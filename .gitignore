@@ -1,5 +1,20 @@
-target/
+# Backend (Spring Boot)
+backend/target/
+backend/*.log
 
-### VS Code ###
+# Frontend (Node/Vue)
+frontend/*/node_modules/
+frontend/*/dist/
+frontend/*/.vite/
+
+# IDE
 .vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agent files
 AGENTS.md

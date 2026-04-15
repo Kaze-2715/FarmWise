@@ -2,6 +2,22 @@
 
 一个基于 Spring Boot + Vue 3 + MySQL 的智慧农业管理系统，支持多角色协同管理，为农场主提供从种植规划到市场销售的全流程数字化解决方案。
 
+## 项目结构
+
+```
+FarmWise/
+├── backend/          # 后端 Spring Boot
+│   ├── src/
+│   ├── pom.xml
+│   └── ...
+├── frontend/         # 前端 Vue 3
+│   └── farmwise-vue/
+│       ├── src/
+│       ├── index.html
+│       └── ...
+└── README.md
+```
+
 ## 核心功能
 
 **多角色权限管理** — 系统支持农场主、技术顾问、数据分析师、供应商、系统管理员五种角色，每种角色拥有独立的权限边界和数据访问范围。农场主管理自有农场数据，技术顾问提供种植方案建议，数据分析师生成市场报告，供应商对接农业投入品资源，管理员统筹全平台运营。
@@ -18,23 +34,34 @@
 
 | 层级 | 技术选型 |
 |------|----------|
-| 前端 | HTML + CSS + JS，实现响应式交互界面与数据可视化 |
-| 后端 | Spring Boot 2.7 + MyBatis，提供 RESTful API 服务 |
-| 数据库 | MySQL 8.0，支持事务管理与数据安全存储 |
-| 安全 | JWT 认证 + RBAC 权限控制，敏感数据加密存储 |
-| 部署 | 支持 Docker 容器化部署，适配云服务器环境 |
+| 前端 | Vue 3 + Vite + Element Plus + Tailwind CSS |
+| 后端 | Spring Boot 3.3 + MyBatis + Maven |
+| 数据库 | MySQL 8.0 |
+| 安全 | Session 认证 + RBAC 权限控制 |
+| 部署 | Nginx + Spring Boot，前后端分离部署 |
 
-系统采用前后端分离架构，表现层负责用户交互与数据展示，业务层处理核心业务逻辑与权限校验，数据层管理持久化存储与备份恢复。前后端通过标准化 API 交互，便于后续功能扩展与第三方服务集成。
+## 本地开发
 
-## 项目状态
+### 后端启动
 
-当前处于功能重构与特性增强阶段，已完成核心模块开发，正在优化数据查询性能与前端交互体验。计划后续接入物联网设备数据接入模块与第三方天气 API。
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+### 前端启动
+
+```bash
+cd frontend/farmwise-vue
+npm install
+npm run dev
+```
 
 ## 开发路线
 
 - [x] 前端 HTML 三件套迁移至 Vue 3
 - [ ] 重构完善业务逻辑
-- [ ] 引入 MyBatis-Plus 替换 MyBatis
+- [ ] 引入 MyBatis-Plus 替换原生 MyBatis
 - [ ] Spring Validation 参数校验
 - [ ] JWT 认证替换 Session 方案
 - [ ] 集成 Redis 缓存与 Session 管理
