@@ -1,6 +1,6 @@
 spring:
   application:
-    name: platform
+    name: FarmWise
   datasource:
     url: jdbc:mysql://39.104.83.135:3306/smart_agri?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8
     username: kaze
@@ -15,7 +15,8 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
-platform:
+      
+FarmWise:
   audit:
     enable: true
     
@@ -29,19 +30,6 @@ mybatis:
 
 logging:
   level:
-    com.agri.platform: debug
+    com.agri.farmwise: debug
     org.springframework.jdbc.core: debug
     root: INFO
-    # Spring 启动时扫描 Mapper 接口
-    org.mybatis.spring.mapper.MapperFactoryBean: TRACE
-    org.mybatis.spring.SqlSessionFactoryBean: TRACE
-    # MyBatis 核心内部
-    org.apache.ibatis: TRACE
-    org.apache.ibatis.builder: TRACE
-    org.apache.ibatis.binding: TRACE
-    org.apache.ibatis.session: TRACE
-    org.apache.ibatis.executor: TRACE
-    org.apache.ibatis.parsing: TRACE
-    org.apache.ibatis.datasource: TRACE
-    org.apache.ibatis.transaction: TRACE
-    org.apache.ibatis.cache: TRACE
