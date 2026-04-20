@@ -3,8 +3,7 @@
         <section class="bg-white rounded-xl shadow-lg p-6">
             <div class="text-center mb-4">
                 <i class="fa fa-leaf text-green-500 text-3xl"></i>
-                <h1 class="text-xl font-bold mt-2">智慧农业种植监控系统</h1>
-                <p class="text-gray-500 text-sm">用户注册</p>
+                <h1 class="text-xl font-bold mt-2">用户注册</h1>
             </div>
 
             <form @submit.prevent="register" class="space-y-4">
@@ -81,7 +80,7 @@ const sendCode = async () => {
     }
     try {
         await fetch('/api/verify-code/send?target=' + email + '&type=EMAIL', { method: 'POST' });
-        toast('验证码已发送');  
+        toast('验证码已发送');
     } catch (e) {
         toast('发送失败：' + e.message, 'bg-red-500');
     }
