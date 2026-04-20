@@ -2,12 +2,26 @@ import { createRouter, createWebHistory } from 'vue-router'
 import UserProfile from '../components/user-profile.vue'
 import Login from '../components/login.vue'
 import Register from '../components/register.vue'
+import MainLayout from '../components/layout/main-layout.vue'
 
 const routes = [
     {
-        path: '/',
-        name: 'root',
-        component: Login
+        path: '/dashboard',
+        component: MainLayout,
+        children: [
+            {
+                path: '/home',
+                name: 'Home',
+                component: {
+                    template: '<div class="p-6"><h2>首页内容</h2></div>'
+                }
+            }
+        ]
+    },
+    {
+        path: '/roles',
+        name: 'Roles',
+        component: Roles
     },
     {
         path: '/user-profile',
