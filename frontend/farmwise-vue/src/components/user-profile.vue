@@ -1,20 +1,4 @@
 <template>
-  <div class="bg-gray-50 font-sans text-dark min-h-screen">
-    <header class="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
-      <div class="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <i class="fa fa-leaf text-green-500 text-2xl"></i>
-          <h1 class="text-xl font-bold">智慧农业种植监控系统</h1>
-        </div>
-        <div class="flex items-center space-x-4">
-          <div class="relative flex items-center space-x-2">
-            <img src="https://picsum.photos/id/1005/40/40" alt="用户头像" class="w-8 h-8 rounded-full object-cover">
-            <span class="text-sm font-medium">{{ username }}</span>
-          </div>
-        </div>
-      </div>
-    </header>
-
     <!-- 主内容 -->
     <div class="container mx-auto px-4 pt-24 pb-16">
       <section class="bg-white rounded-xl p-6 max-w-xl mx-auto" style="box-shadow: 0 4px 20px rgba(0,0,0,.08);">
@@ -56,13 +40,6 @@
         </form>
       </section>
     </div>
-
-    <footer class="bg-white border-t border-gray-200 py-4">
-      <div class="container mx-auto px-4 text-center text-sm text-gray-500">
-        <p>© 2025 智慧农业种植监控系统 - 版权所有</p>
-      </div>
-    </footer>
-  </div>
 </template>
 
 <script setup>
@@ -114,6 +91,3 @@ const handleSubmit = async () => {
   }
 }
 </script>
-
-<style scoped>
-</style>

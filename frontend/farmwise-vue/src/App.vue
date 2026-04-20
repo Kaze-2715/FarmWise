@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="flex flex-col min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
+    <header class="bg-white shadow-sm top-0 left-0 right-0 z-50">
       <div class="container mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <i class="fa fa-leaf text-green-500 text-2xl"></i>
@@ -17,7 +17,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 pt-24">
+    <main class="flex-1">
       <router-view />
     </main>
 
