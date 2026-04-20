@@ -3,6 +3,7 @@ import UserProfile from '../components/user-profile.vue'
 import Login from '../components/login.vue'
 import Register from '../components/register.vue'
 import MainLayout from '../components/layout/main-layout.vue'
+import Roles from '../components/roles.vue'
 
 const routes = [
     {
