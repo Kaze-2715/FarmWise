@@ -71,9 +71,9 @@ const handleLogin = async () => {
         if (!res.ok) throw new Error(await res.text());
 
         const data = await res.json();
-        localStorage.setItem('uid', data.userId);
-        localStorage.setItem('uname', data.username);
-        localStorage.setItem('perms', JSON.stringify(data.permissions));
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('username', data.username);
+        localStorage.setItem('permissions', JSON.stringify(data.permissions));
         localStorage.setItem('roles', JSON.stringify(data.role));
 
         toast('登录成功');
