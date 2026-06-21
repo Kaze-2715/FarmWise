@@ -4,6 +4,7 @@ import Login from '../components/login.vue'
 import Register from '../components/register.vue'
 import MainLayout from '../components/layout/main-layout.vue'
 import Roles from '../components/roles.vue'
+import FarmOwner from '../components/farm-owner.vue'
 
 const routes = [
     {
@@ -38,6 +39,11 @@ const routes = [
         path: '/register',
         name: 'Register',
         component: Register
+    },
+    {
+        path: '/land',
+        name: 'Land',
+        component: FarmOwner
     }
 ]
 
