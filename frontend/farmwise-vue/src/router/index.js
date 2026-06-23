@@ -5,6 +5,7 @@ import Register from '../components/register.vue'
 import MainLayout from '../components/layout/main-layout.vue'
 import Roles from '../components/roles.vue'
 import FarmOwner from '../components/farm-owner.vue'
+import TechAdvisor from '../components/tech-advisor.vue'
 
 const routes = [
     {
@@ -44,6 +45,11 @@ const routes = [
         path: '/land',
         name: 'Land',
         component: FarmOwner
+    },
+    {
+        path: '/advisor',
+        name: 'Advisor',
+        component: TechAdvisor
     }
 ]
 
