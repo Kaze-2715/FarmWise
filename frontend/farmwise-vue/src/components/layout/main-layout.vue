@@ -14,7 +14,7 @@
                     <!-- 中间导航按钮 -->
                     <nav class="flex space-x-2">
                         <!-- 农场主功能 -->
-                        <button v-if="hasRole('farm_owner')" @click="$router.push('/planning')"
+                        <button v-if="hasRole('farm_owner')" @click="$router.push('/planting')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             种植监控
                         </button>

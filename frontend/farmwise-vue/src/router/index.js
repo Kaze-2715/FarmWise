@@ -6,6 +6,7 @@ import MainLayout from '../components/layout/main-layout.vue'
 import Roles from '../components/roles.vue'
 import FarmOwner from '../components/farm-owner.vue'
 import TechAdvisor from '../components/tech-advisor.vue'
+import Planting from '../components/planting.vue'
 
 const routes = [
     {
@@ -18,6 +19,11 @@ const routes = [
                 component: {
                     template: '<div class="p-6"><h2>首页内容</h2></div>'
                 }
+            },
+            {
+                path: '/planting',
+                name: 'Planting',
+                component: Planting
             }
         ]
     },
