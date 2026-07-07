@@ -8,6 +8,7 @@ import FarmOwner from '../components/farm-owner.vue'
 import TechAdvisor from '../components/tech-advisor.vue'
 import Planting from '../components/planting.vue'
 import MarketAnalysis from '../components/market-analysis.vue'
+import Report from "../components/report.vue";
 
 const routes = [
     {
@@ -30,6 +31,11 @@ const routes = [
                 path: '/market',
                 name: 'MarketAnalysis',
                 component: MarketAnalysis
+            },
+            {
+                path: '/reports',
+                name: 'Report',
+                component: Report
             }
         ]
     },
