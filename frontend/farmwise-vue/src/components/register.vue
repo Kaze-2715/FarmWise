@@ -1,29 +1,22 @@
 <template>
-    <div class="flex items-center justify-center min-h-screen bg-gray-100">
-        <section class="bg-white rounded-xl shadow-lg p-6">
+    <div class="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+        <section class="w-full max-w-lg bg-white rounded-xl shadow-lg p-6">
             <div class="text-center mb-4">
-                <i class="fa fa-leaf text-green-500 text-3xl"></i>
-                <h1 class="text-xl font-bold mt-2">用户注册</h1>
+                <div class="flex items-center justify-center gap-2">
+                    <i class="fa fa-leaf text-green-500 text-3xl"></i>
+                    <h1 class="text-xl font-bold">智慧农业种植监控系统</h1>
+                </div>
+                <p class="text-gray-500 text-base mt-4">用户注册</p>
             </div>
 
             <form @submit.prevent="register" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">注册方式</label>
-                    <select v-model="form.type"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                    <input type="email" v-model="form.account" required placeholder="请输入邮箱"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option value="USERNAME">用户名</option>
-                        <option value="EMAIL">邮箱</option>
-                        <option value="PHONE">手机号</option>
-                    </select>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">账号</label>
-                    <input type="text" v-model="form.account" required placeholder="请输入账号"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                </div>
-
-                <div v-show="form.type === 'EMAIL'">
                     <label class="block text-sm font-medium text-gray-700 mb-1">验证码</label>
                     <div class="flex space-x-2">
                         <input type="text" v-model="form.code" placeholder="请输入验证码"
@@ -66,7 +59,6 @@ import { toast } from '../utils/toast';
 
 const router = useRouter();
 const form = ref({
-    type: 'USERNAME',
     account: '',
     code: '',
     password: '',
@@ -87,9 +79,9 @@ const sendCode = async () => {
 }
 
 const register = async () => {
-    const type = form.value.type;
+    const type = 'EMAIL';
     const login = form.value.account;
-    const code = type === 'EMAIL' ? form.value.code : '';
+    const code = form.value.code;
     const pwd = form.value.password;
     const pwd2 = form.value.password2;
 

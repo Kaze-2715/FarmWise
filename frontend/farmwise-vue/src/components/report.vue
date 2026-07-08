@@ -1,15 +1,17 @@
 <template>
-    <div class="container mx-auto px-4 pt-24 pb-16 space-y-6">
-        <div class="bg-white rounded-xl card-shadow p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <p class="text-sm font-medium text-primary mb-1">Report Center</p>
-                <h2 class="text-xl font-bold">报告管理</h2>
-            </div>
-            <button class="btn-primary" type="button" @click="openGenerateReportModal">生成报告</button>
-        </div>
-
+    <div class="space-y-6">
         <!-- 查询区域 -->
         <div class="bg-white rounded-xl card-shadow p-6">
+            <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold">报告管理</h2>
+                </div>
+                <button type="button"
+                    class="inline-flex items-center rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm"
+                    @click="openGenerateReportModal">
+                    <i class="fa fa-plus mr-2"></i>生成报告
+                </button>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">报告类型</label>
@@ -43,7 +45,11 @@
                 </div>
             </div>
             <div class="flex justify-end mt-4">
-                <button type="button" class="btn-outline text-sm px-3 py-1.5" @click="resetQuery">重置查询</button>
+                <button type="button"
+                    class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:shadow active:translate-y-0 active:shadow-sm"
+                    @click="resetQuery">
+                    <i class="fa fa-refresh mr-2"></i>重置查询
+                </button>
             </div>
         </div>
 
@@ -68,8 +74,14 @@
                         <span>作者：{{ report.creator }}</span>
                     </div>
                     <div class="flex justify-end gap-2 mt-4">
-                        <button type="button" @click="viewReport(report)" class="btn-outline text-sm px-3 py-1.5">查看</button>
-                        <button type="button" @click="editReport(report)" class="btn-outline text-sm px-3 py-1.5">编辑</button>
+                        <button type="button" @click="viewReport(report)"
+                            class="rounded-md border border-gray-300 px-2.5 py-1 text-sm text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:shadow-sm active:translate-y-0">
+                            查看
+                        </button>
+                        <button type="button" @click="editReport(report)"
+                            class="rounded-md border border-green-500 bg-green-500 px-2.5 py-1 text-sm text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-sm active:translate-y-0">
+                            编辑
+                        </button>
                     </div>
                 </div>
             </div>
@@ -78,7 +90,7 @@
 
     <!-- 生成报告模态框 -->
     <div v-if="generateReportModalVisible" tabindex="-1"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6" @keyup.esc="quitGenerating">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm px-4 py-6" @keyup.esc="quitGenerating">
         <div class="bg-white rounded-xl card-shadow p-6 w-full max-w-4xl max-h-[calc(100vh-3rem)] overflow-y-auto">
             <!-- 头部 -->
             <div class="border-b border-gray-200 pb-4">
@@ -135,8 +147,14 @@
 
             <!-- 底部按钮 -->
             <div class="flex justify-end gap-3 mt-6">
-                <button class="btn-outline" type="button" @click="quitGenerating">取消</button>
-                <button class="btn-primary" type="button" :disabled="generatingReport" @click="generateReport">
+                <button type="button"
+                    class="w-1/3 rounded-lg border border-gray-500 bg-gray-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-600 hover:shadow active:translate-y-0 active:shadow-sm"
+                    @click="quitGenerating">
+                    取消
+                </button>
+                <button type="button" :disabled="generatingReport"
+                    class="w-1/3 rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    @click="generateReport">
                     {{ generatingReport ? '生成中...' : '立即生成' }}
                 </button>
             </div>
@@ -145,9 +163,9 @@
 
     <!-- 查看报告模态框 -->
     <div v-if="viewReportModalVisible && currentReport" tabindex="-1"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6" @keyup.esc="quitViewing">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm px-4 py-6" @keyup.esc="quitViewing">
         <div class="relative bg-white rounded-xl card-shadow p-6 w-full max-w-2xl">
-            <span class="absolute top-3 right-4 text-2xl text-gray-400 cursor-pointer hover:text-gray-600" @click="quitViewing">&times;</span>
+            <button type="button" class="absolute top-3 right-4 text-2xl text-gray-400 hover:text-gray-600" @click="quitViewing">&times;</button>
             <div class="space-y-3">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">{{ getType(currentReport.type) }}</span>
                 <h3 class="text-lg font-bold">{{ currentReport.title }}</h3>
@@ -165,9 +183,9 @@
 
     <!-- 编辑报告模态框 -->
     <div v-if="editReportModalVisible" tabindex="-1"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6" @keyup.esc="quitEditing">
+        class="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm px-4 py-6" @keyup.esc="quitEditing">
         <div class="relative bg-white rounded-xl card-shadow p-6 w-full max-w-2xl">
-            <span class="absolute top-3 right-4 text-2xl text-gray-400 cursor-pointer hover:text-gray-600" @click="quitEditing">&times;</span>
+            <button type="button" class="absolute top-3 right-4 text-2xl text-gray-400 hover:text-gray-600" @click="quitEditing">&times;</button>
             <h3 class="text-lg font-bold mb-4">编辑报告</h3>
             <div class="space-y-4">
                 <section class="bg-gray-50 rounded-xl p-4 border border-gray-100">
@@ -211,8 +229,14 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
                 </section>
                 <div class="flex justify-end gap-3">
-                    <button type="button" class="btn-outline" @click="quitEditing">取消</button>
-                    <button type="button" :disabled="submittingEdit" @click="submitEdit" class="btn-primary">
+                    <button type="button"
+                        class="w-1/3 rounded-lg border border-gray-500 bg-gray-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-600 hover:shadow active:translate-y-0 active:shadow-sm"
+                        @click="quitEditing">
+                        取消
+                    </button>
+                    <button type="button" :disabled="submittingEdit"
+                        class="w-1/3 rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                        @click="submitEdit">
                         {{ submittingEdit ? '提交中...' : '提交修改' }}
                     </button>
                 </div>

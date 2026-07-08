@@ -20,7 +20,7 @@ const routes = [
     {
         path: '/dashboard',
         component: MainLayout,
-        redirect: '/dashboard/land',
+        redirect: '/dashboard/planting',
         children: [
             {
                 path: 'planting',

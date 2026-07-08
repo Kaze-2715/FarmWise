@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "element-plus": "^2.13.7",
-    "vue": "^3.5.32"
+    "vue": "^3.5.32",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",

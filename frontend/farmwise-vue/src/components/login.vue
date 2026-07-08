@@ -1,27 +1,20 @@
 <template>
-    <div class="flex items-center justify-center min-h-screen bg-gray-100">
-        <section class="bg-white rounded-xl shadow-lg p-6">
+    <div class="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+        <section class="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
             <div class="text-center mb-4">
-                <i class="fa fa-leaf text-green-500 text-3xl"></i>
-                <h1 class="text-xl font-bold mt-2">智慧农业种植监控系统</h1>
-                <p class="text-gray-500 text-sm">用户登录</p>
+                <div class="flex items-center justify-center gap-2">
+                    <i class="fa fa-leaf text-green-500 text-3xl"></i>
+                    <h1 class="text-xl font-bold">智慧农业种植监控系统</h1>
+                </div>
+                <p class="text-gray-500 text-base mt-4">用户登录</p>
             </div>
 
             <form @submit.prevent="handleLogin" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">登录方式</label>
-                    <select v-model="form.type"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option value="USERNAME">用户名</option>
-                        <option value="EMAIL">邮箱</option>
-                        <option value="PHONE">手机号</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">账号</label>
-                    <input type="text" v-model="form.account" required placeholder="请输入账号"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ isEmailLogin ? '邮箱' : '用户名' }}</label>
+                    <input :type="isEmailLogin ? 'email' : 'text'" v-model="form.account" :placeholder="isEmailLogin ? '请输入邮箱' : '请输入用户名'"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
 
                 <div>
@@ -33,6 +26,10 @@
                 <button type="submit"
                     class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition">
                     登录
+                </button>
+                <button type="button" class="w-full text-sm text-green-600 hover:underline" 
+                @click="toggleLoginType">
+                    {{ isEmailLogin ? '使用用户名登录' : '使用邮箱登录' }}
                 </button>
             </form>
 
@@ -51,14 +48,15 @@ import { toast } from '../utils/toast';
 
 const router = useRouter();
 
+const isEmailLogin = ref(true);
+
 const form = ref({
-    type: 'USERNAME',
     account: '',
     password: ''
 })
 
 const handleLogin = async () => {
-    const type = form.value.type;
+    const type = isEmailLogin.value ? 'EMAIL' : 'USERNAME';
     const login = form.value.account;
     const pwd = form.value.password;
 
@@ -66,7 +64,12 @@ const handleLogin = async () => {
         const res = await fetch('/api/user/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login, password: pwd, type, ip: '' })
+            body: JSON.stringify({
+                login,
+                password: pwd,
+                type,
+                ip: ''
+            })
         });
         if (!res.ok) throw new Error(await res.text());
 
@@ -77,13 +80,14 @@ const handleLogin = async () => {
         localStorage.setItem('roles', JSON.stringify(data.role));
 
         toast('登录成功');
-        // 跳回主控制台
-        router.push('/profile')
+        router.push('/dashboard');
     } catch (err) {
         toast('登录失败：' + err.message, 'bg-red-500');
     }
-}
-</script>
+};
 
-<style scoped>
-</style>
+const toggleLoginType = () => {
+    isEmailLogin.value = !isEmailLogin.value;
+    form.value.account = '';
+};
+</script>

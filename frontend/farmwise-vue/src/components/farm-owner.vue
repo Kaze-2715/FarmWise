@@ -1,97 +1,46 @@
 <template>
-    <main class="container mx-auto px-4 py-8">
-        <!-- 页面标题 -->
-        <div class="mb-10 text-center">
-            <h1 class="text-4xl font-bold text-dark mb-4">土地管理</h1>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                管理您的农田信息，获取智能种植建议，提升农业生产效率
-            </p>
-            <div class="w-24 h-1 bg-primary mx-auto mt-6 rounded-full"></div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- 左侧：新增土地表单 -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-lg p-8 sticky top-24">
-                    <h2 class="text-2xl font-bold text-dark mb-6 flex items-center">
-                        <i class="fa fa-plus-circle text-primary mr-3"></i>新增土地
-                    </h2>
-                    <form @submit.prevent="createLand" class="space-y-6">
-                        <div>
-                            <label class="block text-gray-700 mb-2 font-medium">土地ID</label>
-                            <input v-model="form.landId" required
-                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 mb-2 font-medium">面积（平方米）</label>
-                            <input v-model.number="form.area" placeholder="请输入土地面积" type="number" step="0.01" required
-                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 mb-2 font-medium">土壤类型</label>
-                            <input v-model="form.soilType" placeholder="如：红壤、黑土等" required
-                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                        </div>
-
-                        <div>
-                            <label class="block text-gray-700 mb-2 font-medium">附件上传</label>
-                            <div
-                                class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
-
-                                <input type="file" name="attachment" id="attachment" class="hidden" @change="handleAttachmentChange">
-                                <label for="attachment" class="cursor-pointer">
-                                    <i class="fa fa-cloud-upload text-3xl text-gray-400 mb-3"></i>
-                                    <p class="text-gray-500">点击上传土地相关文件</p>
-                                    <p class="text-sm text-gray-400 mt-2">支持图片、PDF、文档等格式</p>
-                                    <p v-if="form.attachment" class="text-sm text-primary mt-2">
-                                        已选择：{{ form.attachment.name }}
-                                    </p>
-                                </label>
-                            </div>
-                        </div>
-
-                        <button type="submit" :disabled="submitting"
-                            class="w-full bg-primary hover:bg-secondary text-black font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:-translate-y-0.5 shadow-md hover:shadow-lg">
-                            <i class="fa fa-check-circle mr-2"></i>创建土地记录
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 右侧：土地列表和消息窗口 -->
-            <div class="lg:col-span-2 space-y-8">
+    <main class="mx-auto w-full max-w-6xl space-y-8">
+        <div class="space-y-8">
+            <!-- 土地列表和消息窗口 -->
+            <div class="space-y-8">
                 <div>
-                    <h2 class="text-2xl font-bold text-dark mb-6 flex items-center">
-                        <i class="fa fa-map-marker text-primary mr-3"></i>土地列表
-                    </h2>
+                    <div class="mb-6 flex items-center justify-between">
+                        <h2 class="text-2xl font-bold text-dark flex items-center">
+                            <i class="fa fa-map-marker text-primary mr-3"></i>土地列表
+                        </h2>
+                        <button type="button"
+                            class="inline-flex items-center rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm"
+                            @click="openAddLandModal">
+                            <i class="fa fa-plus mr-2"></i>新增土地
+                        </button>
+                    </div>
 
                     <!-- 统计卡片 -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                        <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-primary mb-2">{{ totalLands }}</div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="text-3xl font-bold text-green-600 mb-2">{{ totalLands }}</div>
                             <p class="text-gray-600">土地总数</p>
                         </div>
-                        <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-primary mb-2">{{ totalArea }}</div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="text-3xl font-bold text-green-600 mb-2">{{ totalArea }}</div>
                             <p class="text-gray-600">总面积(㎡)</p>
                         </div>
-                        <div class="bg-white rounded-xl p-6 shadow-sm">
-                            <div class="text-3xl font-bold text-primary mb-2">{{ soilTypesCount }}</div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                            <div class="text-3xl font-bold text-green-600 mb-2">{{ soilTypesCount }}</div>
                             <p class="text-gray-600">土壤类型</p>
                         </div>
                     </div>
 
                     <!-- 土地列表 -->
                     <div id="lands" class="space-y-4">
-                        <div v-for="land in lands" :key="land.id" class="bg-white rounded-2xl p-6 shadow-sm card-hover">
+                        <div v-for="land in lands" :key="land.id"
+                            class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow">
                             <div class="flex flex-col md:flex-row md:items-center justify-between">
                                 <div class="mb-4 md:mb-0">
                                     <div class="flex items-center mb-3">
                                         <div
-                                            class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
-                                            <i class="fa fa-map text-primary text-xl"></i>
+                                            class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mr-4">
+                                            <i class="fa fa-map text-green-600 text-xl"></i>
                                         </div>
                                         <div>
                                             <h3 class="font-bold text-lg text-dark">土地编号</h3>
@@ -111,12 +60,12 @@
                                 </div>
                                 <div class="flex flex-col space-y-3">
                                     <button @click="getSuggestion(land.id)"
-                                        class="bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-6 rounded-lg transition-colors flex items-center justify-center">
+                                        class="inline-flex items-center justify-center rounded-lg border border-green-500 bg-green-500 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm">
                                         <i class="fa fa-magic mr-2"></i>生成种植建议
                                     </button>
 
                                     <a v-if="land.attachmentPath" :href="land.attachmentPath" target="_blank"
-                                        class="border border-primary text-primary hover:bg-primary/5 font-medium py-2 px-6 rounded-lg transition-colors flex items-center justify-center">
+                                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:shadow active:translate-y-0 active:shadow-sm">
                                         <i class="fa fa-paperclip mr-2"></i>查看附件
                                     </a>
                                     <span v-else class="text-gray-400 text-sm">无附件</span>
@@ -133,7 +82,7 @@
                         <p v-if="loading" class="text-gray-500 mt-4">加载土地数据中...</p>
                         <p v-else-if="success && (lands.length === 0)">
                             暂无土地数据 <br>
-                            点击上方的“新增土地”表单创建您的第一块土地记录吧！
+                            点击右上角“新增土地”创建您的第一块土地记录吧！
                         </p>
                         <p v-else-if="!success" class="text-red-500 mt-4">加载土地数据失败，请联系技术支持！</p>
                     </div>
@@ -220,7 +169,7 @@
                                     placeholder="输入消息内容...">
                             </div>
                             <button @click="sendMessage"
-                                class="bg-primary hover:bg-secondary text-white font-semibold py-3 px-8 rounded-lg transition-colors whitespace-nowrap"
+                                class="inline-flex items-center justify-center rounded-lg border border-green-500 bg-green-500 px-8 py-3 font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
                                 :disabled="!currentLandId || !messageText.trim() || sendingMessage">
                                 <i class="fa fa-send mr-2"></i>{{ sendingMessage ? '发送中...' : '发送' }}
                             </button>
@@ -276,10 +225,80 @@
         </div>
     </main>
 
+    <!-- 新增土地弹窗 -->
+    <div v-if="addLandModalVisible"
+        class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="closeAddLandModal">
+        <div class="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-xl">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-dark flex items-center">
+                        <i class="fa fa-plus-circle text-green-500 mr-3"></i>新增土地
+                    </h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-500" @click="closeAddLandModal">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form @submit.prevent="createLand" class="space-y-5">
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">土地ID</label>
+                        <input v-model="form.landId" required
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">面积（平方米）</label>
+                        <input v-model.number="form.area" placeholder="请输入土地面积" type="number" step="0.01" required
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">土壤类型</label>
+                        <input v-model="form.soilType" placeholder="如：红壤、黑土等" required
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 mb-2 font-medium">附件上传</label>
+                        <div
+                            class="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center transition-colors hover:border-green-500">
+                            <input type="file" name="attachment" id="attachment" class="hidden"
+                                @change="handleAttachmentChange">
+                            <label for="attachment" class="cursor-pointer">
+                                <i class="fa fa-cloud-upload text-3xl text-gray-400 mb-3"></i>
+                                <p class="text-gray-500">点击上传土地相关文件</p>
+                                <p class="text-sm text-gray-400 mt-2">支持图片、PDF、文档等格式</p>
+                                <p v-if="form.attachment" class="text-sm text-green-600 mt-2">
+                                    已选择：{{ form.attachment.name }}
+                                </p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button type="button"
+                            class="w-1/3 rounded-lg border border-gray-500 bg-gray-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-gray-600 hover:shadow active:translate-y-0 active:shadow-sm"
+                            @click="closeAddLandModal">
+                            取消
+                        </button>
+                        <button type="submit" :disabled="submitting"
+                            class="w-1/3 rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60">
+                            {{ submitting ? '创建中...' : '创建' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- 建议弹窗 -->
-    <div v-if="suggestionModalVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" @click.self="suggestionModalVisible = false">
-        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
-            <div class="bg-primary text-white p-6">
+    <div v-if="suggestionModalVisible"
+        class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        @click.self="suggestionModalVisible = false">
+        <div class="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-hidden shadow-xl">
+            <div class="bg-green-500 text-white p-6">
                 <h3 class="text-xl font-bold flex items-center">
                     <i class="fa fa-lightbulb-o mr-3"></i>种植建议
                 </h3>
@@ -305,7 +324,7 @@
             </div>
             <div class="border-t p-6 flex justify-end">
                 <button @click="suggestionModalVisible = false"
-                    class="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    class="w-1/3 rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm">
                     关闭
                 </button>
             </div>
@@ -333,6 +352,7 @@ const success = ref(true);
 const errorAdvice = ref(false);
 const submitting = ref(false);
 const suggestionModalVisible = ref(false);
+const addLandModalVisible = ref(false);
 const suggestionLoading = ref(false);
 const suggestionError = ref('');
 const sendingMessage = ref(false);
@@ -350,6 +370,26 @@ const messageContainer = ref(null);
 const messageText = ref('');
 
 const currentLandId = ref(null);
+
+const resetLandForm = () => {
+    form.value.landId = '';
+    form.value.area = '';
+    form.value.soilType = '';
+    form.value.attachment = null;
+};
+
+const openAddLandModal = () => {
+    addLandModalVisible.value = true;
+};
+
+const closeAddLandModal = () => {
+    if (submitting.value) {
+        return;
+    }
+
+    resetLandForm();
+    addLandModalVisible.value = false;
+};
 
 watch(messages, () => {
     if (messageContainer.value) {
@@ -433,10 +473,8 @@ const createLand = async () => {
         // 刷新数据
         await loadLands();
 
-        form.value.landId = '';
-        form.value.area = '';
-        form.value.soilType = '';
-        form.value.attachment = null;
+        resetLandForm();
+        addLandModalVisible.value = false;
     } catch (error) {
         console.error(error);
         toast(error.message || "土地添加失败");

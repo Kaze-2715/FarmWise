@@ -1,14 +1,5 @@
 <template>
     <main class="container mx-auto px-4 py-8">
-        <!-- 页面标题 -->
-        <div class="mb-10 text-center">
-            <h1 class="text-4xl font-bold text-dark mb-4">技术方案管理</h1>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                为农场主提供专业种植建议，通过即时沟通优化农业生产方案
-            </p>
-            <div class="w-24 h-1 bg-primary mx-auto mt-6 rounded-full"></div>
-        </div>
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- 左侧：土地选择和详情 -->
             <div class="lg:col-span-1">
@@ -83,7 +74,7 @@
                         </div>
 
                         <button type="submit" :disabled="submittingAdvice"
-                            class="w-full bg-primary hover:bg-secondary text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:-translate-y-0.5 shadow-md hover:shadow-lg">
+                            class="w-full rounded-lg border border-green-500 bg-green-500 px-6 py-3 font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60">
                             <i class="fa fa-paper-plane mr-2"></i>
                             {{ submittingAdvice ? '提交中' : '提交方案' }}
                         </button>

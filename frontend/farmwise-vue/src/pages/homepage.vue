@@ -1,5 +1,5 @@
 <template>
-    <header class="fixed w-full top-0 z-50 transition-all duration-300 bg-transparent">
+    <header class="absolute w-full top-0 z-50 transition-all duration-300 bg-transparent">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo -->
@@ -44,14 +44,14 @@
             <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-100 max-w-3xl mx-auto mb-10 leading-relaxed">
                 基于物联网、大数据和AI技术，为农业生产提供全方位智能解决方案，提升产量、降低成本、绿色环保
             </p>
-            <div class="flex flex-col sm:flex-row justify-center gap-4 mb-16">
+            <div class="flex flex-col sm:flex-row justify-center gap-4 mb-20">
                 <router-link to="/login" class="inline-flex items-center justify-center rounded-full bg-green-500 px-8 py-3 text-lg font-medium text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-lg">
                     立即体验 <i class="fa fa-arrow-right ml-2"></i>
                 </router-link>
             </div>
 
             <!-- 滚动提示 -->
-            <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce">
                 <a href="#features" class="text-white text-2xl">
                     <i class="fa fa-angle-down"></i>
                 </a>
@@ -60,9 +60,9 @@
     </section>
 
     <!-- 功能区 -->
-    <section id="features" class="py-20 bg-white">
+    <section id="features" class="min-h-screen bg-white py-16 lg:py-20">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
+            <div class="text-center mb-8 lg:mb-10">
                 <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] font-bold text-gray-800 mb-4">核心功能</h2>
                 <p class="text-gray-600 max-w-2xl mx-auto text-lg">
                     全方位覆盖农业生产全流程，用科技助力农业现代化转型
@@ -70,69 +70,69 @@
                 <div class="w-24 h-1 bg-green-500 mx-auto mt-6 rounded-full"></div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- 功能卡片1 -->
-                <div class="bg-gray-50 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                        <i class="fa fa-tint text-green-500 text-2xl"></i>
+                <div class="bg-gray-50 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-tint text-green-500 text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">智能灌溉</h3>
-                    <p class="text-gray-600 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">智能灌溉</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
                         基于土壤湿度传感器和天气预报，自动调节灌溉量和时间，节水30%以上
                     </p>
                 </div>
 
                 <!-- 功能卡片2 -->
-                <div class="bg-gray-50 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                        <i class="fa fa-thermometer-half text-green-500 text-2xl"></i>
+                <div class="bg-gray-50 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-thermometer-half text-green-500 text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">环境监测</h3>
-                    <p class="text-gray-600 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">环境监测</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
                         实时监测温度、湿度、光照、CO2浓度等环境数据，异常情况及时预警
                     </p>
                 </div>
 
                 <!-- 功能卡片3 -->
-                <div class="bg-gray-50 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                        <i class="fa fa-bar-chart text-green-500 text-2xl"></i>
+                <div class="bg-gray-50 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-bar-chart text-green-500 text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">数据分析</h3>
-                    <p class="text-gray-600 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">数据分析</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
                         大数据分析作物生长规律，提供精准种植建议，优化生产决策
                     </p>
                 </div>
 
                 <!-- 功能卡片4 -->
-                <div class="bg-gray-50 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                        <i class="fa fa-bug text-green-500 text-2xl"></i>
+                <div class="bg-gray-50 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-bug text-green-500 text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">病虫害预警</h3>
-                    <p class="text-gray-600 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">病虫害预警</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
                         AI图像识别技术，快速检测病虫害，提供科学防治方案
                     </p>
                 </div>
 
                 <!-- 功能卡片5 -->
-                <div class="bg-gray-50 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                        <i class="fa fa-map-marker text-green-500 text-2xl"></i>
+                <div class="bg-gray-50 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-map-marker text-green-500 text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">地块管理</h3>
-                    <p class="text-gray-600 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">地块管理</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
                         数字化管理农田信息，记录种植历史，一键生成农事报告
                     </p>
                 </div>
 
                 <!-- 功能卡片6 -->
-                <div class="bg-gray-50 rounded-2xl p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                        <i class="fa fa-desktop text-green-500 text-2xl"></i>
+                <div class="bg-gray-50 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-desktop text-green-500 text-xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-4">PC管理</h3>
-                    <p class="text-gray-600 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">PC管理</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
                         电脑网页端实时查看数据、远程控制设备，随时随地管理农田
                     </p>
                 </div>
@@ -141,7 +141,7 @@
     </section>
 
     <!-- 产品展示区 -->
-    <section class="py-20 bg-white">
+    <section class="min-h-screen bg-white flex items-center py-16">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col lg:flex-row items-center gap-12">
                 <div class="lg:w-1/2">
@@ -187,10 +187,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <a href="#features" class="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-2 font-medium text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-lg">
-                        查看产品详情 <i class="fa fa-arrow-right ml-2"></i>
-                    </a>
                 </div>
 
                 <div class="lg:w-1/2 relative">
@@ -247,33 +243,21 @@
     </section>
 
     <!-- 页脚 -->
-    <footer class="bg-gray-800 text-white py-12">
+    <footer class="bg-gray-800 text-white py-8">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                    <div class="flex items-center space-x-2 mb-6">
+                    <div class="flex items-center space-x-2 mb-4">
                         <i class="fa fa-leaf text-green-500 text-2xl"></i>
                         <span class="text-xl font-bold">FarmWise</span>
                     </div>
-                    <p class="text-gray-400 mb-6">
+                    <p class="text-gray-400">
                         用科技赋能农业，让每一寸土地都实现价值最大化
                     </p>
                 </div>
 
                 <div>
-                    <h4 class="text-lg font-semibold mb-6">快速链接</h4>
-                    <ul class="space-y-3">
-                        <li><a href="#home"
-                                class="text-gray-400 hover:text-green-500 transition-colors duration-300">首页</a></li>
-                        <li><a href="#features"
-                                class="text-gray-400 hover:text-green-500 transition-colors duration-300">功能介绍</a></li>
-                        <li><a href="#contact"
-                                class="text-gray-400 hover:text-green-500 transition-colors duration-300">联系我们</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="text-lg font-semibold mb-6">联系我们</h4>
+                    <h4 class="text-lg font-semibold mb-4">联系我们</h4>
                     <ul class="space-y-3">
                         <li class="flex items-start">
                             <i class="fa fa-map-marker text-green-500 mt-1 mr-3"></i>
@@ -285,10 +269,6 @@
                         </li>
                     </ul>
                 </div>
-            </div>
-
-            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-500 mb-4 md:mb-0">© 2025 FarmWise. 保留所有权利。</p>
             </div>
         </div>
     </footer>

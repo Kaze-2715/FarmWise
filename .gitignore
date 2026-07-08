@@ -7,6 +7,7 @@ frontend/*/node_modules/
 frontend/*/dist/
 frontend/*/.vite/
 frontend/static/
+frontend-static-legacy.tar.gz
 
 # IDE
 .vscode/
