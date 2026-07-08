@@ -9,45 +9,55 @@ import TechAdvisor from '../components/tech-advisor.vue'
 import Planting from '../components/planting.vue'
 import MarketAnalysis from '../components/market-analysis.vue'
 import Report from "../components/report.vue";
+import Homepage from "../pages/homepage.vue";
 
 const routes = [
     {
+        path: '/',
+        name: 'Homepage',
+        component: Homepage
+    },
+    {
         path: '/dashboard',
         component: MainLayout,
+        redirect: '/dashboard/land',
         children: [
             {
-                path: '/home',
-                name: 'Home',
-                component: {
-                    template: '<div class="p-6"><h2>首页内容</h2></div>'
-                }
-            },
-            {
-                path: '/planting',
+                path: 'planting',
                 name: 'Planting',
                 component: Planting
             },
             {
-                path: '/market',
+                path: 'market',
                 name: 'MarketAnalysis',
                 component: MarketAnalysis
             },
             {
-                path: '/reports',
+                path: 'reports',
                 name: 'Report',
                 component: Report
+            },
+            {
+                path: 'land',
+                name: 'Land',
+                component: FarmOwner
+            },
+            {
+                path: 'advisor',
+                name: 'Advisor',
+                component: TechAdvisor
+            },
+            {
+                path: 'roles',
+                name: 'Roles',
+                component: Roles
+            },
+            {
+                path: 'user-profile',
+                name: 'UserProfile',
+                component: UserProfile
             }
         ]
-    },
-    {
-        path: '/roles',
-        name: 'Roles',
-        component: Roles
-    },
-    {
-        path: '/user-profile',
-        name: 'UserProfile',
-        component: UserProfile
     },
     {
         path: '/login',
@@ -58,16 +68,6 @@ const routes = [
         path: '/register',
         name: 'Register',
         component: Register
-    },
-    {
-        path: '/land',
-        name: 'Land',
-        component: FarmOwner
-    },
-    {
-        path: '/advisor',
-        name: 'Advisor',
-        component: TechAdvisor
     }
 ]
 

@@ -7,38 +7,38 @@
                     <!-- 左侧 Logo -->
                     <router-link to="/" class="flex items-center space-x-2">
                         <i class="fa fa-leaf text-2xl text-green-500"></i>
-                        <span class="text-xl font-bold text-white">Agri Platform</span>
+                        <span class="text-xl font-bold text-white">FarmWise</span>
                         <span class="text-gray-300 ml-4">| 智慧农业控制台</span>
                     </router-link>
 
                     <!-- 中间导航按钮 -->
                     <nav class="flex space-x-2">
                         <!-- 农场主功能 -->
-                        <button v-if="hasRole('farm_owner')" @click="$router.push('/planting')"
+                        <button v-if="hasRole('farm_owner')" @click="$router.push('/dashboard/planting')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             种植监控
                         </button>
-                        <button v-if="hasRole('farm_owner')" @click="$router.push('/land')"
+                        <button v-if="hasRole('farm_owner')" @click="$router.push('/dashboard/land')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             土地管理
                         </button>
-                        <button v-if="hasRole('farm_owner')" @click="$router.push('/advisor')"
+                        <button v-if="hasRole('farm_owner')" @click="$router.push('/dashboard/advisor')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             技术顾问
                         </button>
 
                         <!-- 管理员功能 -->
-                        <button v-if="hasRole('sys_admin')" @click="$router.push('/users')"
+                        <button v-if="hasRole('sys_admin')" @click="$router.push('/dashboard/roles')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             用户中心
                         </button>
 
                         <!-- 数据分析师功能 -->
-                        <button v-if="hasRole('data_analyst')" @click="$router.push('/market')"
+                        <button v-if="hasRole('data_analyst')" @click="$router.push('/dashboard/market')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             产量市场
                         </button>
-                        <button v-if="hasRole('data_analyst')" @click="$router.push('/reports')"
+                        <button v-if="hasRole('data_analyst')" @click="$router.push('/dashboard/reports')"
                             class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
                             报告中心
                         </button>
@@ -54,7 +54,7 @@
                         <!-- 下拉菜单 -->
                         <div
                             class="hidden group-hover:block absolute right-0 top-full w-48 bg-white rounded-xl shadow-lg p-3 z-50 flex flex-col gap-2">
-                            <button @click="$router.push('/profile')"
+                            <button @click="$router.push('/dashboard/user-profile')"
                                 class="w-full bg-green-500 hover:bg-green-600 text-white text-sm py-2 rounded transition">
                                 完善信息
                             </button>
