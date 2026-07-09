@@ -23,7 +23,7 @@
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                             <div class="text-3xl font-bold text-green-600 mb-2">{{ totalArea }}</div>
-                            <p class="text-gray-600">总面积(㎡)</p>
+                            <p class="text-gray-600">总面积(亩)</p>
                         </div>
                         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                             <div class="text-3xl font-bold text-green-600 mb-2">{{ soilTypesCount }}</div>
@@ -43,18 +43,18 @@
                                             <i class="fa fa-map text-green-600 text-xl"></i>
                                         </div>
                                         <div>
-                                            <h3 class="font-bold text-lg text-dark">土地编号</h3>
+                                            <h3 class="font-bold text-lg text-dark">{{ land.name }}</h3>
                                             <p class="text-sm text-gray-500">ID: {{ land.id }}</p>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-2 gap-4 mt-4">
                                         <div>
                                             <p class="text-sm text-gray-500">面积</p>
-                                            <p class="font-semibold">{{ land.area }} ㎡</p>
+                                            <p class="font-semibold">{{ land.area }} 亩</p>
                                         </div>
                                         <div>
                                             <p class="text-sm text-gray-500">土壤类型</p>
-                                            <p class="font-semibold">{{ land.soilType }}</p>
+                                            <p class="font-semibold">{{ land.type }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -62,6 +62,11 @@
                                     <button @click="getSuggestion(land.id)"
                                         class="inline-flex items-center justify-center rounded-lg border border-green-500 bg-green-500 px-6 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm">
                                         <i class="fa fa-magic mr-2"></i>生成种植建议
+                                    </button>
+
+                                    <button type="button" @click="openDeleteLandModal(land)"
+                                        class="inline-flex items-center justify-center rounded-lg border border-red-300 px-6 py-2 text-sm font-medium text-red-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-red-500 hover:shadow active:translate-y-0 active:shadow-sm">
+                                        <i class="fa fa-trash mr-2"></i>删除土地
                                     </button>
 
                                     <a v-if="land.attachmentPath" :href="land.attachmentPath" target="_blank"
@@ -96,12 +101,11 @@
 
                     <!-- 土地选择 -->
                     <div class="mb-6">
-                        <label class="block text-gray-700 mb-3 font-medium">选择土地查看相关消息</label>
                         <select v-model="currentLandId"
                             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                            <option value="">请选择土地...</option>
+                            <option value="" disabled>选择土地查看交流信息</option>
                             <option v-for="land in lands" :key="land.id" :value="land.id">
-                                {{ land.id }} - {{ land.area }}㎡ - {{ land.soilType }}
+                                {{ land.name }}
                             </option>
                         </select>
                     </div>
@@ -229,7 +233,7 @@
     <div v-if="addLandModalVisible"
         class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
         @click.self="closeAddLandModal">
-        <div class="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-xl">
+        <div class="bg-white rounded-xl w-full max-w-2xl overflow-hidden shadow-xl">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-bold text-dark flex items-center">
@@ -242,38 +246,51 @@
             </div>
             <div class="p-6">
                 <form @submit.prevent="createLand" class="space-y-5">
-                    <div>
-                        <label class="block text-gray-700 mb-2 font-medium">土地ID</label>
-                        <input v-model="form.landId" required
-                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-700 mb-2 font-medium">面积（平方米）</label>
-                        <input v-model.number="form.area" placeholder="请输入土地面积" type="number" step="0.01" required
-                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-700 mb-2 font-medium">土壤类型</label>
-                        <input v-model="form.soilType" placeholder="如：红壤、黑土等" required
-                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
-                    </div>
-
-                    <div>
-                        <label class="block text-gray-700 mb-2 font-medium">附件上传</label>
-                        <div
-                            class="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center transition-colors hover:border-green-500">
-                            <input type="file" name="attachment" id="attachment" class="hidden"
-                                @change="handleAttachmentChange">
-                            <label for="attachment" class="cursor-pointer">
-                                <i class="fa fa-cloud-upload text-3xl text-gray-400 mb-3"></i>
-                                <p class="text-gray-500">点击上传土地相关文件</p>
-                                <p class="text-sm text-gray-400 mt-2">支持图片、PDF、文档等格式</p>
-                                <p v-if="form.attachment" class="text-sm text-green-600 mt-2">
-                                    已选择：{{ form.attachment.name }}
-                                </p>
-                            </label>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">土地名称</label>
+                            <input v-model="form.name" placeholder="如：东区1号水田" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">土地类型</label>
+                            <input v-model="form.type" placeholder="如：水田、旱地、温室" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">面积（亩）</label>
+                            <input v-model="form.area" placeholder="请输入土地面积" type="number" min="0" step="0.01" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">当前作物</label>
+                            <input v-model="form.crop" placeholder="如：水稻、小麦" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">使用状态</label>
+                            <select v-model="form.status" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                                <option value="未启用">未启用</option>
+                                <option value="正常种植">正常种植</option>
+                                <option value="休耕">休耕</option>
+                                <option value="异常">异常</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">位置</label>
+                            <input v-model="form.location" placeholder="如：农场东区" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">经度</label>
+                            <input v-model="form.longitude" type="number" step="any" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2 font-medium">纬度</label>
+                            <input v-model="form.latitude" type="number" step="any" required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
                         </div>
                     </div>
 
@@ -289,6 +306,29 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除土地确认弹窗 -->
+    <div v-if="deleteLandModalVisible && pendingDeleteLand"
+        class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
+        @click.self="closeDeleteLandModal">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
+            <h3 class="text-lg font-bold text-gray-800">确认删除</h3>
+            <p class="mt-3 text-gray-600">确认删除土地“{{ pendingDeleteLand.name }}”吗？</p>
+            <p v-if="deleteLandError" class="mt-3 text-sm text-red-500">{{ deleteLandError }}</p>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button"
+                    class="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    @click="closeDeleteLandModal">
+                    取消
+                </button>
+                <button type="button"
+                    class="rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                    @click="confirmDeleteLand">
+                    删除
+                </button>
             </div>
         </div>
     </div>
@@ -333,14 +373,21 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { toast } from '../utils/toast';
+import { useFarmStore } from '../composables/useFarmStore';
+
+const { lands, addLand, deleteLand } = useFarmStore();
 
 const form = ref({
-    landId: '',
+    name: '',
+    type: '',
     area: '',
-    soilType: '',
-    attachment: null
+    crop: '',
+    status: '未启用',
+    location: '',
+    longitude: '',
+    latitude: ''
 });
 
 const CURRENT_SENDER = 'owner';
@@ -353,17 +400,19 @@ const errorAdvice = ref(false);
 const submitting = ref(false);
 const suggestionModalVisible = ref(false);
 const addLandModalVisible = ref(false);
+const deleteLandModalVisible = ref(false);
 const suggestionLoading = ref(false);
 const suggestionError = ref('');
 const sendingMessage = ref(false);
+const pendingDeleteLand = ref(null);
+const deleteLandError = ref('');
 
 const suggestionContent = ref('');
 const adviceHistory = ref([]);
 
-const lands = ref([]);
 const totalLands = computed(() => lands.value.length);
 const totalArea = computed(() => lands.value.reduce((sum, land) => sum + Number(land.area), 0));
-const soilTypesCount = computed(() => new Set(lands.value.map(land => land.soilType)).size);
+const soilTypesCount = computed(() => new Set(lands.value.map(land => land.type)).size);
 
 const messages = ref([]);
 const messageContainer = ref(null);
@@ -372,10 +421,16 @@ const messageText = ref('');
 const currentLandId = ref(null);
 
 const resetLandForm = () => {
-    form.value.landId = '';
-    form.value.area = '';
-    form.value.soilType = '';
-    form.value.attachment = null;
+    form.value = {
+        name: '',
+        type: '',
+        area: '',
+        crop: '',
+        status: '未启用',
+        location: '',
+        longitude: '',
+        latitude: ''
+    };
 };
 
 const openAddLandModal = () => {
@@ -389,6 +444,32 @@ const closeAddLandModal = () => {
 
     resetLandForm();
     addLandModalVisible.value = false;
+};
+
+const openDeleteLandModal = (land) => {
+    pendingDeleteLand.value = land;
+    deleteLandError.value = '';
+    deleteLandModalVisible.value = true;
+};
+
+const closeDeleteLandModal = () => {
+    pendingDeleteLand.value = null;
+    deleteLandError.value = '';
+    deleteLandModalVisible.value = false;
+};
+
+const confirmDeleteLand = () => {
+    if (!pendingDeleteLand.value) {
+        return;
+    }
+
+    try {
+        deleteLand(pendingDeleteLand.value.id);
+        toast('土地删除成功！');
+        closeDeleteLandModal();
+    } catch (error) {
+        deleteLandError.value = error.message || '土地删除失败';
+    }
 };
 
 watch(messages, () => {
@@ -411,68 +492,18 @@ watch(currentLandId, (newId) => {
 
 // 添加 watch 触发加载新的土地数据，修复 createLand() 表单失效的问题，修复 messageContainer 绑定错误的问题
 
-onMounted(() => {
-    loadLands();
-});
-
-// 加载土地数据
-const loadLands = async () => {
-    loading.value = true;
-    success.value = false;
-    try {
-        // 获取土地列表
-        //! 这个 api 很存疑，应该是要获取当前用户的土地列表，而不是所有土地
-        const res = await fetch(`/api/lands/`);
-        if (!res.ok) {
-            throw new Error(res.status + res.statusText);
-        }
-        // 检查土地列表长度是否为空
-        const data = await res.json();
-        if (data.length === 0) {
-            toast('您还没有添加任何土地，快去创建吧！');
-        }
-        lands.value = data;
-        // 更新数据
-        success.value = true;
-    } catch (error) {
-        console.error('加载土地数据失败:', error.status);
-        toast('加载土地数据失败，请稍后再试');
-        success.value = false;
-    } finally {
-        loading.value = false;
-    }
-};
 // 更新 与技术顾问沟通
 
 // 新增土地 表单的提交
-const createLand = async () => {
-    // 设置 api，提交
+const createLand = () => {
     if (submitting.value) {
         return;
     }
     submitting.value = true;
 
-    const data = new FormData();
-    data.append('landId', form.value.landId);
-    data.append('area', form.value.area);
-    data.append('soilType', form.value.soilType);
-
-    if (form.value.attachment) {
-        data.append('attachment', form.value.attachment);
-    }
-
     try {
-        const res = await fetch("/api/lands", {
-            method: 'POST',
-            body: data
-        });
-        if (!res.ok) {
-            throw new Error("土地添加失败！");
-        }
+        addLand(form.value);
         toast("土地添加成功！");
-        // 刷新数据
-        await loadLands();
-
         resetLandForm();
         addLandModalVisible.value = false;
     } catch (error) {
@@ -580,9 +611,4 @@ const sendMessage = async () => {
 
 };
 
-// 提交附件
-const handleAttachmentChange = (event) => {
-    const file = event.target.files?.[0] || null;
-    form.value.attachment = file;
-}
 </script>
