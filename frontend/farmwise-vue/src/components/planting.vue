@@ -5,7 +5,7 @@
       <aside class="md:w-64 bg-white rounded-xl card-shadow p-4 flex-shrink-0">
         <nav class="space-y-1">
           <button type="button" @click="activeSection = 'dashboard'"
-            class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full"
+            class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full hover:bg-gray-50 transition-colors"
             :class="{ 'nav-active': activeSection === 'dashboard' }">
             <i class="fa fa-dashboard w-5 text-center flex-shrink-0"></i>
             <span>数据总览</span>
@@ -43,7 +43,7 @@
           <label for="current-land" class="block text-sm font-medium text-gray-700 mb-2">当前土地</label>
           <select id="current-land" v-model="selectedLandId"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-none focus:outline-none focus:ring-2 focus:ring-primary/50">
-            <option v-for="land in mockLandOptions" :key="land.id" :value="land.id">
+            <option v-for="land in lands" :key="land.id" :value="land.id">
               {{ land.name }}
             </option>
           </select>
@@ -59,7 +59,7 @@
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">种植面积</span>
-              <span class="font-medium">{{ currentLand.plantingArea }} 亩</span>
+              <span class="font-medium">{{ currentLand.area }} 亩</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">当前作物</span>
@@ -67,7 +67,7 @@
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">传感器数量</span>
-              <span class="font-medium">{{ currentLand.sensorCount }} 个</span>
+              <span class="font-medium">{{ currentLandDevices.length }} 个</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">预警处理率</span>
@@ -181,6 +181,29 @@
             </div>
           </div>
 
+          <!-- 当前土地设备运行情况 -->
+          <div class="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <h3 class="mb-4 font-medium">设备运行情况</h3>
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div class="rounded-lg bg-white p-4">
+                <p class="text-sm text-gray-500">设备总数</p>
+                <p class="mt-1 text-2xl font-bold text-gray-800">{{ currentLandDevices.length }}</p>
+              </div>
+              <div class="rounded-lg bg-white p-4">
+                <p class="text-sm text-gray-500">在线设备</p>
+                <p class="mt-1 text-2xl font-bold text-green-600">{{ currentLandOnlineDeviceCount }}</p>
+              </div>
+              <div class="rounded-lg bg-white p-4">
+                <p class="text-sm text-gray-500">离线设备</p>
+                <p class="mt-1 text-2xl font-bold text-gray-600">{{ currentLandOfflineDeviceCount }}</p>
+              </div>
+              <div class="rounded-lg bg-white p-4">
+                <p class="text-sm text-gray-500">低电量设备</p>
+                <p class="mt-1 text-2xl font-bold text-amber-600">{{ currentLandLowBatteryDeviceCount }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- 趋势图表 -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-50 rounded-xl p-4">
@@ -231,7 +254,7 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="plan in plans" :key="plan.id">
+                <tr v-for="plan in filteredPlans" :key="plan.id">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium">{{ plan.planName }}</div>
                   </td>
@@ -241,7 +264,7 @@
                   </td>
 
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm">{{ plan.plantingArea }}</div>
+                    <div class="text-sm">{{ plan.area }}</div>
                   </td>
 
                   <td class="px-6 py-4 whitespace-nowrap">
@@ -658,7 +681,7 @@
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">种植面积(亩)</label>
-                <input v-model="newPlanForm.plantingArea" type="number" step="0.1"
+                <input v-model="newPlanForm.area" type="number" step="0.1"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="请输入种植面积">
               </div>
@@ -677,10 +700,10 @@
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">种植地块</label>
-              <select name="land" v-model="newPlanForm.land"
+              <select name="landId" v-model="newPlanForm.landId"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="">请选择地块</option>
-                <option v-for="land in mockLandOptions" :key="land.id" :value="land.name">
+                <option v-for="land in lands" :key="land.id" :value="land.id">
                   {{ land.name }}
                 </option>
               </select>
@@ -733,7 +756,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">种植面积(亩)</label>
-                <input v-model="editPlanForm.plantingArea" type="number" step="0.1"
+                <input v-model="editPlanForm.area" type="number" step="0.1"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="请输入种植面积">
               </div>
@@ -752,10 +775,10 @@
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">种植地块</label>
-              <select v-model="editPlanForm.land" name="land"
+              <select v-model="editPlanForm.landId" name="landId"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="">请选择地块</option>
-                <option v-for="land in mockLandOptions" :key="land.id" :value="land.name">
+                <option v-for="land in lands" :key="land.id" :value="land.id">
                   {{ land.name }}
                 </option>
               </select>
@@ -810,7 +833,7 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">种植面积(亩)</label>
                 <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">{{
-                  selectedPlan.plantingArea }} 亩</div>
+                  selectedPlan.area }} 亩</div>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -828,7 +851,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">种植地块</label>
               <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">{{
-                selectedPlan.land ||
+                getLandName(selectedPlan.landId) ||
                 '未选择' }}</div>
             </div>
             <div>
@@ -885,6 +908,9 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import { useFarmStore } from "../composables/useFarmStore";
+
+const { lands, devices } = useFarmStore();
 
 // Mock 数据先独立定义，再用于初始化响应式状态。
 const mockPlans = [
@@ -892,22 +918,22 @@ const mockPlans = [
     id: 1,
     planName: '2024年早稻种植',
     cropType: '水稻',
-    plantingArea: 15.2,
+    area: 15.2,
     plantingTime: '2024-03-15',
     expectedHarvestTime: '2024-07-20',
     status: '生长中',
-    land: '',
+    landId: 'LAND-001',
     remark: ''
   },
   {
     id: 2,
     planName: '2024年冬小麦种植',
     cropType: '小麦',
-    plantingArea: 13.3,
+    area: 13.3,
     plantingTime: '2024-10-05',
     expectedHarvestTime: '2025-06-10',
     status: '播种期',
-    land: '',
+    landId: 'LAND-002',
     remark: ''
   }
 ];
@@ -915,6 +941,7 @@ const mockPlans = [
 const mockWarnings = [
   {
     id: 1,
+    landId: 'LAND-001',
     level: 'red',
     cropType: '水稻',
     message: '检测到真菌病害高风险',
@@ -923,6 +950,7 @@ const mockWarnings = [
   },
   {
     id: 2,
+    landId: 'LAND-002',
     level: 'yellow',
     cropType: '小麦',
     message: '土壤湿度连续偏高',
@@ -931,6 +959,7 @@ const mockWarnings = [
   },
   {
     id: 3,
+    landId: 'LAND-003',
     level: 'yellow',
     cropType: '玉米',
     message: '发现轻微虫害迹象',
@@ -940,12 +969,39 @@ const mockWarnings = [
 ];
 
 const mockEnvironmentData = {
-  humidity: 78.5,
-  temperature: 27.8,
-  ph: 6.8,
-  humidityUpdateTime: '1分钟前更新',
-  temperatureUpdateTime: '2分钟前更新',
-  phUpdateTime: '5分钟前更新'
+  'LAND-001': {
+    humidity: 78.5,
+    temperature: 27.8,
+    ph: 6.8,
+    humidityUpdateTime: '1分钟前更新',
+    temperatureUpdateTime: '2分钟前更新',
+    phUpdateTime: '5分钟前更新'
+  },
+  'LAND-002': {
+    humidity: 52.3,
+    temperature: 24.6,
+    ph: 7.1,
+    humidityUpdateTime: '3分钟前更新',
+    temperatureUpdateTime: '3分钟前更新',
+    phUpdateTime: '8分钟前更新'
+  },
+  'LAND-003': {
+    humidity: 66.7,
+    temperature: 29.2,
+    ph: 6.5,
+    humidityUpdateTime: '刚刚更新',
+    temperatureUpdateTime: '1分钟前更新',
+    phUpdateTime: '4分钟前更新'
+  }
+};
+
+const emptyEnvironmentData = {
+  humidity: '--',
+  temperature: '--',
+  ph: '--',
+  humidityUpdateTime: '暂无数据',
+  temperatureUpdateTime: '暂无数据',
+  phUpdateTime: '暂无数据'
 };
 
 const mockDashboardData = {
@@ -956,33 +1012,6 @@ const mockDashboardData = {
     status: 'pending'
   }
 };
-
-const mockLandOptions = [
-  {
-    id: 1,
-    name: '1号地块',
-    type: '水田',
-    plantingArea: 15.2,
-    crop: '水稻',
-    sensorCount: 4
-  },
-  {
-    id: 2,
-    name: '2号地块',
-    type: '旱地',
-    plantingArea: 13.3,
-    crop: '小麦',
-    sensorCount: 3
-  },
-  {
-    id: 3,
-    name: '3号地块',
-    type: '温室',
-    plantingArea: 6.8,
-    crop: '番茄',
-    sensorCount: 5
-  }
-];
 
 const addPlanModalVisible = ref(false);
 const editPlanModalVisible = ref(false);
@@ -995,15 +1024,15 @@ const activeSection = ref('dashboard');
 const selectedWarning = ref(null);
 const warningFilter = ref('all');
 const recordKeyword = ref('');
-const selectedLandId = ref(mockLandOptions[0].id);
+const selectedLandId = ref(lands.value[0]?.id || '');
 
 const newPlanForm = ref({
   planName: '',
   cropType: '',
-  plantingArea: '',
+  area: '',
   plantingTime: '',
   expectedHarvestTime: '',
-  land: '',
+  landId: '',
   remark: ''
 });
 
@@ -1011,10 +1040,10 @@ const editPlanForm = ref({
   id: null,
   planName: '',
   cropType: '',
-  plantingArea: '',
+  area: '',
   plantingTime: '',
   expectedHarvestTime: '',
-  land: '',
+  landId: '',
   remark: ''
 });
 
@@ -1027,65 +1056,99 @@ const handleForm = ref({
   remark: ''
 });
 
-const environmentData = ref({ ...mockEnvironmentData });
+const environmentData = computed(() => {
+  return mockEnvironmentData[selectedLandId.value] || emptyEnvironmentData;
+});
 const dashboardData = ref({ ...mockDashboardData });
 
 const plans = ref([...mockPlans]);
 const warnings = ref([...mockWarnings]);
 
-const totalPlantingArea = computed(() => {
-  return plans.value.reduce((sum, plan) => {
-    return sum + Number(plan.plantingArea || 0);
+const filteredPlans = computed(() => {
+  return plans.value.filter(plan => plan.landId === selectedLandId.value);
+});
+
+const totalArea = computed(() => {
+  return filteredPlans.value.reduce((sum, plan) => {
+    return sum + Number(plan.area || 0);
   }, 0);
 });
 
 const currentLand = computed(() => {
-  return mockLandOptions.find(land => land.id === selectedLandId.value) || mockLandOptions[0];
+  return lands.value.find(land => land.id === selectedLandId.value);
 });
 
+const currentLandDevices = computed(() => {
+  return devices.value.filter(device => device.landId === selectedLandId.value);
+});
+
+const currentLandOnlineDeviceCount = computed(() => {
+  return currentLandDevices.value.filter(device => device.status === 'online').length;
+});
+
+const currentLandOfflineDeviceCount = computed(() => {
+  return currentLandDevices.value.filter(device => device.status === 'offline').length;
+});
+
+const currentLandLowBatteryDeviceCount = computed(() => {
+  return currentLandDevices.value.filter(device => device.battery !== null && device.battery < 20).length;
+});
+
+const getLandName = (landId) => {
+  if (!landId) {
+    return '';
+  }
+
+  return lands.value.find(land => land.id === landId)?.name || '未知土地';
+};
+
 const currentCrops = computed(() => {
-  const crops = plans.value.map(plan => plan.cropType).filter(Boolean);
+  const crops = filteredPlans.value.map(plan => plan.cropType).filter(Boolean);
   return [...new Set(crops)].join('、') || '无';
 });
 
+const currentLandWarnings = computed(() => {
+  return warnings.value.filter(warning => warning.landId === selectedLandId.value);
+});
+
 const unhandledWarningCount = computed(() => {
-  return warnings.value.filter(warning => !warning.handled).length;
+  return currentLandWarnings.value.filter(warning => !warning.handled).length;
 });
 
 const redWarningCount = computed(() => {
-  return warnings.value.filter(warning => warning.level === 'red' && !warning.handled).length;
+  return currentLandWarnings.value.filter(warning => warning.level === 'red' && !warning.handled).length;
 });
 
 const yellowWarningCount = computed(() => {
-  return warnings.value.filter(warning => warning.level === 'yellow' && !warning.handled).length;
+  return currentLandWarnings.value.filter(warning => warning.level === 'yellow' && !warning.handled).length;
 });
 
 const handledWarningCount = computed(() => {
-  return warnings.value.filter(warning => warning.handled).length;
+  return currentLandWarnings.value.filter(warning => warning.handled).length;
 });
 
 const warningHandleRate = computed(() => {
-  if (warnings.value.length === 0) {
+  if (currentLandWarnings.value.length === 0) {
     return 0;
   }
 
-  return Math.round((handledWarningCount.value / warnings.value.length) * 100);
+  return Math.round((handledWarningCount.value / currentLandWarnings.value.length) * 100);
 });
 
 const filteredWarnings = computed(() => {
   if (warningFilter.value === 'handled') {
-    return warnings.value.filter(warning => warning.handled);
+    return currentLandWarnings.value.filter(warning => warning.handled);
   }
 
   if (warningFilter.value === 'all') {
-    return warnings.value;
+    return currentLandWarnings.value;
   }
 
-  return warnings.value.filter(warning => warning.level === warningFilter.value && !warning.handled);
+  return currentLandWarnings.value.filter(warning => warning.level === warningFilter.value && !warning.handled);
 });
 
 const handleRecords = computed(() => {
-  return warnings.value.filter(warning => warning.handled && warning.handleRecord)
+  return currentLandWarnings.value.filter(warning => warning.handled && warning.handleRecord)
     .map(warning => ({
       id: warning.id,
       cropType: warning.cropType,
@@ -1112,10 +1175,10 @@ const resetNewPlanForm = () => {
   newPlanForm.value = {
     planName: '',
     cropType: '',
-    plantingArea: '',
+    area: '',
     plantingTime: '',
     expectedHarvestTime: '',
-    land: '',
+    landId: '',
     remark: ''
   };
 };
@@ -1136,10 +1199,10 @@ const resetEditPlanForm = () => {
     id: null,
     planName: '',
     cropType: '',
-    plantingArea: '',
+    area: '',
     plantingTime: '',
     expectedHarvestTime: '',
-    land: '',
+    landId: '',
     remark: ''
   };
 };
@@ -1182,7 +1245,7 @@ const validatePlanForm = (form) => {
     return false;
   }
 
-  if (!form.plantingArea) {
+  if (!form.area) {
     alert('请输入种植面积');
     return false;
   }
@@ -1202,7 +1265,7 @@ const validatePlanForm = (form) => {
     return false;
   }
 
-  if (!form.land) {
+  if (!form.landId) {
     alert('请选择种植地块');
     return false;
   }
@@ -1221,11 +1284,11 @@ const submitNewPlan = () => {
     id: Date.now(),
     planName: form.planName,
     cropType: form.cropType,
-    plantingArea: form.plantingArea,
+    area: form.area,
     plantingTime: form.plantingTime,
     expectedHarvestTime: form.expectedHarvestTime,
     status: '待开始',
-    land: form.land,
+    landId: form.landId,
     remark: form.remark
   });
 
