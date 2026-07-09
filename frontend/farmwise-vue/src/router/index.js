@@ -10,6 +10,7 @@ import Planting from '../components/planting.vue'
 import MarketAnalysis from '../components/market-analysis.vue'
 import Report from "../components/report.vue";
 import Homepage from "../pages/homepage.vue";
+import DeviceManagement from "../components/device-management.vue";
 
 const routes = [
     {
@@ -56,6 +57,11 @@ const routes = [
                 path: 'user-profile',
                 name: 'UserProfile',
                 component: UserProfile
+            },
+            {
+                path: 'devices',
+                name: 'DeviceManagement',
+                component: DeviceManagement
             }
         ]
     },

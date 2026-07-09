@@ -22,6 +22,10 @@
               class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
               土地管理
             </button>
+            <button v-if="hasRole('farm_owner')" @click="$router.push('/dashboard/devices')"
+              class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
+              设备管理
+            </button>
             <button v-if="hasRole('farm_owner')" @click="$router.push('/dashboard/advisor')"
               class="px-3 py-1.5 rounded hover:bg-green-500/20 text-white hover:text-green-500 transition-colors">
               技术顾问
