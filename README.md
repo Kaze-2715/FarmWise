@@ -1,73 +1,53 @@
 # FarmWise
 
-一个基于 Spring Boot + Vue 3 + MySQL 的智慧农业管理系统，支持多角色协同管理，为农场主提供从种植规划到市场销售的全流程数字化解决方案。
+FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆盖地块、设备、环境监测、灌溉、预警、农事任务、AI 顾问和报告等业务。
 
-## 项目结构
+## 技术栈
 
-```
-FarmWise/
-├── backend/          # 后端 Spring Boot
-│   ├── src/
-│   ├── pom.xml
-│   └── ...
-├── frontend/         # 前端 Vue 3
-│   └── farmwise-vue/
-│       ├── src/
-│       ├── index.html
-│       └── ...
-└── README.md
-```
+- 前端：Vue 3、Vite、Element Plus、Tailwind CSS
+- 后端：Java 21、Spring Boot 3.3、MyBatis、Maven
+- 数据库：MySQL 8.0
+- 认证：Session + RBAC
+- 部署：Nginx + Spring Boot
 
-## 核心功能
+项目采用前后端分离结构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。
 
-**多角色权限管理** — 系统支持农场主、技术顾问、数据分析师、供应商、系统管理员五种角色，每种角色拥有独立的权限边界和数据访问范围。农场主管理自有农场数据，技术顾问提供种植方案建议，数据分析师生成市场报告，供应商对接农业投入品资源，管理员统筹全平台运营。
+## 开发计划
 
-**土地资源管理** — 农场主可录入土地基础信息（面积、地理位置、土壤类型），系统根据环境条件智能推荐适宜作物，技术顾问可在线制定技术方案并与农场主实时沟通。
+当前围绕 Java 后端技术栈展示、物联网应用和 AI Agent 顾问三条主线开发。
 
-**种植规划与监控** — 支持作物种植计划制定，系统基于预设模型计算最佳种植时间与产量预估。通过传感器数据采集，实时监控土壤湿度、温度、光照等关键指标，结合历史数据预测病虫害风险并自动预警。
+开发顺序固定为：
 
-**产量预测与市场分析** — 整合历史种植数据与实时监控信息，提供作物产量预测功能。系统分析农产品市场价格趋势，辅助农场主确定最佳销售时机，数据分析师可生成深度市场分析报告。
+1. 前端产品原型
+2. mock 数据与交互
+3. RESTful 接口契约
+4. 后端实现
 
-**报告生成与共享** — 支持种植记录、资源利用、产量统计等多维度报告生成，技术顾问和分析师可将专业报告共享给农场主，管理员可导出全平台运营数据用于决策优化。
+### 第一阶段：前端原型
 
-## 技术架构
+按以下顺序补齐功能：
 
-| 层级 | 技术选型 |
-|------|----------|
-| 前端 | Vue 3 + Vite + Element Plus + Tailwind CSS |
-| 后端 | Spring Boot 3.3 + MyBatis + Maven |
-| 数据库 | MySQL 8.0 |
-| 安全 | Session 认证 + RBAC 权限控制 |
-| 部署 | Nginx + Spring Boot，前后端分离部署 |
+1. 环境监测：实时指标、历史趋势和传感器状态。
+2. 智能灌溉：自动/手动模式、阈值、设备控制和执行记录。
+3. 异常预警：环境、设备和病虫害预警及处理记录。
+4. 农事任务：从预警生成任务并跟踪处理状态。
+5. AI Agent 顾问：结合地块、作物、传感器和预警上下文生成建议。
+6. 报告中心：汇总地块、设备、监测、预警、任务和 AI 建议。
 
-## 本地开发
+地块管理已有基础功能，后续按其他模块的需求补充关联信息。
 
-### 后端启动
+### 第二阶段：数据与接口
 
-```bash
-cd backend
-mvn spring-boot:run
-```
+前端交互稳定后，确定 `land`、`device`、`sensorReading`、`irrigationRule`、`alert`、`farmTask`、`aiConversation` 和 `report` 等核心数据结构，再设计接口。
 
-### 前端启动
+### 第三阶段：后端能力
 
-```bash
-cd frontend/farmwise-vue
-npm install
-npm run dev
-```
-
-## 开发路线
-
-- [x] 前端 HTML 三件套迁移至 Vue 3
-- [ ] 重构完善业务逻辑
-- [ ] 引入 MyBatis-Plus 替换原生 MyBatis
-- [ ] Spring Validation 参数校验
-- [ ] JWT 认证替换 Session 方案
-- [ ] 集成 Redis 缓存与 Session 管理
-- [ ] 集成阿里云 OSS 文件存储服务
-- [ ] RocketMQ 异步处理报告生成与消息通知
-- [ ] Docker 容器化部署支持
+- 使用 Spring Boot + MyBatis 实现业务接口。
+- 使用 JWT + Spring Security + RBAC 重构认证授权。
+- 使用 Redis 管理验证码、设备状态和短期 AI 上下文。
+- 使用 MQ 和 MQTT 处理设备数据、预警及控制指令。
+- 根据数据特点引入时序数据库或 MongoDB。
+- 使用 Docker Compose 编排项目依赖。
 
 ## 开源协议
 
