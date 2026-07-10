@@ -24,6 +24,25 @@ export const newDevice = {
     longitude: '' // 部署位置经度
 }
 
+export const newEnvironmentThreshold = {
+    landId: '', // 所在土地
+    metric: '', // 约束指标
+    min: 0,
+    max: 100,
+    enabled: false, // 是否启用
+    creator: '', // 创建人
+    updatedAt: '' // 更新时间
+}
+
+export const newSensorData = {
+    deviceId: '', // 采集设备 ID
+    landId: null, // 采集时绑定的土地 ID，未绑定时为 null
+    recordedAt: '', // 采集时间
+    metric: '', // 指标类型
+    unit: '', // 单位
+    value: 0, // 测量值
+}
+
 export const mockLands = [
     {
         id: 'LAND-001',
@@ -138,5 +157,368 @@ export const mockDevices = [
         installTime: '2026-05-18',
         latitude: 28.2196,
         longitude: 112.9465
+    }
+]
+
+export const mockEnvironmentThresholds = [
+    {
+        landId: 'LAND-001',
+        metric: 'soil_moisture',
+        min: 60,
+        max: 80,
+        enabled: true,
+        creator: '技术顾问张三',
+        updatedAt: '2026-07-09T09:00:00+08:00'
+    },
+    {
+        landId: 'LAND-002',
+        metric: 'air_temperature',
+        min: 18,
+        max: 30,
+        enabled: true,
+        creator: '技术顾问李四',
+        updatedAt: '2026-07-09T09:10:00+08:00'
+    },
+    {
+        landId: 'LAND-002',
+        metric: 'air_humidity',
+        min: 50,
+        max: 80,
+        enabled: true,
+        creator: '技术顾问李四',
+        updatedAt: '2026-07-09T09:10:00+08:00'
+    },
+    {
+        landId: 'LAND-003',
+        metric: 'light',
+        min: 10000,
+        max: 30000,
+        enabled: true,
+        creator: '技术顾问王五',
+        updatedAt: '2026-07-09T09:20:00+08:00'
+    },
+    {
+        landId: 'LAND-003',
+        metric: 'soil_ph',
+        min: 6,
+        max: 7.5,
+        enabled: true,
+        creator: '技术顾问王五',
+        updatedAt: '2026-07-09T09:20:00+08:00'
+    }
+]
+
+export const mockSensorReadings = [
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-06-12T10:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 61.8
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-06-19T10:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 64.2
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-06-26T10:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 68.7
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-07-03T10:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 72.4
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-07-08T10:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 75.6
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-07-09T02:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 76.9
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-07-09T06:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 77.8
+    },
+    {
+        deviceId: 'DEV-001',
+        landId: 'LAND-001',
+        recordedAt: '2026-07-09T10:30:00+08:00',
+        metric: 'soil_moisture',
+        unit: '%',
+        value: 78.5
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-06-12T10:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 22.1
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-06-19T10:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 23.4
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-06-26T10:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 24.8
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-03T10:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 25.6
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-08T10:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 24.9
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-09T02:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 21.7
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-09T06:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 22.9
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-09T10:28:00+08:00',
+        metric: 'air_temperature',
+        unit: '℃',
+        value: 24.6
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-06-12T10:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 58.4
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-06-19T10:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 56.8
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-06-26T10:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 54.1
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-03T10:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 53.6
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-08T10:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 51.8
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-09T02:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 57.2
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-09T06:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 55.7
+    },
+    {
+        deviceId: 'DEV-003',
+        landId: 'LAND-002',
+        recordedAt: '2026-07-09T10:28:00+08:00',
+        metric: 'air_humidity',
+        unit: '%',
+        value: 52.3
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-06-12T10:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 16800
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-06-19T10:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 17500
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-06-26T10:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 18200
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-03T10:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 19100
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-08T10:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 18600
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-09T02:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 0
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-09T06:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 4200
+    },
+    {
+        deviceId: 'DEV-005',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-09T10:29:00+08:00',
+        metric: 'light',
+        unit: 'lx',
+        value: 18800
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-06-12T22:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.4
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-06-19T22:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.5
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-06-26T22:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.6
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-03T22:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.7
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-07T22:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.6
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-08T10:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.5
+    },
+    {
+        deviceId: 'DEV-006',
+        landId: 'LAND-003',
+        recordedAt: '2026-07-08T22:40:00+08:00',
+        metric: 'soil_ph',
+        unit: 'pH',
+        value: 6.5
     }
 ]

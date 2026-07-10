@@ -94,75 +94,52 @@
           <!-- 数据卡片组 -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <!-- 土壤湿度 -->
-            <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+            <div class="min-h-20 bg-blue-50 rounded-xl p-4 border border-blue-100">
               <div class="flex justify-between items-start">
                 <div>
                   <p class="text-gray-500 text-sm">土壤湿度</p>
-                  <h3 class="text-2xl font-bold mt-1">{{ environmentData.humidity }}%</h3>
+                  <h3 class="text-2xl font-bold mt-1">
+                    {{ dashboardEnvironmentSummary.soilMoisture.value }}{{ dashboardEnvironmentSummary.soilMoisture.unit }}
+                  </h3>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
                   <i class="fa fa-tint"></i>
                 </div>
               </div>
-              <div class="mt-3 flex items-center text-sm">
-                <span class="text-red-500 flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> 3.2%
-                </span>
-                <span class="text-gray-400 ml-2">较昨日</span>
-              </div>
             </div>
 
-            <!-- 土壤温度 -->
-            <div class="bg-orange-50 rounded-xl p-4 border border-orange-100">
+            <!-- 空气温度 -->
+            <div class="min-h-20 bg-orange-50 rounded-xl p-4 border border-orange-100">
               <div class="flex justify-between items-start">
                 <div>
-                  <p class="text-gray-500 text-sm">土壤温度</p>
-                  <h3 class="text-2xl font-bold mt-1">{{ environmentData.temperature }}℃</h3>
+                  <p class="text-gray-500 text-sm">空气温度</p>
+                  <h3 class="text-2xl font-bold mt-1">
+                    {{ dashboardEnvironmentSummary.airTemperature.value }}{{ dashboardEnvironmentSummary.airTemperature.unit }}
+                  </h3>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
                   <i class="fa fa-thermometer"></i>
                 </div>
               </div>
-              <div class="mt-3 flex items-center text-sm">
-                <span class="text-red-500 flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> 1.5℃
-                </span>
-                <span class="text-gray-400 ml-2">较昨日</span>
-              </div>
             </div>
 
-            <!-- 产量预测 -->
-            <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+            <!-- 空气湿度 -->
+            <div class="min-h-20 bg-green-50 rounded-xl p-4 border border-green-100">
               <div class="flex justify-between items-start">
                 <div>
-                  <p class="text-gray-500 text-sm">产量预测</p>
+                  <p class="text-gray-500 text-sm">空气湿度</p>
                   <h3 class="text-2xl font-bold mt-1">
-                    <template v-if="dashboardData.yieldPrediction.value !== null">
-                      {{ dashboardData.yieldPrediction.value }} {{
-                        dashboardData.yieldPrediction.unit }}
-                    </template>
-                    <template v-else>
-                      待生成
-                    </template>
+                    {{ dashboardEnvironmentSummary.airHumidity.value }}{{ dashboardEnvironmentSummary.airHumidity.unit }}
                   </h3>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-500">
-                  <i class="fa fa-bar-chart"></i>
+                  <i class="fa fa-cloud"></i>
                 </div>
-              </div>
-              <div class="mt-3 flex items-center text-sm">
-                <span v-if="dashboardData.yieldPrediction.trendRate !== null" class="text-green-500 flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> {{ dashboardData.yieldPrediction.trendRate }}%
-                </span>
-                <span v-else class="text-gray-500 flex items-center">
-                  <i class="fa fa-clock-o mr-1"></i> 后端接入后生成
-                </span>
-                <span v-if="dashboardData.yieldPrediction.trendRate !== null" class="text-gray-400 ml-2">较上季</span>
               </div>
             </div>
 
             <!-- 预警数量 -->
-            <div class="bg-red-50 rounded-xl p-4 border border-red-100">
+            <div class="min-h-20 bg-red-50 rounded-xl p-4 border border-red-100">
               <div class="flex justify-between items-start">
                 <div>
                   <p class="text-gray-500 text-sm">未处理预警</p>
@@ -171,12 +148,6 @@
                 <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
                   <i class="fa fa-bell"></i>
                 </div>
-              </div>
-              <div class="mt-3 flex items-center text-sm">
-                <span class="text-red-500 flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> 1 条
-                </span>
-                <span class="text-gray-400 ml-2">较昨日</span>
               </div>
             </div>
           </div>
@@ -307,76 +278,42 @@
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-bold">环境监控</h2>
             <div class="flex space-x-2">
-              <div class="relative">
-                <select
-                  class="appearance-none bg-gray-50 border border-gray-300 text-gray-700 py-2 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                  <option>全部土地</option>
-                  <option>1号地块</option>
-                  <option>2号地块</option>
-                  <option>3号地块</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <i class="fa fa-chevron-down text-xs"></i>
-                </div>
-              </div>
               <button
-                class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:shadow active:translate-y-0 active:shadow-sm">
+                class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-500 hover:shadow active:translate-y-0 active:shadow-sm"
+                @click="exportSensorTrendData">
                 <i class="fa fa-download mr-1"></i> 导出数据
               </button>
             </div>
           </div>
 
           <!-- 实时数据卡片 -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="border border-gray-200 rounded-xl p-4">
-              <div class="flex justify-between items-center mb-3">
-                <h3 class="font-medium">土壤湿度</h3>
-                <span class="text-xs text-gray-500">{{ environmentData.humidityUpdateTime }}</span>
-              </div>
-              <div class="flex items-center">
-                <div class="text-3xl font-bold mr-3">{{ environmentData.humidity }}%</div>
-                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
-                  <i class="fa fa-tint"></i>
-                </div>
-              </div>
-              <div class="flex justify-between text-xs text-gray-500 mt-2">
-                <span>适宜范围: 60%-80%</span>
-                <span class="text-red-500">略高</span>
-              </div>
+          <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div v-if="realtimeIndicators.length === 0"
+              class="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
+              当前地块还没有启用的环境阈值，请先配置监测标准。
             </div>
-
-            <div class="border border-gray-200 rounded-xl p-4">
-              <div class="flex justify-between items-center mb-3">
-                <h3 class="font-medium">土壤温度</h3>
-                <span class="text-xs text-gray-500">{{ environmentData.temperatureUpdateTime }}</span>
-              </div>
-              <div class="flex items-center">
-                <div class="text-3xl font-bold mr-3">{{ environmentData.temperature }}℃</div>
-                <div class="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
-                  <i class="fa fa-thermometer"></i>
+            <div v-for="indicator in realtimeIndicators" :key="indicator.metric"
+              class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <div class="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="font-medium text-gray-800">{{ indicator.label }}</h3>
+                  <p class="mt-1 text-xs text-gray-500">
+                    建议区间：{{ indicator.min }} - {{ indicator.max }} {{ indicator.unit }}
+                  </p>
                 </div>
+                <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="getSensorStatusClass(indicator.status)">
+                  {{ sensorStatusLabels[indicator.status] }}
+                </span>
               </div>
-              <div class="flex justify-between text-xs text-gray-500 mt-2">
-                <span>适宜范围: 15℃-30℃</span>
-                <span class="text-green-500">适宜</span>
-              </div>
-            </div>
 
-            <div class="border border-gray-200 rounded-xl p-4">
-              <div class="flex justify-between items-center mb-3">
-                <h3 class="font-medium">土壤pH值</h3>
-                <span class="text-xs text-gray-500">{{ environmentData.phUpdateTime }}</span>
+              <div class="flex items-end gap-2">
+                <span class="text-3xl font-bold text-gray-900">{{ indicator.value ?? '--' }}</span>
+                <span class="pb-1 text-sm text-gray-500">{{ indicator.unit }}</span>
               </div>
-              <div class="flex items-center">
-                <div class="text-3xl font-bold mr-3">{{ environmentData.ph }}</div>
-                <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-500">
-                  <i class="fa fa-balance-scale"></i>
-                </div>
-              </div>
-              <div class="flex justify-between text-xs text-gray-500 mt-2">
-                <span>适宜范围: 6.0-7.5</span>
-                <span class="text-green-500">适宜</span>
-              </div>
+
+              <p class="mt-3 text-xs text-gray-400">
+                更新时间：{{ formatRecordedAt(indicator.recordedAt) }}
+              </p>
             </div>
           </div>
 
@@ -384,16 +321,59 @@
           <div class="bg-gray-50 rounded-xl p-4 mb-6">
             <div class="flex justify-between items-center mb-4">
               <h3 class="font-medium">历史趋势</h3>
-              <div class="flex space-x-2">
-                <button class="text-sm px-3 py-1 bg-primary text-white rounded-lg">日</button>
-                <button class="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">周</button>
-                <button class="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">月</button>
-                <button class="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">季</button>
+              <div class="flex items-center gap-2">
+                <select v-model="sensorTrendRange"
+                  class="rounded-lg border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  <option value="day">日</option>
+                  <option value="week">周</option>
+                  <option value="month">月</option>
+                  <option value="season">季</option>
+                </select>
+                <select v-model="selectedTrendMetric"
+                  class="rounded-lg border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                  <option v-for="option in trendMetricOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
               </div>
             </div>
-            <div
-              class="h-80 flex items-center justify-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-lg">
-              历史趋势图待接入
+            <div class="min-h-80 rounded-lg border border-dashed border-gray-200 bg-white p-4 text-sm">
+              <div class="mb-3 text-gray-600">
+                当前范围内共有 {{ filteredTrendReadings.length }} 条传感器数据
+              </div>
+
+              <div v-if="filteredTrendReadings.length === 0" class="flex h-64 items-center justify-center text-gray-400">
+                当前时间范围暂无趋势数据
+              </div>
+
+              <div v-else-if="visibleTrendMetricSummaries.length === 0"
+                class="flex h-64 items-center justify-center text-gray-400">
+                当前指标暂无趋势数据
+              </div>
+
+              <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div v-for="summary in visibleTrendMetricSummaries" :key="summary.metric"
+                  class="rounded-lg bg-white p-4 shadow-sm">
+                  <div class="mb-3 flex items-start justify-between">
+                    <div>
+                      <h4 class="font-medium text-gray-800">{{ summary.label }}</h4>
+                      <p class="mt-1 text-xs text-gray-500">数据点：{{ summary.count }}</p>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-xl font-bold text-gray-900">
+                        {{ summary.latestValue ?? '--' }} {{ summary.unit }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <span v-for="point in summary.points" :key="point.time"
+                      class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                      {{ point.value }} ({{ formatTrendPointTime(point.time) }})
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -417,18 +397,16 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">SN-2024001</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">1号地块</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">土壤湿度、温度</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">湿度: {{ environmentData.humidity }}%
-                    温度: {{
-                      environmentData.temperature }}℃</td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm">2024-05-20 14:32:15</td>
+                <tr v-for="row in currentLandSensorRows" :key="row.id">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">{{ row.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">{{ row.location }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">{{ row.metrics }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">{{ row.latestData }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">{{ formatRecordedAt(row.updatedAt) }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      正常
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                      :class="getDeviceStatusClass(row.status)">
+                      {{ deviceStatusLabels[row.status] || row.status }}
                     </span>
                   </td>
                 </tr>
@@ -907,10 +885,38 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useFarmStore } from "../composables/useFarmStore";
 
-const { lands, devices } = useFarmStore();
+const { lands, devices, sensorReadings, environmentThresholds } = useFarmStore();
+
+const sensorMetricLabels = {
+  soil_moisture: '土壤湿度',
+  air_temperature: '空气温度',
+  air_humidity: '空气湿度',
+  light: '光照强度',
+  soil_ph: '土壤 pH'
+};
+
+const sensorStatusLabels = {
+  no_data: '暂无数据',
+  unmatched_data_type: '指标不匹配',
+  low: '偏低',
+  high: '偏高',
+  normal: '适宜'
+};
+
+const deviceStatusLabels = {
+  online: '在线',
+  offline: '离线'
+};
+
+const sensorTrendRangeDays = {
+  day: 1,
+  week: 7,
+  month: 30,
+  season: 90
+};
 
 // Mock 数据先独立定义，再用于初始化响应式状态。
 const mockPlans = [
@@ -968,51 +974,6 @@ const mockWarnings = [
   }
 ];
 
-const mockEnvironmentData = {
-  'LAND-001': {
-    humidity: 78.5,
-    temperature: 27.8,
-    ph: 6.8,
-    humidityUpdateTime: '1分钟前更新',
-    temperatureUpdateTime: '2分钟前更新',
-    phUpdateTime: '5分钟前更新'
-  },
-  'LAND-002': {
-    humidity: 52.3,
-    temperature: 24.6,
-    ph: 7.1,
-    humidityUpdateTime: '3分钟前更新',
-    temperatureUpdateTime: '3分钟前更新',
-    phUpdateTime: '8分钟前更新'
-  },
-  'LAND-003': {
-    humidity: 66.7,
-    temperature: 29.2,
-    ph: 6.5,
-    humidityUpdateTime: '刚刚更新',
-    temperatureUpdateTime: '1分钟前更新',
-    phUpdateTime: '4分钟前更新'
-  }
-};
-
-const emptyEnvironmentData = {
-  humidity: '--',
-  temperature: '--',
-  ph: '--',
-  humidityUpdateTime: '暂无数据',
-  temperatureUpdateTime: '暂无数据',
-  phUpdateTime: '暂无数据'
-};
-
-const mockDashboardData = {
-  yieldPrediction: {
-    value: null,
-    unit: '吨',
-    trendRate: null,
-    status: 'pending'
-  }
-};
-
 const addPlanModalVisible = ref(false);
 const editPlanModalVisible = ref(false);
 const viewPlanModalVisible = ref(false);
@@ -1020,11 +981,21 @@ const deletePlanModalVisible = ref(false);
 const handleModalVisible = ref(false);
 const selectedPlan = ref(null);
 const selectedDeletePlan = ref(null);
+const selectedTrendMetric = ref('all');
 const activeSection = ref('dashboard');
 const selectedWarning = ref(null);
 const warningFilter = ref('all');
 const recordKeyword = ref('');
 const selectedLandId = ref(lands.value[0]?.id || '');
+const sensorTrendRange = ref('day');
+
+watch(selectedLandId, () => {
+  selectedTrendMetric.value = 'all';
+});
+
+watch(sensorTrendRange, () => {
+  selectedTrendMetric.value = 'all';
+});
 
 const newPlanForm = ref({
   planName: '',
@@ -1056,10 +1027,26 @@ const handleForm = ref({
   remark: ''
 });
 
-const environmentData = computed(() => {
-  return mockEnvironmentData[selectedLandId.value] || emptyEnvironmentData;
+const dashboardEnvironmentSummary = computed(() => {
+  const soilMoisture = latestSensorReadings.value.soil_moisture;
+  const airTemperature = latestSensorReadings.value.air_temperature;
+  const airHumidity = latestSensorReadings.value.air_humidity;
+
+  return {
+    soilMoisture: {
+      value: soilMoisture?.value ?? '--',
+      unit: soilMoisture?.unit ?? '%'
+    },
+    airTemperature: {
+      value: airTemperature?.value ?? '--',
+      unit: airTemperature?.unit ?? '℃'
+    },
+    airHumidity: {
+      value: airHumidity?.value ?? '--',
+      unit: airHumidity?.unit ?? '%'
+    }
+  };
 });
-const dashboardData = ref({ ...mockDashboardData });
 
 const plans = ref([...mockPlans]);
 const warnings = ref([...mockWarnings]);
@@ -1094,6 +1081,94 @@ const currentLandLowBatteryDeviceCount = computed(() => {
   return currentLandDevices.value.filter(device => device.battery !== null && device.battery < 20).length;
 });
 
+const currentLandThresholds = computed(() => environmentThresholds.value.filter(threshold => threshold.enabled && threshold.landId === selectedLandId.value));
+
+const getReadingStatus = (reading, threshold) => {
+  if (!reading || !Number.isFinite(reading.value)) {
+    return 'no_data';
+  }
+  if (reading.metric !== threshold.metric) {
+    return 'unmatched_data_type';
+  }
+  if (reading.value <= threshold.min) {
+    return 'low';
+  }
+  if (reading.value >= threshold.max) {
+    return 'high';
+  }
+  return 'normal';
+};
+
+const getSensorStatusClass = (status) => {
+  const classes = {
+    no_data: 'bg-gray-100 text-gray-600',
+    unmatched_data_type: 'bg-purple-100 text-purple-700',
+    low: 'bg-blue-100 text-blue-700',
+    high: 'bg-red-100 text-red-700',
+    normal: 'bg-green-100 text-green-700'
+  };
+
+  return classes[status] || 'bg-gray-100 text-gray-600';
+};
+
+const getDeviceStatusClass = (status) => {
+  const classes = {
+    online: 'bg-green-100 text-green-800',
+    offline: 'bg-gray-100 text-gray-600'
+  };
+
+  return classes[status] || 'bg-gray-100 text-gray-600';
+};
+
+const formatRecordedAt = (recordedAt) => {
+  if (!recordedAt) {
+    return '暂无数据';
+  }
+
+  const recordedTime = new Date(recordedAt);
+  if (!Number.isFinite(recordedTime.getTime())) {
+    return '时间格式异常';
+  }
+
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(recordedTime);
+
+  const dateTime = Object.fromEntries(parts.map(part => [part.type, part.value]));
+
+  return `${dateTime.year} 年 ${dateTime.month} 月 ${dateTime.day} 日 ${dateTime.hour}:${dateTime.minute}`;
+};
+
+const formatTrendPointTime = (recordedAt) => {
+  if (!recordedAt) {
+    return '';
+  }
+
+  const recordedTime = new Date(recordedAt);
+  if (!Number.isFinite(recordedTime.getTime())) {
+    return '';
+  }
+
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(recordedTime);
+
+  const dateTime = Object.fromEntries(parts.map(part => [part.type, part.value]));
+
+  return `${dateTime.month} 月 ${dateTime.day} 日 ${dateTime.hour}:${dateTime.minute}`;
+};
+
 const getLandName = (landId) => {
   if (!landId) {
     return '';
@@ -1110,6 +1185,8 @@ const currentCrops = computed(() => {
 const currentLandWarnings = computed(() => {
   return warnings.value.filter(warning => warning.landId === selectedLandId.value);
 });
+
+const currentLandSensorReadings = computed(() => sensorReadings.value.filter(reading => reading.landId === selectedLandId.value));
 
 const unhandledWarningCount = computed(() => {
   return currentLandWarnings.value.filter(warning => !warning.handled).length;
@@ -1147,6 +1224,99 @@ const filteredWarnings = computed(() => {
   return currentLandWarnings.value.filter(warning => warning.level === warningFilter.value && !warning.handled);
 });
 
+const realtimeIndicators = computed(() => {
+  return currentLandThresholds.value.map(threshold => {
+    const reading = latestSensorReadings.value[threshold.metric];
+
+    return {
+      metric: threshold.metric,
+      label: sensorMetricLabels[threshold.metric] || threshold.metric,
+      value: reading?.value ?? null,
+      unit: reading?.unit ?? '',
+      recordedAt: reading?.recordedAt ?? null,
+      min: threshold.min,
+      max: threshold.max,
+      status: getReadingStatus(reading, threshold)
+    };
+  });
+});
+
+const filteredTrendReadings = computed(() => {
+  const days = sensorTrendRangeDays[sensorTrendRange.value];
+  const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
+
+  return currentLandSensorReadings.value.filter(reading => {
+    return new Date(reading.recordedAt).getTime() >= startTime;
+  });
+});
+
+const trendReadingsByMetric = computed(() => {
+  const result = filteredTrendReadings.value.reduce((groups, reading) => {
+    if (!groups[reading.metric]) {
+      groups[reading.metric] = [];
+    }
+
+    groups[reading.metric].push({
+      time: reading.recordedAt,
+      value: reading.value,
+      unit: reading.unit,
+      deviceId: reading.deviceId
+    });
+
+    return groups;
+  }, {});
+
+  Object.values(result).forEach(readings => {
+    readings.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+  });
+
+  return result;
+});
+
+const trendMetricSummaries = computed(() => {
+  return Object.entries(trendReadingsByMetric.value).map(([metric, readings]) => {
+    const firstReading = readings[0];
+    const latestReading = readings[readings.length - 1];
+
+    return {
+      metric,
+      label: sensorMetricLabels[metric] || metric,
+      unit: latestReading?.unit || firstReading?.unit || '',
+      count: readings.length,
+      latestValue: latestReading?.value ?? null,
+      points: readings.map(reading => ({
+        time: reading.time,
+        value: reading.value
+      }))
+    };
+  });
+});
+
+const trendMetricOptions = computed(() => {
+  return [
+    { value: 'all', label: '全部指标' },
+    ...trendMetricSummaries.value.map(summary => ({
+      value: summary.metric,
+      label: summary.label
+    }))
+  ];
+});
+
+const visibleTrendMetricSummaries = computed(() => {
+  if (selectedTrendMetric.value === 'all') {
+    return trendMetricSummaries.value;
+  }
+  return trendMetricSummaries.value.filter(summary => summary.metric === selectedTrendMetric.value);
+});
+
+const exportableTrendReadings = computed(() => {
+  if (selectedTrendMetric.value === 'all') {
+    return filteredTrendReadings.value;
+  }
+
+  return filteredTrendReadings.value.filter(reading => reading.metric === selectedTrendMetric.value);
+});
+
 const handleRecords = computed(() => {
   return currentLandWarnings.value.filter(warning => warning.handled && warning.handleRecord)
     .map(warning => ({
@@ -1168,6 +1338,40 @@ const filteredHandleRecords = computed(() => {
 
   return handleRecords.value.filter(record => {
     return String(record.id).includes(keyword) || record.cropType.includes(keyword);
+  });
+});
+
+const latestSensorReadings = computed(() => {
+  return currentLandSensorReadings.value.reduce((result, reading) => {
+    const previousReading = result[reading.metric];
+    if (!previousReading || new Date(reading.recordedAt).getTime() > new Date(previousReading.recordedAt).getTime()) {
+      result[reading.metric] = reading;
+    }
+    return result;
+  }, {});
+});
+
+const currentLandSensorRows = computed(() => {
+  return currentLandDevices.value.map(device => {
+    const latestReadings = Object.values(latestSensorReadings.value).filter(reading => reading.deviceId === device.id);
+
+    const latestUpdatedAt = latestReadings.reduce((latestTime, reading) => {
+      if (!latestTime) {
+        return reading.recordedAt;
+      }
+
+      return new Date(reading.recordedAt).getTime() > new Date(latestTime).getTime() ? reading.recordedAt : latestTime;
+    }, null);
+
+    return {
+      id: device.id,
+      name: device.name,
+      location: getLandName(device.landId),
+      metrics: latestReadings.map(reading => sensorMetricLabels[reading.metric] || reading.metric).join('、') || '暂无数据',
+      latestData: latestReadings.map(reading => `${sensorMetricLabels[reading.metric] || reading.metric}: ${reading.value} ${reading.unit}`).join('，') || '暂无数据',
+      updatedAt: latestUpdatedAt,
+      status: device.status
+    };
   });
 });
 
@@ -1396,5 +1600,32 @@ const getWarningButtonClass = (level) => {
   };
 
   return classMap[level] || 'border border-gray-500 bg-gray-500 hover:bg-gray-600';
+};
+
+const exportSensorTrendData = () => {
+  if (exportableTrendReadings.value.length === 0) {
+    window.alert('当前筛选条件下没有可导出的传感器数据');
+    return;
+  }
+
+  const exportData = {
+    landId: selectedLandId.value,
+    landName: currentLand.value?.name || '',
+    range: sensorTrendRange.value,
+    metric: selectedTrendMetric.value,
+    exportedAt: new Date().toISOString(),
+    readings: exportableTrendReadings.value
+  };
+
+  const content = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `sensor-readings-${selectedLandId.value}-${sensorTrendRange.value}.json`;
+  link.click();
+
+  URL.revokeObjectURL(url);
 };
 </script>
