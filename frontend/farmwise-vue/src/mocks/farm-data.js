@@ -89,6 +89,170 @@ export const newAlert = {
     handleRecord: null
 };
 
+export const newFarmTask = {
+    id: '',
+    landId: '',
+    sourceType: '',
+    sourceId: '',
+
+    taskType: '',
+    title: '',
+    description: '',
+    priority: 'medium',
+
+    status: 'pending',
+    assignee: '',
+    deadline: '',
+    createdAt: '',
+
+    completedAt: null,
+    result: '',
+    remark: ''
+};
+
+export const mockFarmTasks = [
+    {
+        id: 'TASK-001',
+        landId: 'LAND-001',
+        sourceType: 'alert',
+        sourceId: 'ALT-001',
+
+        taskType: 'irrigation',
+        title: '处理东区土壤湿度过低',
+        description: '检查土壤湿度和灌溉设备，根据现场情况完成补水。',
+        priority: 'high',
+
+        status: 'pending',
+        assignee: '农场主李四',
+        deadline: '2026-07-10T18:00:00+08:00',
+        createdAt: '2026-07-09T10:35:00+08:00',
+
+        completedAt: null,
+        result: '',
+        remark: '由土壤湿度异常预警生成'
+    },
+    {
+        id: 'TASK-002',
+        landId: 'LAND-001',
+        sourceType: 'alert',
+        sourceId: 'ALT-002',
+
+        taskType: 'inspection',
+        title: '检查东区灌溉控制器',
+        description: '检查控制器供电、网络连接和现场运行状态。',
+        priority: 'high',
+
+        status: 'processing',
+        assignee: '技术顾问张三',
+        deadline: '2026-07-09T12:00:00+08:00',
+        createdAt: '2026-07-09T08:25:00+08:00',
+
+        completedAt: null,
+        result: '',
+        remark: '已前往现场检查'
+    },
+    {
+        id: 'TASK-003',
+        landId: 'LAND-001',
+        sourceType: 'plan',
+        sourceId: 1,
+
+        taskType: 'harvest',
+        title: '完成东区早稻收获',
+        description: '按照种植计划完成成熟水稻收获，并记录现场产量。',
+        priority: 'medium',
+
+        status: 'completed',
+        assignee: '农场主李四',
+        deadline: '2024-07-20T18:00:00+08:00',
+        createdAt: '2024-07-15T09:00:00+08:00',
+
+        completedAt: '2024-07-20T16:30:00+08:00',
+        result: '已完成早稻收获并登记产量',
+        remark: '收获过程正常'
+    },
+    {
+        id: 'TASK-004',
+        landId: 'LAND-002',
+        sourceType: 'manual',
+        sourceId: null,
+
+        taskType: 'weeding',
+        title: '清理西区田埂杂草',
+        description: '清理西区田埂及排水沟附近杂草，保持巡检通道畅通。',
+        priority: 'low',
+
+        status: 'cancelled',
+        assignee: '农场主李四',
+        deadline: '2026-07-11T17:00:00+08:00',
+        createdAt: '2026-07-09T14:00:00+08:00',
+
+        completedAt: null,
+        result: '',
+        remark: '因持续降雨取消，后续重新安排'
+    },
+    {
+        id: 'TASK-005',
+        landId: 'LAND-002',
+        sourceType: 'alert',
+        sourceId: 'ALT-006',
+
+        taskType: 'pesticide',
+        title: '处理西区虫害风险',
+        description: '核对虫害发生范围，并根据现场情况进行定点施药。',
+        priority: 'high',
+
+        status: 'pending',
+        assignee: '技术顾问李四',
+        deadline: '2026-07-10T12:00:00+08:00',
+        createdAt: '2026-07-09T09:20:00+08:00',
+
+        completedAt: null,
+        result: '',
+        remark: '施药前需确认药剂类型和安全间隔期'
+    },
+    {
+        id: 'TASK-006',
+        landId: 'LAND-003',
+        sourceType: 'system',
+        sourceId: null,
+
+        taskType: 'fertilization',
+        title: '完成温室苗期追肥',
+        description: '根据当前苗期安排追肥，并观察作物后续生长状态。',
+        priority: 'medium',
+
+        status: 'processing',
+        assignee: '技术顾问王五',
+        deadline: '2026-07-12T16:00:00+08:00',
+        createdAt: '2026-07-10T08:00:00+08:00',
+
+        completedAt: null,
+        result: '',
+        remark: '系统根据作物生长周期自动生成'
+    },
+    {
+        id: 'TASK-007',
+        landId: 'LAND-003',
+        sourceType: 'manual',
+        sourceId: null,
+
+        taskType: 'other',
+        title: '整理温室生产工具',
+        description: '清点并整理温室内常用生产工具和防护用品。',
+        priority: 'low',
+
+        status: 'completed',
+        assignee: '农场主李四',
+        deadline: '2026-07-09T18:00:00+08:00',
+        createdAt: '2026-07-09T09:30:00+08:00',
+
+        completedAt: '2026-07-09T17:10:00+08:00',
+        result: '工具已完成分类清点并归位',
+        remark: ''
+    }
+];
+
 export const mockAlerts = [
     {
         id: 'ALT-001',
@@ -98,7 +262,7 @@ export const mockAlerts = [
         title: '土壤湿度低于适宜范围',
         description: '东区1号水田的土壤湿度降至56%，低于当前地块设定的60%下限。',
         suggestion: '建议检查土壤湿度传感器，并根据现场情况安排灌溉。',
-        status: 'pending',
+        status: 'processing',
         occurredAt: '2026-07-09T10:30:00+08:00',
         source: { deviceId: 'DEV-001', metric: 'soil_moisture', value: 56, unit: '%' },
         handleRecord: null
@@ -175,7 +339,7 @@ export const mockAlerts = [
         title: '小麦蚌虫数量快速增加',
         description: '近期巡田发现蚌虫数量明显增加，存在扩散风险。',
         suggestion: '建议尽快核对发生范围并制定防治方案。',
-        status: 'pending',
+        status: 'processing',
         occurredAt: '2026-07-09T09:15:00+08:00',
         source: { deviceId: 'DEV-004', metric: null, value: null, unit: null },
         handleRecord: null

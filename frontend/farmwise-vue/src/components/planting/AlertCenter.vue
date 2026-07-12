@@ -130,19 +130,27 @@
           <p class="mt-1"><span class="font-medium">备注：</span>{{ alert.handleRecord.remark || '无' }}</p>
         </div>
 
-        <div v-if="alert.status === 'pending'" class="flex flex-wrap gap-2 mt-4">
-          <button type="button"
+        <div v-if="hasGeneratedTask(alert.id) || alert.status === 'pending' || alert.status === 'processing'"
+          class="mt-4 flex flex-wrap items-center gap-2">
+          <span v-if="hasGeneratedTask(alert.id)"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700">
+            <i class="fa fa-check-circle"></i>
+            已生成任务
+          </span>
+          <button v-if="alert.status === 'pending'" type="button"
             class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700"
             @click="startProcessing(alert)">开始处理</button>
-          <button type="button"
+          <button v-if="alert.status === 'pending'" type="button"
             class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
             @click="openHandleModal(alert, 'ignore')">忽略</button>
-        </div>
-
-        <div v-else-if="alert.status === 'processing'" class="flex mt-4">
-          <button type="button"
-            class="rounded-lg bg-green-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-green-700"
-            @click="openHandleModal(alert, 'resolve')">完成处理</button>
+          <button v-if="alert.status === 'processing'" type="button"
+            class="rounded-lg px-3 py-1.5 text-sm text-white transition-colors"
+            :class="canResolveAlert(alert.id) ? 'bg-green-600 hover:bg-green-700' : 'cursor-not-allowed bg-gray-400'"
+            :disabled="!canResolveAlert(alert.id)"
+            :title="canResolveAlert(alert.id) ? '' : '请先完成关联农事任务'"
+            @click="openHandleModal(alert, 'resolve')">
+            {{ canResolveAlert(alert.id) ? '完成处理' : '等待任务完成' }}
+          </button>
         </div>
       </div>
     </div>
@@ -321,6 +329,83 @@
   </div>
 </div>
 
+<!-- 开始处理模态框 -->
+<div v-if="startModalVisible && selectedStartAlert"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-white/30 p-4 backdrop-blur-sm">
+  <div class="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl">
+    <div class="flex items-start justify-between border-b border-gray-200 p-6">
+      <div>
+        <h3 class="text-lg font-bold text-gray-800">开始处理预警</h3>
+        <p class="mt-1 text-sm text-gray-500">{{ selectedStartAlert.title }}</p>
+      </div>
+      <button type="button" class="text-gray-400 transition-colors hover:text-gray-600" @click="closeStartModal">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+
+    <div class="space-y-5 p-6">
+      <label class="flex items-start gap-3 rounded-lg border border-gray-200 p-4"
+        :class="existingTaskForStart ? 'bg-gray-50' : 'cursor-pointer hover:border-emerald-300'">
+        <input v-model="generateTaskChecked" type="checkbox" :disabled="existingTaskForStart"
+          class="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+        <span>
+          <span class="block text-sm font-medium text-gray-800">同时生成农事任务</span>
+          <span class="mt-1 block text-xs text-gray-500">
+            {{ existingTaskForStart ? '该预警已经生成过农事任务，不会重复创建。' : '确认后将创建一条与当前预警关联的待处理任务。' }}
+          </span>
+        </span>
+      </label>
+
+      <div v-if="generateTaskChecked && !existingTaskForStart" class="grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-gray-700">任务类型</span>
+          <select v-model="startTaskForm.taskType"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+            <option value="irrigation">灌溉</option>
+            <option value="fertilization">施肥</option>
+            <option value="pesticide">施药</option>
+            <option value="weeding">除草</option>
+            <option value="inspection">巡检</option>
+            <option value="harvest">收获</option>
+            <option value="other">其他</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-gray-700">优先级</span>
+          <select v-model="startTaskForm.priority"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-gray-700">负责人</span>
+          <input v-model.trim="startTaskForm.assignee" type="text" placeholder="请输入负责人"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+        </label>
+
+        <label class="block">
+          <span class="mb-1.5 block text-sm font-medium text-gray-700">截止时间</span>
+          <input v-model="startTaskForm.deadline" type="datetime-local"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100">
+        </label>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
+      <button type="button"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+        @click="closeStartModal">取消</button>
+      <button type="button"
+        class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        @click="confirmStartProcessing">确认开始</button>
+    </div>
+  </div>
+</div>
+
 
 </template>
 
@@ -329,7 +414,7 @@ import { computed, ref } from 'vue';
 import { useFarmStore } from '../../composables/useFarmStore';
 
 const props = defineProps({ landId: { type: String, required: true } });
-const { alerts, devices } = useFarmStore();
+const { alerts, devices, farmTasks } = useFarmStore();
 
 const alertTypeLabels = {
   environment: '环境异常',
@@ -405,6 +490,16 @@ const createHandleForm = () => ({
   remark: ''
 });
 const handleForm = ref(createHandleForm());
+const startModalVisible = ref(false);
+const selectedStartAlert = ref(null);
+const generateTaskChecked = ref(false);
+const createStartTaskForm = () => ({
+  taskType: 'inspection',
+  priority: 'medium',
+  assignee: '',
+  deadline: ''
+});
+const startTaskForm = ref(createStartTaskForm());
 
 const currentLandAlerts = computed(() => alerts.value.filter(alert => alert.landId === props.landId));
 const currentLandDevices = computed(() => devices.value.filter(device => device.landId === props.landId));
@@ -436,6 +531,29 @@ const formatAlertTime = value => {
   }).format(date);
 };
 
+const hasGeneratedTask = alertId => {
+  return farmTasks.value.some(task =>
+    task.sourceType === 'alert' && task.sourceId === alertId
+  );
+};
+
+const getAlertTasks = alertId => {
+  return farmTasks.value.filter(task =>
+    task.sourceType === 'alert' && task.sourceId === alertId
+  );
+};
+
+const canResolveAlert = alertId => {
+  return !getAlertTasks(alertId).some(task =>
+    task.status === 'pending' ||
+    task.status === 'processing'
+  );
+};
+
+const existingTaskForStart = computed(() =>
+  selectedStartAlert.value ? hasGeneratedTask(selectedStartAlert.value.id) : false
+);
+
 const getAlertSourceText = alert => {
   const source = alert.source;
   if (!source) return '来源未知';
@@ -451,14 +569,92 @@ const getAlertSourceText = alert => {
 
 const getAlertIndex = alertId => alerts.value.findIndex(alert => alert.id === alertId);
 
+const getDefaultTaskType = alert => {
+  if (alert.type === 'pest') return 'pesticide';
+  if (alert.type === 'device') return 'inspection';
+  if (alert.type === 'environment' && alert.source?.metric === 'soil_moisture') return 'irrigation';
+  return 'inspection';
+};
+
 const startProcessing = alert => {
   const index = getAlertIndex(alert.id);
   if (index === -1) return window.alert('预警不存在');
+  if (alerts.value[index].status !== 'pending') return window.alert('只有待处理预警可以开始处理');
+
+  selectedStartAlert.value = alerts.value[index];
+  generateTaskChecked.value = hasGeneratedTask(alert.id);
+  startTaskForm.value = {
+    taskType: getDefaultTaskType(alert),
+    priority: alert.severity,
+    assignee: localStorage.getItem('username') || '',
+    deadline: ''
+  };
+  startModalVisible.value = true;
+};
+
+const closeStartModal = () => {
+  startModalVisible.value = false;
+  selectedStartAlert.value = null;
+  generateTaskChecked.value = false;
+  startTaskForm.value = createStartTaskForm();
+};
+
+const getNextTaskId = () => {
+  const largestId = farmTasks.value.reduce((largest, task) => {
+    const numericId = Number.parseInt(String(task.id).replace(/\D/g, ''), 10);
+    return Number.isFinite(numericId) ? Math.max(largest, numericId) : largest;
+  }, 0);
+
+  return `TASK-${String(largestId + 1).padStart(3, '0')}`;
+};
+
+const confirmStartProcessing = () => {
+  if (!selectedStartAlert.value) return;
+
+  const index = getAlertIndex(selectedStartAlert.value.id);
+  if (index === -1) return window.alert('预警不存在');
+  if (alerts.value[index].status !== 'pending') {
+    closeStartModal();
+    return window.alert('预警状态已发生变化，请刷新后重试');
+  }
+
+  const shouldCreateTask = generateTaskChecked.value && !hasGeneratedTask(selectedStartAlert.value.id);
+  if (shouldCreateTask) {
+    if (!startTaskForm.value.assignee.trim() || !startTaskForm.value.deadline) {
+      return window.alert('请填写任务负责人和截止时间');
+    }
+
+    const deadline = new Date(startTaskForm.value.deadline);
+    if (Number.isNaN(deadline.getTime())) {
+      return window.alert('截止时间格式不正确');
+    }
+
+    const alert = alerts.value[index];
+    farmTasks.value.unshift({
+      id: getNextTaskId(),
+      landId: alert.landId,
+      sourceType: 'alert',
+      sourceId: alert.id,
+      taskType: startTaskForm.value.taskType,
+      title: `处理：${alert.title}`,
+      description: alert.suggestion,
+      priority: startTaskForm.value.priority,
+      status: 'pending',
+      assignee: startTaskForm.value.assignee.trim(),
+      deadline: deadline.toISOString(),
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      result: '',
+      remark: `由预警 ${alert.id} 生成`
+    });
+  }
 
   alerts.value[index] = {
     ...alerts.value[index],
     status: 'processing'
   };
+
+  closeStartModal();
 };
 
 const getLocalDateTimeInput = () => {
@@ -549,6 +745,10 @@ const submitHandleAlert = () => {
 
   const index = getAlertIndex(selectedAlert.value.id);
   if (index === -1) return window.alert('预警不存在');
+
+  if (handleAction.value === 'resolve' && !canResolveAlert(selectedAlert.value.id)) {
+    return window.alert('请先完成该预警关联的农事任务');
+  }
 
   if (handleAction.value === 'resolve') {
     if (!handleForm.value.measure.trim() || !handleForm.value.result.trim() || !handleForm.value.handledAt) {

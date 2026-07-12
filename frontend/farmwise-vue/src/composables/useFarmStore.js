@@ -7,7 +7,8 @@ import {
     mockPlans,
     mockAlerts,
     mockIrrigationConfigs,
-    mockIrrigationRecords
+    mockIrrigationRecords,
+    mockFarmTasks
 } from "../mocks/farm-data";
 
 const lands = ref(
@@ -33,6 +34,8 @@ const alerts = ref(mockAlerts.map(alert => ({
 const irrigationConfigs = ref(mockIrrigationConfigs.map(config => ({ ...config })));
 
 const irrigationRecords = ref(mockIrrigationRecords.map(record => ({ ...record })));
+
+const farmTasks = ref(mockFarmTasks.map(task => ({ ...task })));
 
 const addLand = (formData) => {
     const area = Number(formData.area);
@@ -179,6 +182,7 @@ export const useFarmStore = () => {
         alerts,
         irrigationConfigs,
         irrigationRecords,
+        farmTasks,
         addLand,
         deleteLand,
         addDevice,

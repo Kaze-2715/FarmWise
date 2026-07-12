@@ -42,6 +42,12 @@
             <i class="fa fa-list-alt w-5 text-center flex-shrink-0"></i>
             <span>处理记录</span>
           </button>
+          <button type="button" @click="activeSection = 'farm-task'"
+            class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full hover:bg-gray-50 transition-colors"
+            :class="{ 'nav-active': activeSection === 'farm-task' }">
+            <i class="fa fa-tasks w-5 text-center flex-shrink-0"></i>
+            <span>农事任务</span>
+          </button>
         </nav>
 
         <!-- 土地选择 -->
@@ -110,6 +116,8 @@
         <AlertCenter v-if="activeSection === 'alert-center'" :land-id="selectedLandId" />
 
         <HandleRecord v-if="activeSection === 'handle-record'" :land-id="selectedLandId" />
+
+        <FarmTask v-if="activeSection === 'farm-task'" :land-id="selectedLandId" />
       </main>
     </div>
 
@@ -125,6 +133,7 @@ import EnvironmentMonitor from "./planting/EnvironmentMonitor.vue";
 import AlertCenter from "./planting/AlertCenter.vue";
 import HandleRecord from "./planting/HandleRecord.vue";
 import SmartIrrigation from "./planting/SmartIrrigation.vue";
+import FarmTask from "./planting/FarmTask.vue";
 
 const { lands, devices, sensorReadings, environmentThresholds, alerts } = useFarmStore();
 
