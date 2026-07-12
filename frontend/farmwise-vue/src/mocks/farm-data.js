@@ -43,6 +43,33 @@ export const newSensorData = {
     value: 0, // 测量值
 }
 
+export const newIrrigationConfig = {
+    landId: '',                 // 所属地块
+    controllerDeviceId: '',     // 灌溉控制器
+    mode: 'manual',             // manual / automatic
+    enabled: false,             // 自动灌溉是否启用
+    triggerMoisture: 40,        // 湿度低于或等于该值时启动
+    targetMoisture: 65,         // 达到该湿度时停止
+    defaultDuration: 30,        // 手动灌溉默认时长，分钟
+    updatedBy: '',              // 最后修改人
+    updatedAt: ''               // 最后修改时间
+}
+
+export const newIrrigationRecord = {
+    id: '',                     // 执行记录编号
+    landId: '',                 // 灌溉地块
+    controllerDeviceId: '',     // 执行控制器
+    source: 'manual',           // manual / automatic
+    status: 'pending',          // pending /running / completed / failed
+    startedAt: '',              // 开始时间
+    endedAt: '',                // 结束时间
+    plannedDuration: 0,         // 计划持续分钟数
+    duration: 0,                // 实际持续分钟数
+    waterUsage: null,           // 用水量，设备不能提供时允许为空
+    triggerReason: '',          // 手动操作或土壤湿度低于阈值
+    operator: ''                // 操作人；自动执行时可填“系统”
+}
+
 export const mockWarnings = [
   {
     id: 1,
@@ -212,6 +239,155 @@ export const mockDevices = [
         installTime: '2026-05-18',
         latitude: 28.2196,
         longitude: 112.9465
+    },
+    {
+        id: 'DEV-007',
+        name: '西区灌溉控制器',
+        type: '灌溉控制器',
+        landId: 'LAND-002',
+        status: 'online',
+        battery: 78,
+        lastReportedAt: '2026-07-09 10:26:00',
+        model: 'FW-IC200',
+        installTime: '2026-04-03',
+        latitude: 28.2314,
+        longitude: 112.9258
+    },
+    {
+        id: 'DEV-008',
+        name: '温室灌溉控制器',
+        type: '灌溉控制器',
+        landId: 'LAND-003',
+        status: 'online',
+        battery: 91,
+        lastReportedAt: '2026-07-09 10:27:00',
+        model: 'FW-IC210',
+        installTime: '2026-05-20',
+        latitude: 28.2199,
+        longitude: 112.9461
+    }
+]
+
+export const mockIrrigationConfigs = [
+    {
+        landId: 'LAND-001',
+        controllerDeviceId: 'DEV-002',
+        mode: 'automatic',
+        enabled: true,
+        triggerMoisture: 45,
+        targetMoisture: 68,
+        defaultDuration: 30,
+        updatedBy: '技术顾问张三',
+        updatedAt: '2026-07-09T09:20:00+08:00'
+    },
+    {
+        landId: 'LAND-002',
+        controllerDeviceId: 'DEV-007',
+        mode: 'manual',
+        enabled: false,
+        triggerMoisture: 35,
+        targetMoisture: 55,
+        defaultDuration: 25,
+        updatedBy: '技术顾问张三',
+        updatedAt: '2026-07-08T16:10:00+08:00'
+    },
+    {
+        landId: 'LAND-003',
+        controllerDeviceId: 'DEV-008',
+        mode: 'automatic',
+        enabled: false,
+        triggerMoisture: 50,
+        targetMoisture: 72,
+        defaultDuration: 15,
+        updatedBy: '技术顾问李四',
+        updatedAt: '2026-07-07T11:35:00+08:00'
+    }
+]
+
+export const mockIrrigationRecords = [
+    {
+        id: 'IRR-001',
+        landId: 'LAND-001',
+        controllerDeviceId: 'DEV-002',
+        source: 'automatic',
+        status: 'completed',
+        startedAt: '2026-07-09T05:30:00+08:00',
+        endedAt: '2026-07-09T06:02:00+08:00',
+        plannedDuration: 30,
+        duration: 32,
+        waterUsage: 18.6,
+        triggerReason: '土壤湿度低于 45%',
+        operator: '系统'
+    },
+    {
+        id: 'IRR-002',
+        landId: 'LAND-001',
+        controllerDeviceId: 'DEV-002',
+        source: 'manual',
+        status: 'failed',
+        startedAt: '2026-07-08T16:20:00+08:00',
+        endedAt: '2026-07-08T16:21:00+08:00',
+        plannedDuration: 30,
+        duration: 1,
+        waterUsage: null,
+        triggerReason: '人工补充灌溉',
+        operator: '技术顾问张三'
+    },
+    {
+        id: 'IRR-003',
+        landId: 'LAND-002',
+        controllerDeviceId: 'DEV-007',
+        source: 'manual',
+        status: 'completed',
+        startedAt: '2026-07-09T07:40:00+08:00',
+        endedAt: '2026-07-09T08:05:00+08:00',
+        plannedDuration: 25,
+        duration: 25,
+        waterUsage: 14.2,
+        triggerReason: '人工日常灌溉',
+        operator: '农场主李四'
+    },
+    {
+        id: 'IRR-004',
+        landId: 'LAND-002',
+        controllerDeviceId: 'DEV-007',
+        source: 'manual',
+        status: 'running',
+        startedAt: '2026-07-09T10:15:00+08:00',
+        endedAt: '',
+        plannedDuration: 25,
+        duration: 0,
+        waterUsage: null,
+        triggerReason: '播种后补水',
+        operator: '农场主李四'
+    },
+    {
+        id: 'IRR-005',
+        landId: 'LAND-003',
+        controllerDeviceId: 'DEV-008',
+        source: 'automatic',
+        status: 'pending',
+        startedAt: '',
+        endedAt: '',
+        plannedDuration: 15,
+        duration: 0,
+        waterUsage: null,
+        triggerReason: '等待达到自动灌溉条件',
+        operator: '系统'
+    },
+    {
+        id: 'IRR-006',
+        landId: 'LAND-003',
+        controllerDeviceId: 'DEV-008',
+        source: 'manual',
+        status: 'completed',
+        startedAt: '2026-07-08T09:10:00+08:00',
+        endedAt: '2026-07-08T09:25:00+08:00',
+        plannedDuration: 15,
+        duration: 15,
+        waterUsage: 8.4,
+        triggerReason: '温室日常补水',
+        operator: '技术顾问李四'
     }
 ]
 

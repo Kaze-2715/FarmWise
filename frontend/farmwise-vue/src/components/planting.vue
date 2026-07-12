@@ -22,6 +22,12 @@
             <i class="fa fa-thermometer-half w-5 text-center flex-shrink-0"></i>
             <span>环境监控</span>
           </button>
+          <button type="button" @click="activeSection = 'smart-irrigation'"
+            class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full hover:bg-gray-50 transition-colors"
+            :class="{ 'nav-active': activeSection === 'smart-irrigation' }">
+            <i class="fa fa-tint w-5 text-center flex-shrink-0"></i>
+            <span>智能灌溉</span>
+          </button>
           <button type="button" @click="activeSection = 'pest-warning'"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full hover:bg-gray-50 transition-colors"
             :class="{ 'nav-active': activeSection === 'pest-warning' }">
@@ -99,6 +105,8 @@
           :get-device-status-class="getDeviceStatusClass" :format-recorded-at="formatRecordedAt"
           :format-trend-point-time="formatTrendPointTime" @export-data="exportSensorTrendData" />
 
+          <SmartIrrigation v-if="activeSection === 'smart-irrigation'" :land-id="selectedLandId" />
+
         <PestWarning v-if="activeSection === 'pest-warning'" :land-id="selectedLandId" />
 
         <HandleRecord v-if="activeSection === 'handle-record'" :land-id="selectedLandId" />
@@ -116,6 +124,7 @@ import PlantingPlan from "./planting/PlantingPlan.vue";
 import EnvironmentMonitor from "./planting/EnvironmentMonitor.vue";
 import PestWarning from "./planting/PestWarning.vue";
 import HandleRecord from "./planting/HandleRecord.vue";
+import SmartIrrigation from "./planting/SmartIrrigation.vue";
 
 const { lands, devices, sensorReadings, environmentThresholds, warnings } = useFarmStore();
 
