@@ -110,6 +110,110 @@ export const newFarmTask = {
     remark: ''
 };
 
+export const newReport = {
+    id: '',
+    landId: '',
+
+    type: 'comprehensive', // comprehensive / device / environment / alert / task
+    title: '',
+    startDate: '',
+    endDate: '',
+
+    status: 'draft', // draft / generated / archived
+    creator: '',
+    createdAt: '',
+    generatedAt: null,
+
+    summary: '',
+
+    snapshot: {
+        land: {
+            id: '',
+            name: '',
+            crop: '',
+            area: 0
+        },
+        devices: {
+            total: 0,
+            online: 0,
+            offline: 0,
+            lowBattery: 0
+        },
+        environment: [],
+        alerts: {
+            total: 0,
+            pending: 0,
+            processing: 0,
+            resolved: 0,
+            ignored: 0
+        },
+        tasks: {
+            total: 0,
+            pending: 0,
+            processing: 0,
+            completed: 0,
+            cancelled: 0
+        }
+    }
+};
+
+export const mockReports = [
+    {
+        id: 'REP-001',
+        landId: 'LAND-001',
+
+        type: 'comprehensive',
+        title: '东区1号水田综合运行报告',
+        startDate: '2026-07-08',
+        endDate: '2026-07-09',
+
+        status: 'generated',
+        creator: '技术顾问张三',
+        createdAt: '2026-07-09T11:00:00+08:00',
+        generatedAt: '2026-07-09T11:00:00+08:00',
+
+        summary: '本期地块环境指标处于适宜范围，存在两条处理中的异常预警，并有两项关联农事任务需要跟进。',
+
+        snapshot: {
+            land: {
+                id: 'LAND-001',
+                name: '东区1号水田',
+                crop: '水稻',
+                area: 15.2
+            },
+            devices: {
+                total: 2,
+                online: 1,
+                offline: 1,
+                lowBattery: 0
+            },
+            environment: [
+                {
+                    metric: 'soil_moisture',
+                    value: 78.5,
+                    unit: '%',
+                    status: 'normal',
+                    recordedAt: '2026-07-09T10:30:00+08:00'
+                }
+            ],
+            alerts: {
+                total: 3,
+                pending: 0,
+                processing: 2,
+                resolved: 1,
+                ignored: 0
+            },
+            tasks: {
+                total: 2,
+                pending: 1,
+                processing: 1,
+                completed: 0,
+                cancelled: 0
+            }
+        }
+    }
+];
+
 export const mockFarmTasks = [
     {
         id: 'TASK-001',

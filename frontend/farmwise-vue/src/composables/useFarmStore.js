@@ -8,7 +8,8 @@ import {
     mockAlerts,
     mockIrrigationConfigs,
     mockIrrigationRecords,
-    mockFarmTasks
+    mockFarmTasks,
+    mockReports
 } from "../mocks/farm-data";
 
 const lands = ref(
@@ -36,6 +37,17 @@ const irrigationConfigs = ref(mockIrrigationConfigs.map(config => ({ ...config }
 const irrigationRecords = ref(mockIrrigationRecords.map(record => ({ ...record })));
 
 const farmTasks = ref(mockFarmTasks.map(task => ({ ...task })));
+
+const reports = ref(mockReports.map(report => ({
+    ...report,
+    snapshot: {
+        land: { ...report.snapshot.land },
+        devices: { ...report.snapshot.devices },
+        environment: report.snapshot.environment.map(reading => ({ ...reading })),
+        alerts: { ...report.snapshot.alerts },
+        tasks: { ...report.snapshot.tasks }
+    }
+})));
 
 const addLand = (formData) => {
     const area = Number(formData.area);
@@ -183,6 +195,7 @@ export const useFarmStore = () => {
         irrigationConfigs,
         irrigationRecords,
         farmTasks,
+        reports,
         addLand,
         deleteLand,
         addDevice,
