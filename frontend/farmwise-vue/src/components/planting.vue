@@ -28,11 +28,11 @@
             <i class="fa fa-tint w-5 text-center flex-shrink-0"></i>
             <span>智能灌溉</span>
           </button>
-          <button type="button" @click="activeSection = 'pest-warning'"
+          <button type="button" @click="activeSection = 'alert-center'"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full hover:bg-gray-50 transition-colors"
-            :class="{ 'nav-active': activeSection === 'pest-warning' }">
+            :class="{ 'nav-active': activeSection === 'alert-center' }">
             <i class="fa fa-exclamation-triangle text-danger w-5 text-center flex-shrink-0"></i>
-            <span>病虫害预警</span>
+            <span>异常预警</span>
             <span class="ml-auto bg-danger text-white text-xs px-2 py-1 rounded-full">{{
               unhandledWarningCount }}</span>
           </button>
@@ -107,7 +107,7 @@
 
           <SmartIrrigation v-if="activeSection === 'smart-irrigation'" :land-id="selectedLandId" />
 
-        <PestWarning v-if="activeSection === 'pest-warning'" :land-id="selectedLandId" />
+        <AlertCenter v-if="activeSection === 'alert-center'" :land-id="selectedLandId" />
 
         <HandleRecord v-if="activeSection === 'handle-record'" :land-id="selectedLandId" />
       </main>
@@ -122,11 +122,11 @@ import { useFarmStore } from "../composables/useFarmStore";
 import PlantingDashboard from "./planting/PlantingDashboard.vue";
 import PlantingPlan from "./planting/PlantingPlan.vue";
 import EnvironmentMonitor from "./planting/EnvironmentMonitor.vue";
-import PestWarning from "./planting/PestWarning.vue";
+import AlertCenter from "./planting/AlertCenter.vue";
 import HandleRecord from "./planting/HandleRecord.vue";
 import SmartIrrigation from "./planting/SmartIrrigation.vue";
 
-const { lands, devices, sensorReadings, environmentThresholds, warnings } = useFarmStore();
+const { lands, devices, sensorReadings, environmentThresholds, alerts } = useFarmStore();
 
 const sensorMetricLabels = {
   soil_moisture: '土壤湿度',
@@ -316,26 +316,26 @@ const formatTrendPointTime = (recordedAt) => {
   return `${dateTime.month} 月 ${dateTime.day} 日 ${dateTime.hour}:${dateTime.minute}`;
 };
 
-const currentLandWarnings = computed(() => {
-  return warnings.value.filter(warning => warning.landId === selectedLandId.value);
+const currentLandAlerts = computed(() => {
+  return alerts.value.filter(alert => alert.landId === selectedLandId.value);
 });
 
 const currentLandSensorReadings = computed(() => sensorReadings.value.filter(reading => reading.landId === selectedLandId.value));
 
 const unhandledWarningCount = computed(() => {
-  return currentLandWarnings.value.filter(warning => !warning.handled).length;
+  return currentLandAlerts.value.filter(alert => alert.status === 'pending' || alert.status === 'processing').length;
 });
 
-const handledWarningCount = computed(() => {
-  return currentLandWarnings.value.filter(warning => warning.handled).length;
+const endedAlertCount = computed(() => {
+  return currentLandAlerts.value.filter(alert => alert.status === 'resolved' || alert.status === 'ignored').length;
 });
 
 const warningHandleRate = computed(() => {
-  if (currentLandWarnings.value.length === 0) {
+  if (currentLandAlerts.value.length === 0) {
     return 0;
   }
 
-  return Math.round((handledWarningCount.value / currentLandWarnings.value.length) * 100);
+  return Math.round((endedAlertCount.value / currentLandAlerts.value.length) * 100);
 });
 
 const realtimeIndicators = computed(() => {

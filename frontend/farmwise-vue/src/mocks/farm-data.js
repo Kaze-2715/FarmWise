@@ -68,36 +68,169 @@ export const newIrrigationRecord = {
     waterUsage: null,           // 用水量，设备不能提供时允许为空
     triggerReason: '',          // 手动操作或土壤湿度低于阈值
     operator: ''                // 操作人；自动执行时可填“系统”
-}
+};
 
-export const mockWarnings = [
-  {
-    id: 1,
-    landId: 'LAND-001',
-    level: 'red',
-    cropType: '水稻',
-    message: '检测到真菌病害高风险',
-    suggestion: '建议尽快巡田并记录处理措施',
-    handled: false
-  },
-  {
-    id: 2,
-    landId: 'LAND-002',
-    level: 'yellow',
-    cropType: '小麦',
-    message: '土壤湿度连续偏高',
-    suggestion: '建议检查排水情况',
-    handled: false
-  },
-  {
-    id: 3,
-    landId: 'LAND-003',
-    level: 'yellow',
-    cropType: '玉米',
-    message: '发现轻微虫害迹象',
-    suggestion: '建议持续观察',
-    handled: true
-  }
+export const newAlert = {
+    id: '',
+    landId: '',
+    type: 'environment',   // environment / device / pest
+    severity: 'medium',    // high / medium / low
+    title: '',
+    description: '',
+    suggestion: '',
+    status: 'pending',     // pending / processing / resolved / ignored
+    occurredAt: '',
+    source: {
+        deviceId: null,
+        metric: null,
+        value: null,
+        unit: null
+    },
+    handleRecord: null
+};
+
+export const mockAlerts = [
+    {
+        id: 'ALT-001',
+        landId: 'LAND-001',
+        type: 'environment',
+        severity: 'high',
+        title: '土壤湿度低于适宜范围',
+        description: '东区1号水田的土壤湿度降至56%，低于当前地块设定的60%下限。',
+        suggestion: '建议检查土壤湿度传感器，并根据现场情况安排灌溉。',
+        status: 'pending',
+        occurredAt: '2026-07-09T10:30:00+08:00',
+        source: { deviceId: 'DEV-001', metric: 'soil_moisture', value: 56, unit: '%' },
+        handleRecord: null
+    },
+    {
+        id: 'ALT-002',
+        landId: 'LAND-001',
+        type: 'device',
+        severity: 'high',
+        title: '灌溉控制器离线',
+        description: '东区灌溉控制器无法连接，暂时不能接收灌溉指令。',
+        suggestion: '建议检查设备供电、网络和现场控制状态。',
+        status: 'processing',
+        occurredAt: '2026-07-09T08:20:00+08:00',
+        source: { deviceId: 'DEV-002', metric: null, value: null, unit: null },
+        handleRecord: null
+    },
+    {
+        id: 'ALT-003',
+        landId: 'LAND-001',
+        type: 'pest',
+        severity: 'medium',
+        title: '水稻真菌病害风险',
+        description: '巡田时发现叶片出现少量疑似真菌病斑。',
+        suggestion: '建议复查发病范围，并持续观察病斑变化。',
+        status: 'resolved',
+        occurredAt: '2026-07-08T15:10:00+08:00',
+        source: { deviceId: null, metric: null, value: null, unit: null },
+        handleRecord: {
+            measure: '完成现场复查并对受影响区域进行定点处理',
+            handledAt: '2026-07-08T17:30:00+08:00',
+            result: '病斑未继续扩大',
+            remark: '使用多菌灵可湿性粉剂，800倍稀释后局部喷施。',
+            operator: '技术顾问张三'
+        }
+    },
+    {
+        id: 'ALT-004',
+        landId: 'LAND-002',
+        type: 'environment',
+        severity: 'medium',
+        title: '空气温度偏高',
+        description: '西区2号旱地空气温度达到32.6℃，高于适宜范围上限。',
+        suggestion: '建议关注高温持续时间，必要时安排降温或补水。',
+        status: 'processing',
+        occurredAt: '2026-07-09T13:40:00+08:00',
+        source: { deviceId: 'DEV-003', metric: 'air_temperature', value: 32.6, unit: '℃' },
+        handleRecord: null
+    },
+    {
+        id: 'ALT-005',
+        landId: 'LAND-002',
+        type: 'device',
+        severity: 'low',
+        title: '虫情摄像头电量偏低',
+        description: '西区虫情摄像头剩余电量为18%，建议及时补充电量。',
+        suggestion: '建议安排巡检并检查充电设施。',
+        status: 'ignored',
+        occurredAt: '2026-07-09T10:20:00+08:00',
+        source: { deviceId: 'DEV-004', metric: 'battery', value: 18, unit: '%' },
+        handleRecord: {
+            measure: '核对设备续航和当日巡检计划',
+            handledAt: '2026-07-09T10:45:00+08:00',
+            result: '已忽略',
+            remark: '设备尚可支持当日采集，已纳入明日充电计划。',
+            operator: '技术顾问李四'
+        }
+    },
+    {
+        id: 'ALT-006',
+        landId: 'LAND-002',
+        type: 'pest',
+        severity: 'high',
+        title: '小麦蚌虫数量快速增加',
+        description: '近期巡田发现蚌虫数量明显增加，存在扩散风险。',
+        suggestion: '建议尽快核对发生范围并制定防治方案。',
+        status: 'pending',
+        occurredAt: '2026-07-09T09:15:00+08:00',
+        source: { deviceId: 'DEV-004', metric: null, value: null, unit: null },
+        handleRecord: null
+    },
+    {
+        id: 'ALT-007',
+        landId: 'LAND-003',
+        type: 'environment',
+        severity: 'low',
+        title: '温室光照短时偏低',
+        description: '南区育苗温室光照强度短时降至9500 lx，低于适宜范围。',
+        suggestion: '建议观察后续数据，确认是否需要开启补光设备。',
+        status: 'ignored',
+        occurredAt: '2026-07-08T16:20:00+08:00',
+        source: { deviceId: 'DEV-005', metric: 'light', value: 9500, unit: 'lx' },
+        handleRecord: {
+            measure: '核对后续光照数据',
+            handledAt: '2026-07-08T16:50:00+08:00',
+            result: '已忽略',
+            remark: '由短时云层遮挡引起，后续数据已恢复正常。',
+            operator: '技术顾问王五'
+        }
+    },
+    {
+        id: 'ALT-008',
+        landId: 'LAND-003',
+        type: 'device',
+        severity: 'high',
+        title: '土壤pH传感器离线',
+        description: '温室土壤pH传感器长时间未上报数据，当前pH数据可能已失效。',
+        suggestion: '建议检查设备电量、通信和传感器接线。',
+        status: 'resolved',
+        occurredAt: '2026-07-08T22:45:00+08:00',
+        source: { deviceId: 'DEV-006', metric: 'soil_ph', value: null, unit: null },
+        handleRecord: {
+            measure: '更换电池并重新连接设备',
+            handledAt: '2026-07-09T08:40:00+08:00',
+            result: '设备恢复上报',
+            remark: '恢复后已校验首条pH数据。',
+            operator: '技术顾问王五'
+        }
+    },
+    {
+        id: 'ALT-009',
+        landId: 'LAND-003',
+        type: 'pest',
+        severity: 'medium',
+        title: '番茄叶片出现虫害迹象',
+        description: '育苗区部分番茄叶片发现轻微取食痕迹。',
+        suggestion: '建议对叶片背面和相邻植株进行进一步检查。',
+        status: 'pending',
+        occurredAt: '2026-07-09T11:05:00+08:00',
+        source: { deviceId: null, metric: null, value: null, unit: null },
+        handleRecord: null
+    }
 ];
 
 export const mockPlans = [

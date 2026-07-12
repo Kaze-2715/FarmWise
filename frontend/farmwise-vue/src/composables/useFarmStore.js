@@ -5,7 +5,7 @@ import {
     mockSensorReadings,
     mockEnvironmentThresholds,
     mockPlans,
-    mockWarnings,
+    mockAlerts,
     mockIrrigationConfigs,
     mockIrrigationRecords
 } from "../mocks/farm-data";
@@ -24,7 +24,11 @@ const environmentThresholds = ref(mockEnvironmentThresholds.map(threshold => ({ 
 
 const plans = ref(mockPlans.map(plan => ({ ...plan })));
 
-const warnings = ref(mockWarnings.map(warning => ({ ...warning })));
+const alerts = ref(mockAlerts.map(alert => ({
+    ...alert,
+    source: { ...alert.source },
+    handleRecord: alert.handleRecord ? { ...alert.handleRecord } : null
+})));
 
 const irrigationConfigs = ref(mockIrrigationConfigs.map(config => ({ ...config })));
 
@@ -172,7 +176,7 @@ export const useFarmStore = () => {
         sensorReadings,
         environmentThresholds,
         plans,
-        warnings,
+        alerts,
         irrigationConfigs,
         irrigationRecords,
         addLand,
