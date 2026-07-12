@@ -43,6 +43,61 @@ export const newSensorData = {
     value: 0, // 测量值
 }
 
+export const mockWarnings = [
+  {
+    id: 1,
+    landId: 'LAND-001',
+    level: 'red',
+    cropType: '水稻',
+    message: '检测到真菌病害高风险',
+    suggestion: '建议尽快巡田并记录处理措施',
+    handled: false
+  },
+  {
+    id: 2,
+    landId: 'LAND-002',
+    level: 'yellow',
+    cropType: '小麦',
+    message: '土壤湿度连续偏高',
+    suggestion: '建议检查排水情况',
+    handled: false
+  },
+  {
+    id: 3,
+    landId: 'LAND-003',
+    level: 'yellow',
+    cropType: '玉米',
+    message: '发现轻微虫害迹象',
+    suggestion: '建议持续观察',
+    handled: true
+  }
+];
+
+export const mockPlans = [
+    {
+        id: 1,
+        planName: '2024年早稻种植',
+        cropType: '水稻',
+        area: 15.2,
+        plantingTime: '2024-03-15',
+        expectedHarvestTime: '2024-07-20',
+        status: '生长中',
+        landId: 'LAND-001',
+        remark: ''
+    },
+    {
+        id: 2,
+        planName: '2024年冬小麦种植',
+        cropType: '小麦',
+        area: 13.3,
+        plantingTime: '2024-10-05',
+        expectedHarvestTime: '2025-06-10',
+        status: '播种期',
+        landId: 'LAND-002',
+        remark: ''
+    }
+];
+
 export const mockLands = [
     {
         id: 'LAND-001',

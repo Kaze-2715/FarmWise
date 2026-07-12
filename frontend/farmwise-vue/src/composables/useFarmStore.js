@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { mockLands, mockDevices, mockSensorReadings, mockEnvironmentThresholds } from "../mocks/farm-data";
+import { mockLands, mockDevices, mockSensorReadings, mockEnvironmentThresholds, mockPlans, mockWarnings } from "../mocks/farm-data";
 
 const lands = ref(
     mockLands.map(land => ({ ...land }))
@@ -12,6 +12,10 @@ const devices = ref(
 const sensorReadings = ref(mockSensorReadings.map(reading => ({ ...reading })));
 
 const environmentThresholds = ref(mockEnvironmentThresholds.map(threshold => ({ ...threshold })));
+
+const plans = ref(mockPlans.map(plan => ({ ...plan })));
+
+const warnings = ref(mockWarnings.map(warning => ({ ...warning })));
 
 const addLand = (formData) => {
     const area = Number(formData.area);
@@ -154,6 +158,8 @@ export const useFarmStore = () => {
         lands,
         sensorReadings,
         environmentThresholds,
+        plans,
+        warnings,
         addLand,
         deleteLand,
         addDevice,
