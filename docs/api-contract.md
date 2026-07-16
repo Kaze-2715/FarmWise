@@ -4,7 +4,7 @@
 
 ## 通用约定
 
-- 接口使用 JSON；成功时直接返回对象或数组，列表无数据返回 `[]`。
+- 接口默认使用 JSON；文件上传使用 `multipart/form-data`。成功时直接返回对象或数组，列表无数据返回 `[]`。
 - 创建成功返回 `201`，删除成功返回 `204`，设备控制命令受理返回 `202`。
 - 错误响应统一为 `{ "message": "错误原因" }`。
 - 登录成功后使用 `Authorization: Bearer <accessToken>` 访问受保护接口；前端不传 `userId`。
@@ -12,6 +12,7 @@
 - 资源 ID、操作者和创建/更新时间由后端生成；时间使用 ISO 8601，日期使用 `YYYY-MM-DD`。
 - 列表筛选使用查询参数，资源 ID 使用路径参数，新增和修改数据使用 JSON 请求体。
 - Controller 必须通过 `@RequiredPermission` 校验表中权限。
+- 权限码统一使用小写 `resource:action` 格式；多单词资源使用下划线，例如 `farm_task:manage`。
 - 设备上报数据后续通过 MQTT 接入，不提供前端可调用的 REST 写接口。
 
 ## 枚举值
@@ -39,6 +40,8 @@
 - 登录 `loginType`：`email`（邮箱）、`username`（用户名）
 - 系统角色 `roleCode`：`farm_owner`（农场主）、`data_analyst`（数据分析员）、`sys_admin`（系统管理员）
 - 用户 `status`：`active`（正常）、`disabled`（已禁用）
+- 验证码 `scene`：`register`（注册）、`change_email`（修改邮箱）
+- 文件 `purpose`：`avatar`（用户头像）；`attachment`（业务附件）留待附件功能接入时启用
 
 ## 实现顺序
 
@@ -53,79 +56,85 @@
 | 5 | `POST /api/auth/logout` | 已登录 | 已确认 |
 | 6 | `GET /api/users/me` | 已登录 | 已确认 |
 | 7 | `PUT /api/users/me` | 已登录 | 已确认 |
+| 8 | `POST /api/files` | 已登录 | 已确认 |
 
 ### 农业业务
 
 | 顺序 | 接口 | 权限 | 状态 |
 | --- | --- | --- | --- |
-| 1 | `GET /api/lands` | `农场-查看` | 已确认 |
-| 2 | `POST /api/lands` | `农场-新增` | 已确认 |
-| 3 | `PUT /api/lands/{landId}` | `农场-修改` | 已确认 |
-| 4 | `DELETE /api/lands/{landId}` | `农场-删除` | 已确认 |
-| 5 | `GET /api/devices` | `设备-查看` | 已确认 |
-| 6 | `POST /api/devices` | `设备-新增` | 已确认 |
-| 7 | `PUT /api/devices/{deviceId}` | `设备-修改` | 已确认 |
-| 8 | `DELETE /api/devices/{deviceId}` | `设备-删除` | 已确认 |
-| 9 | `GET /api/planting-plans` | `种植计划-查看` | 已确认 |
-| 10 | `POST /api/planting-plans` | `种植计划-管理` | 已确认 |
-| 11 | `PUT /api/planting-plans/{planId}` | `种植计划-管理` | 已确认 |
-| 12 | `DELETE /api/planting-plans/{planId}` | `种植计划-管理` | 已确认 |
-| 13 | `GET /api/sensor-readings` | `环境监测-查看` | 已确认 |
-| 14 | `GET /api/lands/{landId}/environment-thresholds` | `环境监测-查看` | 已确认 |
-| 15 | `POST /api/lands/{landId}/environment-thresholds` | `环境阈值-管理` | 已确认 |
-| 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `环境阈值-管理` | 已确认 |
-| 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `环境阈值-管理` | 已确认 |
-| 18 | `GET /api/lands/{landId}/irrigation-config` | `灌溉-查看` | 已确认 |
-| 19 | `PUT /api/lands/{landId}/irrigation-config` | `灌溉-配置` | 已确认 |
-| 20 | `DELETE /api/lands/{landId}/irrigation-config` | `灌溉-配置` | 已确认 |
-| 21 | `GET /api/irrigation-records` | `灌溉-查看` | 已确认 |
-| 22 | `POST /api/irrigations` | `设备-控制` | 已确认 |
-| 23 | `POST /api/irrigations/{recordId}/stop` | `设备-控制` | 已确认 |
-| 24 | `GET /api/alerts` | `预警-查看` | 已确认 |
-| 25 | `POST /api/alerts` | `预警-管理` | 已确认 |
-| 26 | `POST /api/alerts/{alertId}/start` | `预警-管理` | 已确认 |
-| 27 | `POST /api/alerts/{alertId}/resolve` | `预警-管理` | 已确认 |
-| 28 | `POST /api/alerts/{alertId}/ignore` | `预警-管理` | 已确认 |
-| 29 | `GET /api/farm-tasks` | `农事任务-查看` | 已确认 |
-| 30 | `POST /api/farm-tasks` | `农事任务-管理` | 已确认 |
-| 31 | `POST /api/farm-tasks/{taskId}/start` | `农事任务-管理` | 已确认 |
-| 32 | `POST /api/farm-tasks/{taskId}/complete` | `农事任务-管理` | 已确认 |
-| 33 | `POST /api/farm-tasks/{taskId}/cancel` | `农事任务-管理` | 已确认 |
-| 34 | `GET /api/ai/conversations` | `AI顾问-使用` | 已确认 |
-| 35 | `POST /api/ai/conversations` | `AI顾问-使用` | 已确认 |
-| 36 | `POST /api/ai/conversations/{conversationId}/messages` | `AI顾问-使用` | 已确认 |
-| 37 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `农事任务-管理` | 已确认 |
-| 38 | `POST /api/ai/conversations/{conversationId}/close` | `AI顾问-使用` | 已确认 |
-| 39 | `GET /api/reports` | `报告-查看` | 已确认 |
-| 40 | `GET /api/reports/{reportId}` | `报告-查看` | 已确认 |
-| 41 | `POST /api/reports` | `报告-生成` | 已确认 |
-| 42 | `POST /api/reports/{reportId}/archive` | `报告-归档` | 已确认 |
+| 1 | `GET /api/lands` | `land:read` | 已确认 |
+| 2 | `POST /api/lands` | `land:create` | 已确认 |
+| 3 | `PUT /api/lands/{landId}` | `land:update` | 已确认 |
+| 4 | `DELETE /api/lands/{landId}` | `land:delete` | 已确认 |
+| 5 | `GET /api/devices` | `device:read` | 已确认 |
+| 6 | `POST /api/devices` | `device:create` | 已确认 |
+| 7 | `PUT /api/devices/{deviceId}` | `device:update` | 已确认 |
+| 8 | `DELETE /api/devices/{deviceId}` | `device:delete` | 已确认 |
+| 9 | `GET /api/planting-plans` | `planting_plan:read` | 已确认 |
+| 10 | `POST /api/planting-plans` | `planting_plan:manage` | 已确认 |
+| 11 | `PUT /api/planting-plans/{planId}` | `planting_plan:manage` | 已确认 |
+| 12 | `DELETE /api/planting-plans/{planId}` | `planting_plan:manage` | 已确认 |
+| 13 | `GET /api/sensor-readings` | `environment:read` | 已确认 |
+| 14 | `GET /api/lands/{landId}/environment-thresholds` | `environment:read` | 已确认 |
+| 15 | `POST /api/lands/{landId}/environment-thresholds` | `environment_threshold:manage` | 已确认 |
+| 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已确认 |
+| 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已确认 |
+| 18 | `GET /api/lands/{landId}/irrigation-config` | `irrigation:read` | 已确认 |
+| 19 | `PUT /api/lands/{landId}/irrigation-config` | `irrigation:configure` | 已确认 |
+| 20 | `DELETE /api/lands/{landId}/irrigation-config` | `irrigation:configure` | 已确认 |
+| 21 | `GET /api/irrigation-records` | `irrigation:read` | 已确认 |
+| 22 | `POST /api/irrigations` | `device:control` | 已确认 |
+| 23 | `POST /api/irrigations/{recordId}/stop` | `device:control` | 已确认 |
+| 24 | `GET /api/alerts` | `alert:read` | 已确认 |
+| 25 | `POST /api/alerts` | `alert:manage` | 已确认 |
+| 26 | `POST /api/alerts/{alertId}/start` | `alert:manage` | 已确认 |
+| 27 | `POST /api/alerts/{alertId}/resolve` | `alert:manage` | 已确认 |
+| 28 | `POST /api/alerts/{alertId}/ignore` | `alert:manage` | 已确认 |
+| 29 | `GET /api/farm-tasks` | `farm_task:read` | 已确认 |
+| 30 | `POST /api/farm-tasks` | `farm_task:manage` | 已确认 |
+| 31 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已确认 |
+| 32 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已确认 |
+| 33 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已确认 |
+| 34 | `GET /api/ai/conversations` | `ai_advisor:use` | 已确认 |
+| 35 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
+| 36 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
+| 37 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已确认 |
+| 38 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已确认 |
+| 39 | `GET /api/reports` | `report:read` | 已确认 |
+| 40 | `GET /api/reports/{reportId}` | `report:read` | 已确认 |
+| 41 | `POST /api/reports` | `report:generate` | 已确认 |
+| 42 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已确认 |
 
 ### RBAC 后台管理
 
 | 顺序 | 接口 | 权限 | 状态 |
 | --- | --- | --- | --- |
-| 1 | `GET /api/admin/users` | `用户-查看` | 已确认 |
-| 2 | `PUT /api/admin/users/{userId}/roles` | `用户-授权` | 已确认 |
-| 3 | `GET /api/admin/roles` | `角色-查看` | 已确认 |
-| 4 | `GET /api/admin/permissions` | `角色-查看` | 已确认 |
-| 5 | `PUT /api/admin/roles/{roleCode}/permissions` | `角色-管理` | 已确认 |
+| 1 | `GET /api/admin/users` | `user:read` | 已确认 |
+| 2 | `PUT /api/admin/users/{userId}/roles` | `user:grant` | 已确认 |
+| 3 | `GET /api/admin/roles` | `role:read` | 已确认 |
+| 4 | `GET /api/admin/permissions` | `role:read` | 已确认 |
+| 5 | `PUT /api/admin/roles/{roleCode}/permissions` | `role:manage` | 已确认 |
 
 ## 1. 认证与用户
 
-`UserProfile`：`id`、`username`、`email`、`phone|null`、`status`、`roles`、`permissions`。
+`UserProfile`：`id`、`username`、`realName|null`、`email`、`emailVerified`、`phone|null`、`avatarUrl|null`、`organization|null`、`province|null`、`city|null`、`position|null`、`status`、`roles`、`permissions`、`createdAt`、`lastLoginAt|null`。
+
+`FileResource`：`id`、`originalName`、`contentType`、`size`（字节）、`url`、`purpose`、`createdAt`。
 
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
-| `POST /api/auth/verification-codes` | `email, scene`；当前 `scene=register` | `202`；验证码存入 Redis，不在响应中返回 |
+| `POST /api/auth/verification-codes` | `email, scene` | `202`；`register` 无需登录，`change_email` 必须登录；验证码存入 Redis，不在响应中返回 |
 | `POST /api/auth/register` | `email, password, verificationCode` | `201 UserProfile`；邮箱唯一，默认分配 `farm_owner` |
 | `POST /api/auth/login` | `loginType, account, password` | `{ accessToken, tokenType, expiresIn, user }`；同时写入刷新令牌 Cookie |
 | `POST /api/auth/refresh` | 无请求体，读取刷新令牌 Cookie | 返回新的访问令牌并轮换刷新令牌 |
 | `POST /api/auth/logout` | 无请求体 | `204`；删除刷新令牌状态和 Cookie |
 | `GET /api/users/me` | 无 | `UserProfile` |
-| `PUT /api/users/me` | `username, email, phone?, verificationCode?` | `UserProfile`；修改邮箱时必须验证新邮箱 |
+| `PUT /api/users/me` | `username, realName?, email, phone?, organization?, province?, city?, position?, avatarFileId?, verificationCode?` | `UserProfile`；修改邮箱时必须提交新邮箱的 `change_email` 验证码；未修改邮箱时忽略验证码 |
+| `POST /api/files` | `multipart/form-data`：`file, purpose`；当前 `purpose=avatar` | `201 FileResource`；头像只允许 JPEG、PNG、WebP，最大 5 MB；上传成功不自动修改用户资料 |
 
 密码只保存哈希值。访问令牌过期时间和刷新令牌有效期由配置决定；退出后访问令牌最多存活到自身过期。
+
+头像更新顺序为先上传文件取得 `FileResource.id`，再将其作为 `avatarFileId` 提交到 `PUT /api/users/me`。客户端不直接提交外部头像 URL。
 
 ## 2. 权限管理
 

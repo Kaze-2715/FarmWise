@@ -46,6 +46,8 @@ Spring Boot 4.1 支持 Java 17 至 26；MyBatis Starter 4 对应 Spring Boot 4.x
 - 设备通过 MQTT 与 EMQX 通信；浏览器只调用 REST API，不直接连接设备。
 - AI 完整聊天历史保存在 MySQL，Spring AI Chat Memory 只负责模型需要的短期上下文。
 - 报告快照和 AI 参考数据使用 MySQL JSON 字段，生成后保持只读。
+- 用户头像和业务附件通过统一文件服务管理；MySQL 保存文件元数据和业务关联，二进制内容由可替换的对象存储实现保存。
+- REST 接口只使用文件 ID 关联业务对象，不暴露对象存储路径；后续接入 OSS 时不改变用户资料和附件接口。
 - 数据库时间统一保存 UTC，面向用户时转换为北京时间。
 
 ## 数据库原则
@@ -70,6 +72,13 @@ Spring Boot 4.1 支持 Java 17 至 26；MyBatis Starter 4 对应 Spring Boot 4.x
 | RabbitMQ、Kafka | MQTT 已覆盖当前设备通信，内部事件规模尚不需要第二套消息中间件 |
 | 时序数据库、MongoDB | 当前数据规模和查询可由 MySQL 8 完成，避免过早增加运维负担 |
 | 未使用的 POI、iText | 报告导出实现前不保留重型依赖，届时再按格式需求选择 |
+
+## 权限码约定
+
+- 权限码统一使用小写 `resource:action` 格式，多单词资源使用下划线，例如 `farm_task:manage`。
+- Flyway 初始化数据、角色权限关系、JWT 用户权限和 `@RequiredPermission` 注解必须使用相同权限码。
+- 权限的中文名称只用于界面展示，不参与数据库关联和后端授权判断。
+- 角色码继续使用 `farm_owner`、`data_analyst`、`sys_admin`，不与权限码混用。
 
 ## 保留但收敛的能力
 
