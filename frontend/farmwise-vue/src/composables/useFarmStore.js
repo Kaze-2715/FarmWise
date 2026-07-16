@@ -17,6 +17,8 @@ const allowedMessageRoles = new Set(['user', 'assistant']);
 
 const allowedPriorities = new Set(['low', 'medium', 'high']);
 
+const allowedLandStatuses = new Set(['未启用', '正常种植', '休耕', '异常']);
+
 const lands = ref(
     mockLands.map(land => ({ ...land }))
 );
@@ -170,6 +172,23 @@ const createAiConversation = ({
     return conversation;
 };
 
+const closeAiConversation = (conversationId) => {
+    const conversation = aiConversations.value.find(conversation => conversation.id === conversationId);
+
+    if (!conversation) {
+        throw new Error('对话不存在');
+    }
+
+    if (conversation.status !== 'active') {
+        throw new Error('只有进行中的对话可以结束');
+    }
+
+    conversation.status = 'closed';
+    conversation.updatedAt = new Date().toISOString();
+
+    return conversation;
+};
+
 const createFarmTaskFromAiDraft = ({
     conversationId,
     messageId,
@@ -260,7 +279,7 @@ const validateString = (string, fieldName) => {
     return validString;
 };
 
-const addLand = (formData) => {
+const normalizeLandForm = (formData) => {
     const area = Number(formData.area);
     const longitude = Number(formData.longitude);
     const latitude = Number(formData.latitude);
@@ -281,19 +300,47 @@ const addLand = (formData) => {
         throw new Error('纬度必须在 -90 到 90 之间');
     }
 
-    const land = {
+    if (!allowedLandStatuses.has(formData.status)) {
+        throw new Error('请选择有效的土地状态');
+    }
+
+    return {
         ...formData,
-        id: crypto.randomUUID(),
         name: formData.name.trim(),
         type: formData.type.trim(),
+        crop: formData.crop?.trim() || null,
         location: formData.location.trim(),
         area,
         longitude,
         latitude
     };
+};
+
+const addLand = (formData) => {
+    const land = {
+        ...normalizeLandForm(formData),
+        id: crypto.randomUUID()
+    };
 
     lands.value.push(land);
     return land;
+};
+
+const updateLand = (landId, formData) => {
+    const landIndex = lands.value.findIndex(land => land.id === landId);
+
+    if (landIndex === -1) {
+        throw new Error('土地不存在，无法更新');
+    }
+
+    const updatedLand = {
+        ...lands.value[landIndex],
+        ...normalizeLandForm(formData),
+        id: lands.value[landIndex].id
+    };
+
+    lands.value[landIndex] = updatedLand;
+    return updatedLand;
 };
 
 const deleteLand = (landId) => {
@@ -395,6 +442,85 @@ const deleteDevice = (deviceId) => {
     return deletedDevice;
 };
 
+const saveIrrigationConfig = (formData) => {
+    const land = lands.value.find(land => land.id === formData.landId);
+    const controller = devices.value.find(device => device.id === formData.controllerDeviceId);
+    const triggerMoisture = Number(formData.triggerMoisture);
+    const targetMoisture = Number(formData.targetMoisture);
+    const defaultDuration = Number(formData.defaultDuration);
+
+    if (!land) {
+        throw new Error('地块不存在');
+    }
+
+    if (!controller || controller.landId !== land.id || controller.type !== '灌溉控制器') {
+        throw new Error('请选择当前地块绑定的灌溉控制器');
+    }
+
+    if (!['manual', 'automatic'].includes(formData.mode)) {
+        throw new Error('请选择有效的运行模式');
+    }
+
+    if (!Number.isFinite(triggerMoisture) || triggerMoisture < 0 || triggerMoisture > 100) {
+        throw new Error('触发湿度必须在 0 到 100 之间');
+    }
+
+    if (!Number.isFinite(targetMoisture) || targetMoisture < 0 || targetMoisture > 100) {
+        throw new Error('目标湿度必须在 0 到 100 之间');
+    }
+
+    if (triggerMoisture >= targetMoisture) {
+        throw new Error('触发湿度必须小于目标湿度');
+    }
+
+    if (!Number.isFinite(defaultDuration) || defaultDuration < 1 || defaultDuration > 180) {
+        throw new Error('默认灌溉时长必须在 1 到 180 分钟之间');
+    }
+
+    const configIndex = irrigationConfigs.value.findIndex(config => config.landId === land.id);
+    const config = {
+        landId: land.id,
+        controllerDeviceId: controller.id,
+        mode: formData.mode,
+        enabled: formData.mode === 'automatic' && Boolean(formData.enabled),
+        triggerMoisture,
+        targetMoisture,
+        defaultDuration,
+        updatedBy: localStorage.getItem('username') || '游客',
+        updatedAt: new Date().toISOString()
+    };
+
+    if (configIndex === -1) {
+        irrigationConfigs.value.push(config);
+        return config;
+    }
+
+    irrigationConfigs.value[configIndex] = config;
+    return config;
+};
+
+const deleteIrrigationConfig = (landId) => {
+    const configIndex = irrigationConfigs.value.findIndex(config => config.landId === landId);
+
+    if (configIndex === -1) {
+        throw new Error('灌溉配置不存在');
+    }
+
+    const config = irrigationConfigs.value[configIndex];
+    const hasActiveRecord = irrigationRecords.value.some(record =>
+        record.landId === landId
+        && record.controllerDeviceId === config.controllerDeviceId
+        && ['pending', 'running'].includes(record.status)
+    );
+
+    if (hasActiveRecord) {
+        throw new Error('当前仍有待执行或执行中的灌溉任务，无法删除配置');
+    }
+
+    irrigationConfigs.value.splice(configIndex, 1);
+    return config;
+};
+
 export const useFarmStore = () => {
     return {
         devices,
@@ -409,12 +535,16 @@ export const useFarmStore = () => {
         reports,
         aiConversations,
         addLand,
+        updateLand,
         deleteLand,
         addDevice,
         updateDevice,
         deleteDevice,
         appendAiMessage,
         createAiConversation,
-        createFarmTaskFromAiDraft
+        closeAiConversation,
+        createFarmTaskFromAiDraft,
+        saveIrrigationConfig,
+        deleteIrrigationConfig
     };
 };

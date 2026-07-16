@@ -10,7 +10,18 @@
 
     <div v-if="!currentIrrigationConfig"
       class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-500">
-      当前地块尚未配置智能灌溉规则。
+      <p>当前地块尚未配置智能灌溉规则。</p>
+      <p v-if="availableControllers.length === 0" class="mt-2 text-xs text-amber-600">
+        请先为当前地块绑定灌溉控制器。
+      </p>
+      <button type="button" :disabled="availableControllers.length === 0"
+        class="mt-4 rounded-lg px-4 py-2 text-sm font-medium text-white"
+        :class="availableControllers.length === 0
+          ? 'cursor-not-allowed bg-gray-300'
+          : 'bg-blue-600 hover:bg-blue-700'"
+        @click="openCreateConfigModal">
+        添加灌溉配置
+      </button>
     </div>
 
     <div v-else class="rounded-xl border border-blue-100 bg-blue-50/60 p-5">
@@ -87,6 +98,11 @@
             class="rounded-lg border border-blue-200 px-4 py-2 text-sm text-blue-700 transition-colors hover:bg-blue-50"
             @click="openConfigModal">
             编辑灌溉配置
+          </button>
+          <button type="button"
+            class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+            @click="openDeleteConfigModal">
+            删除配置
           </button>
         </div>
       </div>
@@ -192,8 +208,10 @@
     <div class="mx-4 w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl">
       <div class="flex items-center justify-between border-b border-gray-200 p-6">
         <div>
-          <h3 class="text-lg font-bold text-gray-800">编辑灌溉配置</h3>
-          <p class="mt-1 text-sm text-gray-500">调整当前地块的智能灌溉规则</p>
+          <h3 class="text-lg font-bold text-gray-800">{{ isCreatingConfig ? '添加灌溉配置' : '编辑灌溉配置' }}</h3>
+          <p class="mt-1 text-sm text-gray-500">
+            {{ isCreatingConfig ? '为当前地块创建智能灌溉规则' : '调整当前地块的智能灌溉规则' }}
+          </p>
         </div>
         <button type="button" class="text-gray-400 hover:text-gray-600" @click="closeConfigModal">
           <i class="fa fa-times"></i>
@@ -201,6 +219,16 @@
       </div>
 
       <form class="p-6" @submit.prevent="submitIrrigationConfig">
+        <div v-if="isCreatingConfig" class="mb-4">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700">灌溉控制器</label>
+          <select v-model="irrigationConfigForm.controllerDeviceId"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+            <option v-for="controller in availableControllers" :key="controller.id" :value="controller.id">
+              {{ controller.name }}
+            </option>
+          </select>
+        </div>
+
         <div class="mb-4">
           <label class="mb-1.5 block text-sm font-medium text-gray-700">运行模式</label>
           <select v-model="irrigationConfigForm.mode"
@@ -240,6 +268,8 @@
             class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
         </div>
 
+        <p v-if="configError" class="mt-4 text-sm text-red-500">{{ configError }}</p>
+
         <div class="mt-6 flex justify-end gap-3">
           <button type="button"
             class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -247,10 +277,32 @@
             取消
           </button>
           <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
-            保存配置
+            {{ isCreatingConfig ? '创建配置' : '保存配置' }}
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div v-if="deleteConfigModalVisible"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    @click.self="closeDeleteConfigModal">
+    <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-gray-800">确认删除灌溉配置</h3>
+      <p class="mt-3 text-sm text-gray-600">
+        删除后不会清除历史灌溉记录，确认删除当前地块的灌溉配置吗？
+      </p>
+      <p v-if="deleteConfigError" class="mt-3 text-sm text-red-500">{{ deleteConfigError }}</p>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          @click="closeDeleteConfigModal">
+          取消
+        </button>
+        <button type="button" class="rounded-lg bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
+          @click="confirmDeleteConfig">
+          删除配置
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -266,13 +318,24 @@ const props = defineProps({
   }
 });
 
-const { devices, sensorReadings, irrigationConfigs, irrigationRecords } = useFarmStore();
+const {
+  devices,
+  sensorReadings,
+  irrigationConfigs,
+  irrigationRecords,
+  saveIrrigationConfig,
+  deleteIrrigationConfig
+} = useFarmStore();
 
 const manualDuration = ref(30);
 const manualControlModalVisible = ref(false);
 const selectedController = ref(null);
 const configModalVisible = ref(false);
+const isCreatingConfig = ref(false);
+const configError = ref('');
 const irrigationConfigForm = ref({});
+const deleteConfigModalVisible = ref(false);
+const deleteConfigError = ref('');
 
 const irrigationStatusLabels = {
   pending: '待执行',
@@ -304,6 +367,10 @@ const irrigationNeedClasses = {
 const currentIrrigationConfig = computed(() => {
   return irrigationConfigs.value.find(config => config.landId === props.landId) ?? null;
 });
+
+const availableControllers = computed(() => devices.value.filter(device =>
+  device.landId === props.landId && device.type === '灌溉控制器'
+));
 
 const currentIrrigationRecords = computed(() => {
   return irrigationRecords.value.filter(record => record.landId === props.landId);
@@ -396,59 +463,66 @@ const closeManualControl = () => {
 };
 
 const openConfigModal = () => {
+  isCreatingConfig.value = false;
+  configError.value = '';
   irrigationConfigForm.value = {
     ...currentIrrigationConfig.value
   };
   configModalVisible.value = true;
 };
 
+const openCreateConfigModal = () => {
+  if (availableControllers.value.length === 0) {
+    return;
+  }
+
+  isCreatingConfig.value = true;
+  configError.value = '';
+  irrigationConfigForm.value = {
+    landId: props.landId,
+    controllerDeviceId: availableControllers.value[0].id,
+    mode: 'manual',
+    enabled: false,
+    triggerMoisture: 40,
+    targetMoisture: 65,
+    defaultDuration: 30
+  };
+  configModalVisible.value = true;
+};
+
 const closeConfigModal = () => {
   configModalVisible.value = false;
+  isCreatingConfig.value = false;
+  configError.value = '';
   irrigationConfigForm.value = {};
 };
 
 const submitIrrigationConfig = () => {
-  const form = irrigationConfigForm.value;
-  const triggerMoisture = Number(form.triggerMoisture);
-  const targetMoisture = Number(form.targetMoisture);
-  const defaultDuration = Number(form.defaultDuration);
+  try {
+    saveIrrigationConfig(irrigationConfigForm.value);
+    closeConfigModal();
+  } catch (error) {
+    configError.value = error.message || '灌溉配置保存失败';
+  }
+};
 
-  if (!['manual', 'automatic'].includes(form.mode)) {
-    return window.alert('请选择有效的运行模式');
-  }
-  if (!Number.isFinite(triggerMoisture) || triggerMoisture < 0 || triggerMoisture > 100) {
-    return window.alert('触发湿度必须在 0 到 100 之间');
-  }
-  if (!Number.isFinite(targetMoisture) || targetMoisture < 0 || targetMoisture > 100) {
-    return window.alert('目标湿度必须在 0 到 100 之间');
-  }
-  if (triggerMoisture >= targetMoisture) {
-    return window.alert('触发湿度必须小于目标湿度');
-  }
-  if (!Number.isFinite(defaultDuration) || defaultDuration < 1 || defaultDuration > 180) {
-    return window.alert('默认灌溉时长必须在 1 到 180 分钟之间');
-  }
+const openDeleteConfigModal = () => {
+  deleteConfigError.value = '';
+  deleteConfigModalVisible.value = true;
+};
 
-  const configIndex = irrigationConfigs.value.findIndex(config =>
-    config.landId === form.landId && config.controllerDeviceId === form.controllerDeviceId
-  );
+const closeDeleteConfigModal = () => {
+  deleteConfigModalVisible.value = false;
+  deleteConfigError.value = '';
+};
 
-  if (configIndex === -1) {
-    return window.alert('灌溉配置不存在');
+const confirmDeleteConfig = () => {
+  try {
+    deleteIrrigationConfig(props.landId);
+    closeDeleteConfigModal();
+  } catch (error) {
+    deleteConfigError.value = error.message || '灌溉配置删除失败';
   }
-
-  irrigationConfigs.value[configIndex] = {
-    ...irrigationConfigs.value[configIndex],
-    ...form,
-    enabled: form.mode === 'automatic' && Boolean(form.enabled),
-    triggerMoisture,
-    targetMoisture,
-    defaultDuration,
-    updatedBy: localStorage.getItem('username') || '游客',
-    updatedAt: new Date().toISOString()
-  };
-
-  closeConfigModal();
 };
 
 const startManualIrrigation = () => {

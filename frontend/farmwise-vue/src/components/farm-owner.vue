@@ -59,6 +59,10 @@
                                     </div>
                                 </div>
                                 <div class="flex flex-col space-y-3">
+                                    <button type="button" @click="openEditLandModal(land)"
+                                        class="inline-flex items-center justify-center rounded-lg border border-green-300 px-6 py-2 text-sm font-medium text-green-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-green-500 hover:shadow active:translate-y-0 active:shadow-sm">
+                                        <i class="fa fa-pencil mr-2"></i>修改土地信息
+                                    </button>
                                     <button type="button" @click="openDeleteLandModal(land)"
                                         class="inline-flex items-center justify-center rounded-lg border border-red-300 px-6 py-2 text-sm font-medium text-red-500 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-red-500 hover:shadow active:translate-y-0 active:shadow-sm">
                                         <i class="fa fa-trash mr-2"></i>删除土地
@@ -91,7 +95,7 @@
         </div>
     </main>
 
-    <!-- 新增土地弹窗 -->
+    <!-- 新增/编辑土地弹窗 -->
     <div v-if="addLandModalVisible"
         class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center p-4 z-50"
         @click.self="closeAddLandModal">
@@ -99,7 +103,8 @@
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-bold text-dark flex items-center">
-                        <i class="fa fa-plus-circle text-green-500 mr-3"></i>新增土地
+                        <i class="fa text-green-500 mr-3" :class="editingLandId ? 'fa-pencil' : 'fa-plus-circle'"></i>
+                        {{ editingLandId ? '编辑土地' : '新增土地' }}
                     </h3>
                     <button type="button" class="text-gray-400 hover:text-gray-500" @click="closeAddLandModal">
                         <i class="fa fa-times"></i>
@@ -107,7 +112,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form @submit.prevent="createLand" class="space-y-5">
+                <form @submit.prevent="submitLand" class="space-y-5">
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                             <label class="block text-gray-700 mb-2 font-medium">土地名称</label>
@@ -126,7 +131,7 @@
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2 font-medium">当前作物</label>
-                            <input v-model="form.crop" placeholder="如：水稻、小麦" required
+                            <input v-model="form.crop" placeholder="未种植时可不填"
                                 class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
                         </div>
                         <div>
@@ -164,7 +169,7 @@
                         </button>
                         <button type="submit" :disabled="submitting"
                             class="w-1/3 rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60">
-                            {{ submitting ? '创建中...' : '创建' }}
+                            {{ submitting ? '保存中...' : editingLandId ? '保存修改' : '创建' }}
                         </button>
                     </div>
                 </form>
@@ -202,7 +207,7 @@ import { computed, ref } from 'vue';
 import { toast } from '../utils/toast';
 import { useFarmStore } from '../composables/useFarmStore';
 
-const { lands, addLand, deleteLand } = useFarmStore();
+const { lands, addLand, updateLand, deleteLand } = useFarmStore();
 
 const form = ref({
     name: '',
@@ -220,6 +225,7 @@ const loading = ref(false);
 const success = ref(true);
 const submitting = ref(false);
 const addLandModalVisible = ref(false);
+const editingLandId = ref(null);
 const deleteLandModalVisible = ref(false);
 const pendingDeleteLand = ref(null);
 const deleteLandError = ref('');
@@ -242,6 +248,23 @@ const resetLandForm = () => {
 };
 
 const openAddLandModal = () => {
+    editingLandId.value = null;
+    resetLandForm();
+    addLandModalVisible.value = true;
+};
+
+const openEditLandModal = (land) => {
+    editingLandId.value = land.id;
+    form.value = {
+        name: land.name,
+        type: land.type,
+        area: land.area,
+        crop: land.crop ?? '',
+        status: land.status,
+        location: land.location,
+        longitude: land.longitude,
+        latitude: land.latitude
+    };
     addLandModalVisible.value = true;
 };
 
@@ -251,6 +274,7 @@ const closeAddLandModal = () => {
     }
 
     resetLandForm();
+    editingLandId.value = null;
     addLandModalVisible.value = false;
 };
 
@@ -280,21 +304,26 @@ const confirmDeleteLand = () => {
     }
 };
 
-// 新增土地 表单的提交
-const createLand = () => {
+const submitLand = () => {
     if (submitting.value) {
         return;
     }
     submitting.value = true;
 
     try {
-        addLand(form.value);
-        toast("土地添加成功！");
+        if (editingLandId.value) {
+            updateLand(editingLandId.value, form.value);
+            toast('土地修改成功！');
+        } else {
+            addLand(form.value);
+            toast('土地添加成功！');
+        }
         resetLandForm();
+        editingLandId.value = null;
         addLandModalVisible.value = false;
     } catch (error) {
         console.error(error);
-        toast(error.message || "土地添加失败");
+        toast(error.message || '土地保存失败');
     } finally {
         submitting.value = false;
     }

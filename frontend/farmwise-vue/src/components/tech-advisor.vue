@@ -65,10 +65,16 @@
                 回答基于当前地块的设备、环境、灌溉、预警和任务上下文。
               </p>
             </div>
-            <span v-if="currentConversation"
-              class="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
-              {{ currentConversation.status === 'active' ? '进行中' : '已归档' }}
-            </span>
+            <div v-if="currentConversation" class="flex items-center gap-3">
+              <span class="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                进行中
+              </span>
+              <button type="button"
+                class="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-50"
+                @click="archiveCurrentConversation">
+                结束对话并归档
+              </button>
+            </div>
           </div>
 
           <div v-if="messages.length === 0"
@@ -78,9 +84,11 @@
           </div>
 
           <div v-else class="space-y-5">
-            <article v-for="message in messages" :key="message.id" class="rounded-xl border p-5" :class="message.role === 'assistant'
-              ? 'border-green-100 bg-green-50/40'
-              : 'border-blue-100 bg-blue-50/40'">
+            <div v-for="message in messages" :key="message.id" class="flex"
+              :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
+              <article class="w-fit max-w-[88%] border p-5 sm:max-w-[78%]" :class="message.role === 'assistant'
+                ? 'rounded-2xl rounded-tl-sm border-green-100 bg-green-50/60'
+                : 'rounded-2xl rounded-tr-sm border-blue-100 bg-blue-50/70'">
               <div class="mb-3 flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
                   <div class="flex h-8 w-8 items-center justify-center rounded-full"
@@ -145,19 +153,24 @@
                   </button>
                 </div>
               </div>
-            </article>
+              </article>
+            </div>
           </div>
 
-          <div class="mt-8 rounded-xl bg-light p-5 text-sm text-gray-500">
-            <div v-if="!currentConversation">
-              当前地块暂无对话
+          <div class="mt-8 rounded-xl border border-green-100 bg-green-50/40 p-5">
+            <div class="mb-3 flex items-center gap-2 text-sm text-gray-600">
+              <i class="fa fa-leaf text-green-600"></i>
+              <span>{{ currentConversation ? '输入消息继续咨询 AI 技术顾问' : '输入问题开始新的 AI 对话' }}</span>
             </div>
-            <div v-else>
-              输入消息询问 AI 技术顾问
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <input v-model="messageText" type="text" placeholder="例如：当前土壤湿度是否需要灌溉？"
+                :disabled="!currentLandId" @keyup.enter.prevent="sendMessage"
+                class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400">
+              <button type="button" :disabled="!currentLandId || !messageText.trim()" @click="sendMessage"
+                class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300">
+                <i class="fa fa-paper-plane mr-2"></i>发送
+              </button>
             </div>
-            <input type="text" placeholder="请输入内容" :disabled="!currentLandId" v-model="messageText"
-              @keyup.enter.prevent="sendMessage">
-            <button type="button" :disabled="!currentLandId || !messageText.trim()" @click="sendMessage">发送</button>
           </div>
         </div>
       </section>
@@ -184,6 +197,7 @@ const {
   aiConversations,
   appendAiMessage,
   createAiConversation,
+  closeAiConversation,
   createFarmTaskFromAiDraft
 } = useFarmStore();
 
@@ -289,6 +303,20 @@ const sendMessage = () => {
   } catch (error) {
     console.error(error);
     alert(error.message);
+  }
+};
+
+const archiveCurrentConversation = () => {
+  if (!currentConversation.value) {
+    return;
+  }
+
+  try {
+    closeAiConversation(currentConversation.value.id);
+    messageText.value = '';
+  } catch (error) {
+    console.error(error);
+    alert(error.message || '结束对话失败');
   }
 };
 
