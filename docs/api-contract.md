@@ -1,13 +1,14 @@
 # FarmWise 接口文档
 
-本文档覆盖当前 Vue 核心原型需要的农业业务接口。已确认接口按表中顺序实现，其余接口统一评审后再实现。
+本文档覆盖当前 Vue 核心原型需要的认证、权限和农业业务接口。按“认证与 RBAC 基础 → 农业业务 → RBAC 后台管理”的顺序实现。
 
 ## 通用约定
 
 - 接口使用 JSON；成功时直接返回对象或数组，列表无数据返回 `[]`。
 - 创建成功返回 `201`，删除成功返回 `204`，设备控制命令受理返回 `202`。
 - 错误响应统一为 `{ "message": "错误原因" }`。
-- 用户身份从 Session 获取，前端不传 `userId`；以后改用 JWT 时业务接口不变。
+- 登录成功后使用 `Authorization: Bearer <accessToken>` 访问受保护接口；前端不传 `userId`。
+- 短期 JWT 访问令牌由 Spring Security 校验；刷新令牌通过 HttpOnly Cookie 传递并在 Redis 中保存有效状态。
 - 资源 ID、操作者和创建/更新时间由后端生成；时间使用 ISO 8601，日期使用 `YYYY-MM-DD`。
 - 列表筛选使用查询参数，资源 ID 使用路径参数，新增和修改数据使用 JSON 请求体。
 - Controller 必须通过 `@RequiredPermission` 校验表中权限。
@@ -35,8 +36,25 @@
 - 报告 `type`：`comprehensive`（综合运行）、`device`（设备运行）、`environment`（环境监测）、`alert`（异常预警）、`task`（农事任务）
 - 报告 `status`：`generated`（已生成）、`archived`（已归档）
 - 报告环境项 `status`：`normal`（正常）、`low`（偏低）、`high`（偏高）、`no_data`（无数据）、`unconfigured`（未配置阈值）
+- 登录 `loginType`：`email`（邮箱）、`username`（用户名）
+- 系统角色 `roleCode`：`farm_owner`（农场主）、`data_analyst`（数据分析员）、`sys_admin`（系统管理员）
+- 用户 `status`：`active`（正常）、`disabled`（已禁用）
 
 ## 实现顺序
+
+### 认证与 RBAC 基础
+
+| 顺序 | 接口 | 权限 | 状态 |
+| --- | --- | --- | --- |
+| 1 | `POST /api/auth/verification-codes` | 无 | 已确认 |
+| 2 | `POST /api/auth/register` | 无 | 已确认 |
+| 3 | `POST /api/auth/login` | 无 | 已确认 |
+| 4 | `POST /api/auth/refresh` | 无 | 已确认 |
+| 5 | `POST /api/auth/logout` | 已登录 | 已确认 |
+| 6 | `GET /api/users/me` | 已登录 | 已确认 |
+| 7 | `PUT /api/users/me` | 已登录 | 已确认 |
+
+### 农业业务
 
 | 顺序 | 接口 | 权限 | 状态 |
 | --- | --- | --- | --- |
@@ -44,46 +62,86 @@
 | 2 | `POST /api/lands` | `农场-新增` | 已确认 |
 | 3 | `PUT /api/lands/{landId}` | `农场-修改` | 已确认 |
 | 4 | `DELETE /api/lands/{landId}` | `农场-删除` | 已确认 |
-| 5 | `GET /api/devices` | `设备-查看` | 待确认 |
-| 6 | `POST /api/devices` | `设备-新增` | 待确认 |
-| 7 | `PUT /api/devices/{deviceId}` | `设备-修改` | 待确认 |
-| 8 | `DELETE /api/devices/{deviceId}` | `设备-删除` | 待确认 |
-| 9 | `GET /api/planting-plans` | `种植计划-查看` | 待确认 |
-| 10 | `POST /api/planting-plans` | `种植计划-管理` | 待确认 |
-| 11 | `PUT /api/planting-plans/{planId}` | `种植计划-管理` | 待确认 |
-| 12 | `DELETE /api/planting-plans/{planId}` | `种植计划-管理` | 待确认 |
-| 13 | `GET /api/sensor-readings` | `环境监测-查看` | 待确认 |
-| 14 | `GET /api/lands/{landId}/environment-thresholds` | `环境监测-查看` | 待确认 |
-| 15 | `POST /api/lands/{landId}/environment-thresholds` | `环境阈值-管理` | 待确认 |
-| 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `环境阈值-管理` | 待确认 |
-| 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `环境阈值-管理` | 待确认 |
-| 18 | `GET /api/lands/{landId}/irrigation-config` | `灌溉-查看` | 待确认 |
-| 19 | `PUT /api/lands/{landId}/irrigation-config` | `灌溉-配置` | 待确认 |
+| 5 | `GET /api/devices` | `设备-查看` | 已确认 |
+| 6 | `POST /api/devices` | `设备-新增` | 已确认 |
+| 7 | `PUT /api/devices/{deviceId}` | `设备-修改` | 已确认 |
+| 8 | `DELETE /api/devices/{deviceId}` | `设备-删除` | 已确认 |
+| 9 | `GET /api/planting-plans` | `种植计划-查看` | 已确认 |
+| 10 | `POST /api/planting-plans` | `种植计划-管理` | 已确认 |
+| 11 | `PUT /api/planting-plans/{planId}` | `种植计划-管理` | 已确认 |
+| 12 | `DELETE /api/planting-plans/{planId}` | `种植计划-管理` | 已确认 |
+| 13 | `GET /api/sensor-readings` | `环境监测-查看` | 已确认 |
+| 14 | `GET /api/lands/{landId}/environment-thresholds` | `环境监测-查看` | 已确认 |
+| 15 | `POST /api/lands/{landId}/environment-thresholds` | `环境阈值-管理` | 已确认 |
+| 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `环境阈值-管理` | 已确认 |
+| 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `环境阈值-管理` | 已确认 |
+| 18 | `GET /api/lands/{landId}/irrigation-config` | `灌溉-查看` | 已确认 |
+| 19 | `PUT /api/lands/{landId}/irrigation-config` | `灌溉-配置` | 已确认 |
 | 20 | `DELETE /api/lands/{landId}/irrigation-config` | `灌溉-配置` | 已确认 |
-| 21 | `GET /api/irrigation-records` | `灌溉-查看` | 待确认 |
-| 22 | `POST /api/irrigations` | `设备-控制` | 待确认 |
-| 23 | `POST /api/irrigations/{recordId}/stop` | `设备-控制` | 待确认 |
-| 24 | `GET /api/alerts` | `预警-查看` | 待确认 |
-| 25 | `POST /api/alerts` | `预警-管理` | 待确认 |
-| 26 | `POST /api/alerts/{alertId}/start` | `预警-管理` | 待确认 |
-| 27 | `POST /api/alerts/{alertId}/resolve` | `预警-管理` | 待确认 |
-| 28 | `POST /api/alerts/{alertId}/ignore` | `预警-管理` | 待确认 |
-| 29 | `GET /api/farm-tasks` | `农事任务-查看` | 待确认 |
-| 30 | `POST /api/farm-tasks` | `农事任务-管理` | 待确认 |
-| 31 | `POST /api/farm-tasks/{taskId}/start` | `农事任务-管理` | 待确认 |
-| 32 | `POST /api/farm-tasks/{taskId}/complete` | `农事任务-管理` | 待确认 |
-| 33 | `POST /api/farm-tasks/{taskId}/cancel` | `农事任务-管理` | 待确认 |
-| 34 | `GET /api/ai/conversations` | `AI顾问-使用` | 待确认 |
-| 35 | `POST /api/ai/conversations` | `AI顾问-使用` | 待确认 |
-| 36 | `POST /api/ai/conversations/{conversationId}/messages` | `AI顾问-使用` | 待确认 |
-| 37 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `农事任务-管理` | 待确认 |
+| 21 | `GET /api/irrigation-records` | `灌溉-查看` | 已确认 |
+| 22 | `POST /api/irrigations` | `设备-控制` | 已确认 |
+| 23 | `POST /api/irrigations/{recordId}/stop` | `设备-控制` | 已确认 |
+| 24 | `GET /api/alerts` | `预警-查看` | 已确认 |
+| 25 | `POST /api/alerts` | `预警-管理` | 已确认 |
+| 26 | `POST /api/alerts/{alertId}/start` | `预警-管理` | 已确认 |
+| 27 | `POST /api/alerts/{alertId}/resolve` | `预警-管理` | 已确认 |
+| 28 | `POST /api/alerts/{alertId}/ignore` | `预警-管理` | 已确认 |
+| 29 | `GET /api/farm-tasks` | `农事任务-查看` | 已确认 |
+| 30 | `POST /api/farm-tasks` | `农事任务-管理` | 已确认 |
+| 31 | `POST /api/farm-tasks/{taskId}/start` | `农事任务-管理` | 已确认 |
+| 32 | `POST /api/farm-tasks/{taskId}/complete` | `农事任务-管理` | 已确认 |
+| 33 | `POST /api/farm-tasks/{taskId}/cancel` | `农事任务-管理` | 已确认 |
+| 34 | `GET /api/ai/conversations` | `AI顾问-使用` | 已确认 |
+| 35 | `POST /api/ai/conversations` | `AI顾问-使用` | 已确认 |
+| 36 | `POST /api/ai/conversations/{conversationId}/messages` | `AI顾问-使用` | 已确认 |
+| 37 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `农事任务-管理` | 已确认 |
 | 38 | `POST /api/ai/conversations/{conversationId}/close` | `AI顾问-使用` | 已确认 |
-| 39 | `GET /api/reports` | `报告-查看` | 待确认 |
-| 40 | `GET /api/reports/{reportId}` | `报告-查看` | 待确认 |
-| 41 | `POST /api/reports` | `报告-生成` | 待确认 |
-| 42 | `POST /api/reports/{reportId}/archive` | `报告-归档` | 待确认 |
+| 39 | `GET /api/reports` | `报告-查看` | 已确认 |
+| 40 | `GET /api/reports/{reportId}` | `报告-查看` | 已确认 |
+| 41 | `POST /api/reports` | `报告-生成` | 已确认 |
+| 42 | `POST /api/reports/{reportId}/archive` | `报告-归档` | 已确认 |
 
-## 1. 地块
+### RBAC 后台管理
+
+| 顺序 | 接口 | 权限 | 状态 |
+| --- | --- | --- | --- |
+| 1 | `GET /api/admin/users` | `用户-查看` | 已确认 |
+| 2 | `PUT /api/admin/users/{userId}/roles` | `用户-授权` | 已确认 |
+| 3 | `GET /api/admin/roles` | `角色-查看` | 已确认 |
+| 4 | `GET /api/admin/permissions` | `角色-查看` | 已确认 |
+| 5 | `PUT /api/admin/roles/{roleCode}/permissions` | `角色-管理` | 已确认 |
+
+## 1. 认证与用户
+
+`UserProfile`：`id`、`username`、`email`、`phone|null`、`status`、`roles`、`permissions`。
+
+| 方法和路径 | 参数或请求体 | 响应与规则 |
+| --- | --- | --- |
+| `POST /api/auth/verification-codes` | `email, scene`；当前 `scene=register` | `202`；验证码存入 Redis，不在响应中返回 |
+| `POST /api/auth/register` | `email, password, verificationCode` | `201 UserProfile`；邮箱唯一，默认分配 `farm_owner` |
+| `POST /api/auth/login` | `loginType, account, password` | `{ accessToken, tokenType, expiresIn, user }`；同时写入刷新令牌 Cookie |
+| `POST /api/auth/refresh` | 无请求体，读取刷新令牌 Cookie | 返回新的访问令牌并轮换刷新令牌 |
+| `POST /api/auth/logout` | 无请求体 | `204`；删除刷新令牌状态和 Cookie |
+| `GET /api/users/me` | 无 | `UserProfile` |
+| `PUT /api/users/me` | `username, email, phone?, verificationCode?` | `UserProfile`；修改邮箱时必须验证新邮箱 |
+
+密码只保存哈希值。访问令牌过期时间和刷新令牌有效期由配置决定；退出后访问令牌最多存活到自身过期。
+
+## 2. 权限管理
+
+`Role`：`code`、`name`、`permissions`；`Permission`：`code`、`name`、`module`。
+
+| 方法和路径 | 参数或请求体 | 响应与规则 |
+| --- | --- | --- |
+| `GET /api/admin/users` | 可选 `keyword, status, roleCode` | `UserProfile[]` |
+| `PUT /api/admin/users/{userId}/roles` | `roleCodes` | `UserProfile`；整体替换用户角色，至少保留一个角色 |
+| `GET /api/admin/roles` | 无 | `Role[]` |
+| `GET /api/admin/permissions` | 可选 `module` | `Permission[]` |
+| `PUT /api/admin/roles/{roleCode}/permissions` | `permissionCodes` | `Role`；整体替换角色权限 |
+
+系统角色和权限码由 Flyway 初始化。管理员不能移除自己的最后一个 `sys_admin` 角色，系统中必须至少保留一名系统管理员。
+
+## 3. 地块
 
 `Land`：`id`、`name`、`landType`、`area`（亩）、`crop|null`、`status`、`location`、`longitude`、`latitude`。
 
@@ -94,7 +152,7 @@
 | `PUT /api/lands/{landId}` | 字段与新增相同 | `Land`；不能修改 `id` 和所属用户 |
 | `DELETE /api/lands/{landId}` | 路径参数 `landId` | `204`；不存在或不属于当前用户返回 `404`；有关联业务数据返回 `409` |
 
-## 2. 设备
+## 4. 设备
 
 `Device`：`id`、`name`、`deviceType`、`landId|null`、`status`、`battery|null`、`lastReportedAt|null`、`model`、`installDate|null`、`longitude`、`latitude`。
 
@@ -107,7 +165,7 @@
 
 `landId` 可为 `null`，非空时必须属于当前用户。经纬度范围与地块相同，`battery` 范围为 `0～100`。
 
-## 3. 种植计划
+## 5. 种植计划
 
 `PlantingPlan`：`id`、`landId`、`planName`、`cropType`、`area`、`plantingDate`、`expectedHarvestDate`、`status`、`remark`。
 
@@ -120,7 +178,7 @@
 
 `area > 0`，预计收获日期不得早于种植日期，计划面积不得超过所属地块面积。
 
-## 4. 环境监测
+## 6. 环境监测
 
 `SensorReading`：`deviceId`、`landId|null`、`recordedAt`、`metric`、`unit`、`value`。单位由指标决定，前端不能修改。
 
@@ -136,7 +194,7 @@
 
 阈值必须满足 `min < max`。`metric` 不包含当前地块设备无法采集的指标。
 
-## 5. 智能灌溉
+## 7. 智能灌溉
 
 `IrrigationConfig`：`landId`、`controllerDeviceId`、`mode`、`enabled`、`triggerMoisture`、`targetMoisture`、`defaultDuration`、`updatedBy`、`updatedAt`。
 
@@ -153,7 +211,7 @@
 
 `triggerMoisture` 和 `targetMoisture` 范围为 `0～100` 且前者小于后者；时长范围为 `1～180` 分钟。控制器必须在线，同一控制器存在待执行或执行中记录时不得重复启动。
 
-## 6. 异常预警
+## 8. 异常预警
 
 `Alert`：`id`、`landId`、`type`、`severity`、`title`、`description`、`suggestion`、`status`、`occurredAt`、`source`、`handleRecord|null`。
 
@@ -170,7 +228,7 @@
 
 只有 `pending` 预警可以开始处理。仍有关联 `pending` 或 `processing` 任务时不能解决预警；`cancelled` 任务不阻塞。
 
-## 7. 农事任务
+## 9. 农事任务
 
 `FarmTask`：`id`、`landId`、`sourceType`、`sourceId|null`、`taskType`、`title`、`description`、`priority`、`status`、`assignee`、`deadline`、`createdAt`、`completedAt|null`、`result`、`remark`。
 
@@ -184,7 +242,7 @@
 
 预警、计划、系统和 AI 产生的任务由对应业务接口创建，前端不能伪造 `sourceType` 或 `sourceId`。
 
-## 8. AI 技术顾问
+## 10. AI 技术顾问
 
 `AiConversation`：`id`、`landId`、`title`、`status`、`createdAt`、`updatedAt`、`messages`。
 
@@ -203,7 +261,7 @@
 
 前端只提交问题，不提交上下文、AI 回复、参考数据或任务草稿。同一 AI 消息最多生成一个任务。
 
-## 9. 报告中心
+## 11. 报告中心
 
 `ReportSummary`：`id`、`landId`、`type`、`title`、`startDate`、`endDate`、`status`、`creator`、`createdAt`、`generatedAt`、`summary`。
 

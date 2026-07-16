@@ -2,15 +2,18 @@
 
 FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆盖地块、设备、环境监测、灌溉、预警、农事任务、AI 顾问和报告等业务。
 
-## 技术栈
+## 目标技术栈
 
 - 前端：Vue 3、Vite、Element Plus、Tailwind CSS
-- 后端：Java 21、Spring Boot 3.3、MyBatis、Maven
-- 数据库：MySQL 8.0
-- 认证：Session + RBAC
-- 部署：Nginx + Spring Boot
+- 后端：Java 21、Spring Boot 4.1、Spring MVC、MyBatis 4、Maven
+- 数据：MySQL 8.0、Flyway、Redis
+- 认证：Spring Security、JWT、RBAC
+- 物联网：EMQX、MQTT、Eclipse Paho
+- AI Agent：Spring AI
+- 可观测性：Actuator、Micrometer
+- 部署：Docker Compose、Nginx、Spring Boot
 
-项目采用前后端分离结构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。
+项目采用前后端分离的模块化单体架构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。后端骨架已按目标技术栈重建，业务接口尚待实现；架构、选型理由和淘汰项见 [后端架构说明](docs/backend-architecture.md)。
 
 ## 开发计划
 
@@ -39,16 +42,17 @@ FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆
 
 ### 第二阶段：数据与接口
 
-前端交互稳定后，确定 `land`、`device`、`sensorReading`、`environmentThreshold`、`irrigationRule`、`alert`、`farmTask`、`aiConversation` 和 `report` 等核心数据结构，再设计接口。
+- [x] 确定核心数据结构和 RESTful 接口契约，完整接口见 [接口文档](docs/api-contract.md)。
 
 ### 第三阶段：后端能力
 
-- 使用 Spring Boot + MyBatis 实现业务接口。
-- 使用 JWT + Spring Security + RBAC 重构认证授权。
-- 使用 Redis 管理验证码、设备状态和短期 AI 上下文。
-- 使用 MQ 和 MQTT 处理设备数据、预警及控制指令。
-- 根据数据特点引入时序数据库或 MongoDB。
-- 使用 Docker Compose 编排项目依赖。
+- 重新设计 MySQL 数据库，通过 Flyway 管理结构和种子数据。
+- 按业务模块重构 Spring Boot + MyBatis 后端，再按接口文档顺序实现业务接口。
+- 使用 Spring Security + JWT + RBAC 重构认证授权。
+- 使用 Redis 管理验证码、刷新令牌、设备状态和短期 AI 上下文。
+- 使用 EMQX + MQTT 处理设备数据和控制指令。
+- 使用 Spring AI 实现技术顾问的上下文、工具调用和任务草稿。
+- 使用 Docker Compose 编排 MySQL、Redis、EMQX 和应用服务。
 
 ## 开源协议
 
