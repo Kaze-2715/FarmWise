@@ -50,21 +50,26 @@
 
           <!-- 右侧用户下拉 -->
           <div class="relative flex items-center space-x-2 group">
-            <div class="flex items-center space-x-2 cursor-pointer">
-              <img src="https://picsum.photos/id/1005/40/40" alt="头像" class="w-8 h-8 rounded-full object-cover">
+            <button type="button" class="flex items-center space-x-2 cursor-pointer">
+              <img v-if="avatarUrl" :src="avatarUrl" alt="头像" class="w-8 h-8 rounded-full object-cover">
+              <span v-else class="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-sm font-semibold text-white">
+                {{ username.slice(0, 1) }}
+              </span>
               <span class="text-sm font-medium text-white">{{ username }}</span>
-            </div>
+            </button>
             <!-- 下拉菜单 -->
             <div
-              class="absolute right-0 top-full z-50 mt-2 hidden w-48 flex-col gap-3 rounded-xl bg-white p-3 shadow-lg group-hover:flex">
-              <button @click="$router.push('/dashboard/user-profile')"
-                class="w-full bg-green-500 hover:bg-green-600 text-white text-sm py-2 rounded transition">
-                完善信息
-              </button>
-              <button @click="logout"
-                class="w-full border border-gray-300 hover:border-green-500 hover:text-green-500 text-sm py-2 rounded transition">
-                退出登录
-              </button>
+              class="absolute right-0 top-full z-50 hidden w-48 pt-2 group-hover:block group-focus-within:block">
+              <div class="flex flex-col gap-3 rounded-xl bg-white p-3 shadow-lg">
+                <button @click="$router.push('/dashboard/user-profile')"
+                  class="w-full bg-green-500 hover:bg-green-600 text-white text-sm py-2 rounded transition">
+                  个人中心
+                </button>
+                <button @click="logout"
+                  class="w-full border border-gray-300 hover:border-green-500 hover:text-green-500 text-sm py-2 rounded transition">
+                  退出登录
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -78,12 +83,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { mockCurrentUserId, mockUsers } from '../../mocks/user-data'
 
 const router = useRouter()
 const username = ref('游客')
+const avatarUrl = ref(null)
 const roles = ref([])
+
+const handleProfileUpdated = (event) => {
+  username.value = event.detail?.username || username.value
+  avatarUrl.value = event.detail?.avatarUrl || null
+}
 
 // 检查角色权限
 const hasRole = (role) => {
@@ -99,11 +111,13 @@ const logout = () => {
 // 页面加载时读取用户信息
 onMounted(() => {
   const uname = localStorage.getItem('username')
+  const currentUserId = localStorage.getItem('userId') || mockCurrentUserId
+  const mockUser = mockUsers.find((user) => user.id === currentUserId)
   const rolesRaw = localStorage.getItem('roles')
 
-  if (uname) {
-    username.value = uname
-  }
+  username.value = uname || mockUser?.username || '游客'
+  avatarUrl.value = mockUser?.avatarUrl || null
+  window.addEventListener('farmwise:user-profile-updated', handleProfileUpdated)
 
   if (rolesRaw && rolesRaw !== 'undefined') {
     try {
@@ -121,4 +135,6 @@ onMounted(() => {
     console.log('使用 mock 角色:', roles.value)
   }
 })
+
+onUnmounted(() => window.removeEventListener('farmwise:user-profile-updated', handleProfileUpdated))
 </script>
