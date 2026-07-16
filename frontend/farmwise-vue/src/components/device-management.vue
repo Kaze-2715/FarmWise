@@ -104,8 +104,18 @@
                 {{ device.lastReportedAt || '尚未上报' }}
               </td>
               <td class="whitespace-nowrap px-5 py-4 text-right text-sm">
-                <button type="button" class="mr-3 text-green-600 hover:text-green-700" @click="openEditModal(device)">编辑</button>
-                <button type="button" class="text-red-500 hover:text-red-600" @click="openDeleteModal(device)">删除</button>
+                <div class="inline-flex items-center gap-2">
+                  <button type="button"
+                    class="inline-flex items-center rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 font-medium text-green-700 transition-all hover:-translate-y-0.5 hover:border-green-300 hover:bg-green-100 active:translate-y-0"
+                    @click="openEditModal(device)">
+                    <i class="fa fa-pencil mr-1.5"></i>编辑
+                  </button>
+                  <button type="button"
+                    class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 font-medium text-red-600 transition-all hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-100 active:translate-y-0"
+                    @click="openDeleteModal(device)">
+                    <i class="fa fa-trash-o mr-1.5"></i>删除
+                  </button>
+                </div>
               </td>
             </tr>
             <tr v-if="filteredDevices.length === 0">
