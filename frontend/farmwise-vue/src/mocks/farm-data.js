@@ -153,9 +153,89 @@ export const newReport = {
             processing: 0,
             completed: 0,
             cancelled: 0
-        }
+        },
+        aiAdvice: []
     }
 };
+
+export const newAiConversation = {
+    id: '',
+    landId: '',
+    title: '',
+    status: 'active',
+    createdAt: '',
+    updatedAt: '',
+    messages: []
+};
+
+export const newAiMessage = {
+    id: '',
+    role: 'user',
+    content: '',
+    createdAt: '',
+    references: [],
+    taskDraft: null
+};
+
+export const mockAiConversations = [
+    {
+        id: 'CONV-001',
+        landId: 'LAND-002',
+        title: '西区高温处理建议',
+        status: 'active',
+        createdAt: '2026-07-09T13:45:00+08:00',
+        updatedAt: '2026-07-09T13:45:10+08:00',
+
+        messages: [
+            {
+                id: 'MSG-001',
+                role: 'user',
+                content: '西区2号旱地温度偏高，现在应该怎么处理？',
+                createdAt: '2026-07-09T13:45:00+08:00',
+                references: [],
+                taskDraft: null
+            },
+            {
+                id: 'MSG-002',
+                role: 'assistant',
+                content: '当前空气温度已经超过适宜范围。建议先进行现场巡查，确认高温持续情况和小麦状态，再根据土壤墒情决定是否补水。暂不建议直接启动灌溉。',
+                createdAt: '2026-07-09T13:45:10+08:00',
+                references: [
+                    {
+                        type: 'alert',
+                        sourceId: 'ALT-004',
+                        label: '预警记录温度',
+                        value: 32.6,
+                        unit: '℃'
+                    },
+                    {
+                        type: 'environmentThreshold',
+                        sourceId: 'LAND-002:air_temperature',
+                        label: '适宜空气温度',
+                        value: '18～30',
+                        unit: '℃'
+                    },
+                    {
+                        type: 'alert',
+                        sourceId: 'ALT-004',
+                        label: '关联预警',
+                        value: '空气温度偏高',
+                        unit: ''
+                    }
+                ],
+
+                taskDraft: {
+                    taskType: 'inspection',
+                    title: '巡查西区高温影响',
+                    description: '检查高温持续情况、小麦状态和土壤墒情，根据现场情况决定是否补水。',
+                    priority: 'medium',
+                    assignee: '',
+                    deadline: '2026-07-09T18:00:00+08:00'
+                }
+            }
+        ]
+    }
+];
 
 export const mockReports = [
     {
@@ -209,7 +289,8 @@ export const mockReports = [
                 processing: 1,
                 completed: 0,
                 cancelled: 0
-            }
+            },
+            aiAdvice: []
         }
     }
 ];

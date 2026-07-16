@@ -9,8 +9,13 @@ import {
     mockIrrigationConfigs,
     mockIrrigationRecords,
     mockFarmTasks,
-    mockReports
+    mockReports,
+    mockAiConversations
 } from "../mocks/farm-data";
+
+const allowedMessageRoles = new Set(['user', 'assistant']);
+
+const allowedPriorities = new Set(['low', 'medium', 'high']);
 
 const lands = ref(
     mockLands.map(land => ({ ...land }))
@@ -45,9 +50,215 @@ const reports = ref(mockReports.map(report => ({
         devices: { ...report.snapshot.devices },
         environment: report.snapshot.environment.map(reading => ({ ...reading })),
         alerts: { ...report.snapshot.alerts },
-        tasks: { ...report.snapshot.tasks }
+        tasks: { ...report.snapshot.tasks },
+        aiAdvice: report.snapshot.aiAdvice.map(advice => ({
+            ...advice,
+            references: advice.references.map(reference => ({ ...reference }))
+        }))
     }
 })));
+
+const aiConversations = ref(
+    mockAiConversations.map(conversation => ({
+        ...conversation,
+        messages: conversation.messages.map(message => ({
+            ...message,
+            references: message.references.map(reference => ({
+                ...reference
+            })),
+            taskDraft: message.taskDraft ? { ...message.taskDraft } : null
+        }))
+    }))
+);
+
+const appendAiMessage = (conversationId, messageData) => {
+    const conversation = aiConversations.value.find(conversation => conversation.id === conversationId);
+
+    if (!conversation) {
+        throw new Error("对话不存在：" + conversationId);
+    }
+
+    const role = messageData.role;
+
+    const validRole = allowedMessageRoles.has(role);
+
+    if (!validRole) {
+        throw new Error("无效的对话角色：" + messageData.role);
+    }
+
+    if (!messageData.content || typeof messageData.content !== 'string') {
+        throw new Error("content 字段不存在");
+    }
+
+    const content = messageData.content.trim();
+
+    if (!content) {
+        throw new Error("对话内容不能为空");
+    }
+
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    const references = messageData.references ?? [];
+    const taskDraft = messageData.taskDraft ?? null;
+
+    if (!Array.isArray(references)) {
+        throw new Error("references 应为数组");
+    }
+
+    if (taskDraft !== null && (typeof taskDraft !== 'object' || Array.isArray(taskDraft))) {
+        throw new Error("taskDraft 类型应为非数组的对象");
+    }
+
+    const message = {
+        id,
+        role,
+        content,
+        createdAt,
+        references: references.map(reference => ({
+            ...reference
+        })),
+        taskDraft: taskDraft === null ? null : { ...taskDraft }
+    };
+
+    conversation.messages.push(message);
+
+    conversation.updatedAt = createdAt;
+
+    return message;
+};
+
+const createAiConversation = ({
+    landId,
+    title
+}) => {
+    const index = lands.value.findIndex(land => land.id === landId);
+
+    if (index === -1) {
+        throw new Error("地块不存在");
+    }
+
+    const existsActiveConversation = aiConversations.value.some(conversation => conversation.landId === landId && conversation.status === 'active');
+
+    if (existsActiveConversation) {
+        throw new Error("当前地块已经存在活跃对话");
+    }
+
+    if (typeof title !== "string") {
+        throw new Error("title的类型应该为字符串，而不是: " + typeof title);
+    }
+
+    const validTitle = title.trim();
+
+    if (!validTitle) {
+        throw new Error("标题不能为空!");
+    }
+
+    const now = new Date().toISOString();
+
+    const conversation = {
+        id: crypto.randomUUID(),
+        landId,
+        title: validTitle,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+        messages: []
+    };
+
+    aiConversations.value.unshift(conversation);
+
+    return conversation;
+};
+
+const createFarmTaskFromAiDraft = ({
+    conversationId,
+    messageId,
+    assignee,
+    deadline
+}) => {
+    const conversation = aiConversations.value.find(conversation => conversation.id === conversationId);
+
+    if (!conversation) {
+        throw new Error("对话不存在");
+    }
+
+    const message = conversation.messages.find(message => message.id === messageId);
+
+    if (!message) {
+        throw new Error("AI 消息不存在");
+    }
+
+    if (message.role !== 'assistant') {
+        throw new Error("只有 AI 顾问消息可以生成农事任务");
+    }
+
+    const draft = message.taskDraft ?? null;
+
+    if (!draft) {
+        throw new Error("draft 对象为空");
+    }
+
+    if (typeof draft !== "object" || Array.isArray(draft)) {
+        throw new Error("draft 类型错误，应为非数组的普通对象");
+    }
+
+    const validTaskType = validateString(draft.taskType, '任务类型');
+    const validTitle = validateString(draft.title, '任务标题');
+    const validDescription = validateString(draft.description, '任务描述');
+    const validAssignee = validateString(assignee, '负责人');
+    const validDeadline = validateString(deadline, '截止时间');
+    const validPriority = validateString(draft.priority, '优先级');
+
+    if (!allowedPriorities.has(validPriority)) {
+        throw new Error("无效的优先级");
+    }
+
+    const taskAlreadyCreated = farmTasks.value.some(task =>
+        task.sourceType === 'aiMessage' && task.sourceId === message.id
+    );
+
+    if (taskAlreadyCreated) {
+        throw new Error("该 AI 消息已经创建过农事任务");
+    }
+
+    const task = {
+        id: crypto.randomUUID(),
+        landId: conversation.landId,
+        sourceType: 'aiMessage',
+        sourceId: message.id,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        result: '',
+        remark: '由 AI 技术顾问建议生成',
+        taskType: validTaskType,
+        title: validTitle,
+        description: validDescription,
+        priority: validPriority,
+        assignee: validAssignee,
+        deadline: validDeadline
+    };
+
+    farmTasks.value.unshift(task);
+
+    return task;
+};
+
+const validateString = (string, fieldName) => {
+    const type = typeof string;
+
+    if (type !== "string") {
+        throw new Error(`${fieldName}的类型应为 string，当前为 ${type}`);
+    }
+
+    const validString = string.trim();
+
+    if (!validString) {
+        throw new Error(`${fieldName}不能为空`);
+    }
+
+    return validString;
+};
 
 const addLand = (formData) => {
     const area = Number(formData.area);
@@ -196,10 +407,14 @@ export const useFarmStore = () => {
         irrigationRecords,
         farmTasks,
         reports,
+        aiConversations,
         addLand,
         deleteLand,
         addDevice,
         updateDevice,
-        deleteDevice
+        deleteDevice,
+        appendAiMessage,
+        createAiConversation,
+        createFarmTaskFromAiDraft
     };
 };

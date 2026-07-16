@@ -283,7 +283,13 @@ const taskTypeLabels = {
 
 const priorityLabels = { high: '高优先级', medium: '中优先级', low: '低优先级' };
 const statusLabels = { pending: '待处理', processing: '进行中', completed: '已完成', cancelled: '已取消' };
-const sourceTypeLabels = { manual: '人工创建', alert: '预警触发', plan: '农事计划', system: '系统生成' };
+const sourceTypeLabels = {
+  manual: '人工创建',
+  alert: '预警触发',
+  plan: '农事计划',
+  system: '系统生成',
+  aiMessage: 'AI 顾问建议'
+};
 const priorityClasses = {
   high: 'bg-red-50 text-red-700',
   medium: 'bg-amber-50 text-amber-700',

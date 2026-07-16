@@ -1,376 +1,342 @@
 <template>
-    <main class="container mx-auto px-4 py-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- 左侧：土地选择和详情 -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-dark mb-6 flex items-center">
-                        <i class="fa fa-map-marker text-primary mr-3"></i>选择土地
-                    </h2>
+  <main class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <aside class="lg:col-span-1">
+        <div class="rounded-2xl bg-white p-8 shadow-lg">
+          <h2 class="mb-6 flex items-center text-2xl font-bold text-dark">
+            <i class="fa fa-map-marker mr-3 text-primary"></i>AI 顾问上下文
+          </h2>
 
-                    <div class="mb-6">
-                        <label class="block text-gray-700 mb-3 font-medium">选择要服务的土地</label>
-                        <select v-model="currentLandId"
-                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
-                            <option value="">请选择土地...</option>
-                            <option v-for="land in lands" :key="land.id" :value="land.id">
-                                {{ land.landId }} | {{ land.area }} ㎡ | {{ land.soilType }}
-                            </option>
-                        </select>
-                    </div>
+          <div class="mb-6">
+            <label class="mb-3 block font-medium text-gray-700">选择咨询地块</label>
+            <select v-model="currentLandId"
+              class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20">
+              <option v-if="lands.length === 0" value="" disabled>暂无地块</option>
+              <option v-for="land in lands" :key="land.id" :value="land.id">
+                {{ land.name }} | {{ land.area }} ㎡ | {{ land.type }}
+              </option>
+            </select>
+          </div>
 
-                    <!-- 土地详情 -->
-                    <div id="landDetail" class="bg-light rounded-xl p-6 mb-8">
-                        <div v-if="!currentLand" class="text-center py-8">
-                            <i class="fa fa-map-o text-4xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-500">请从左侧选择一块土地</p>
-                        </div>
-
-                        <div v-else class="space-y-4">
-                            <div>
-                                <h3 class="font-bold text-lg text-dark">
-                                    {{ currentLand.landId }}
-                                </h3>
-                                <p class="text-sm text-gray-500">
-                                    ID: {{ currentLand.id }}
-                                </p>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-sm text-gray-500">土地面积</p>
-                                    <p class="font-semibold">{{ currentLand.area }} ㎡</p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">土壤类型</p>
-                                    <p class="font-semibold">{{ currentLand.soilType }}</p>
-                                </div>
-                            </div>
-
-                            <a v-if="currentLand.attachmentPath" :href="currentLand.attachmentPath" target="_blank">
-                                查看土地附件
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- 提交方案表单 -->
-                    <form @submit.prevent="submitAdvice" class="bg-primary/5 rounded-xl p-6">
-                        <h3 class="text-xl font-bold text-dark mb-4 flex items-center">
-                            <i class="fa fa-edit text-primary mr-3"></i>提交技术方案
-                        </h3>
-
-                        <div class="mb-4">
-                            <label class="block text-gray-700 mb-2 font-medium">顾问姓名</label>
-                            <input v-model="adviceForm.advisorName" required
-                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                                placeholder="请输入您的姓名">
-                        </div>
-
-                        <div class="mb-6">
-                            <label class="block text-gray-700 mb-2 font-medium">方案内容</label>
-                            <textarea v-model="adviceForm.content" required rows="6"
-                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
-                                placeholder="请输入详细的技术方案和建议..."></textarea>
-                        </div>
-
-                        <button type="submit" :disabled="submittingAdvice"
-                            class="w-full rounded-lg border border-green-500 bg-green-500 px-6 py-3 font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60">
-                            <i class="fa fa-paper-plane mr-2"></i>
-                            {{ submittingAdvice ? '提交中' : '提交方案' }}
-                        </button>
-                    </form>
-                </div>
+          <div v-if="currentLand" class="space-y-4 rounded-xl bg-light p-6">
+            <div>
+              <h3 class="text-lg font-bold text-dark">{{ currentLand.name }}</h3>
+              <p class="text-sm text-gray-500">{{ currentLand.id }}</p>
             </div>
 
-            <!-- 右侧：沟通记录 -->
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-2xl shadow-lg p-8 h-full">
-                    <div class="flex justify-between items-center mb-8">
-                        <h2 class="text-2xl font-bold text-dark flex items-center">
-                            <i class="fa fa-comments text-primary mr-3"></i>沟通记录
-                        </h2>
-                        <div v-if="currentLand" class="text-sm text-gray-500" >
-                            当前土地：<span class="font-semibold">{{ currentLand.landId }}</span>
-                        </div>
-                    </div>
-
-                    <!-- 消息列表 -->
-                    <div class="space-y-4 mb-8 max-h-[400px] overflow-y-auto p-4 border border-gray-100 rounded-lg scrollbar-thin">
-                        <div v-if="!currentLand" class="text-center py-12">
-                            选择土地后显示沟通记录
-                        </div>
-
-                        <div v-else-if="messages.length === 0" class="text-center py-12">
-                            暂无沟通记录
-                        </div>
-
-                        <div v-else class="space-y-4">
-                            <div v-for="msg in messages" :key="msg.id" class="p-4 rounded-lg" :class="{
-                                'message-advisor': msg.sender === 'advisor',
-                                'message-owner': msg.sender === 'owner'
-                            }">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="flex items-center">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3" :class="{
-                                            'bg-primary/10': msg.sender === 'advisor',
-                                            'bg-blue-100': msg.sender === 'owner'
-                                        }">
-                                            <i class="fa" :class="{
-                                                'fa-user-md text-primary': msg.sender === 'advisor',
-                                                'fa-user text-blue-500': msg.sender === 'owner'
-                                            }"></i>
-                                        </div>
-
-                                        <span class="font-semibold">
-                                            {{ msg.sender === 'advisor' ? '技术顾问' : '农场主' }}
-                                        </span>
-                                    </div>
-
-                                    <span class="text-sm text-gray-500">
-                                        {{ formatDate(msg.createdAt) }}
-                                    </span>
-                                </div>
-                                <div class="text-gray-700 ml-11">
-                                    {{ msg.text }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 发送消息 -->
-                    <div class="bg-light rounded-xl p-6">
-                        <h3 class="font-bold text-dark mb-4">发送新消息</h3>
-                        <div class="flex gap-4">
-                            <div class="flex-1">
-                                <input v-model="messageText" :disabled="!currentLandId || sendingMessage" @keydown.enter.prevent="sendMessage" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="输入消息内容...">
-                            </div>
-                            <button type="button" :disabled="!currentLandId || !messageText.trim() || sendingMessage" @click="sendMessage" class="bg-primary hover:bg-secondary text-white font-semibold py-3 px-8 rounded-lg transition-colors whitespace-nowrap">
-                                <i class="fa fa-send mr-2"></i> {{ sendingMessage ? '发送中...' : '发送' }}
-                            </button>
-                        </div>
-                        <div class="mt-4 text-sm text-gray-500 flex items-center">
-                            <i class="fa fa-info-circle mr-2"></i>
-                            消息将实时同步到农场主的控制台
-                        </div>
-                    </div>
-
-                    <!-- 历史方案 -->
-                    <div class="mt-8">
-                        <h3 class="text-xl font-bold text-dark mb-4 flex items-center">
-                            <i class="fa fa-history text-primary mr-3"></i>历史技术方案
-                        </h3>
-                        <div id="adviceHistory" class="bg-light rounded-xl p-6">
-                            <div v-if="!currentLand">
-                                选择土地后显示历史技术方案
-                            </div>
-
-                            <div v-else-if="adviceHistory.length === 0">
-                                暂无历史方案记录
-                            </div>
-
-                            <div v-else class="space-y-4">
-                                <div v-for="advice in adviceHistory" :key="advice.id"
-                                    class="bg-white rounded-lg p-6 mb-4 border border-gray-100">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <div>
-                                            <span class="font-semibold text-dark">{{ advice.advisorName }}</span>
-                                            <span class="text-sm text-gray-500 ml-3">顾问</span>
-                                        </div>
-
-                                        <span class="text-sm text-gray-500">
-                                            {{ formatDate(advice.createdAt) }}
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        class="text-gray-700 leading-relaxed whitespace-pre-wrap bg-light/50 p-4 rounded">
-                                        {{ advice.content }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500">种植作物</p>
+                <p class="font-semibold">{{ currentLand.crop || '暂无' }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">土地类型</p>
+                <p class="font-semibold">{{ currentLand.type }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">设备</p>
+                <p class="font-semibold">{{ currentAiContext?.devices.length ?? 0 }} 台</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">最新指标</p>
+                <p class="font-semibold">{{ currentAiContext?.sensorReadings.length ?? 0 }} 项</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">活跃预警</p>
+                <p class="font-semibold">{{ currentAiContext?.activeAlerts.length ?? 0 }} 条</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">进行中任务</p>
+                <p class="font-semibold">{{ currentAiContext?.activeTasks.length ?? 0 }} 项</p>
+              </div>
             </div>
+          </div>
         </div>
-    </main>
+      </aside>
+
+      <section class="lg:col-span-2">
+        <div class="min-h-full rounded-2xl bg-white p-8 shadow-lg">
+          <div class="mb-8 flex items-start justify-between gap-4">
+            <div>
+              <h2 class="flex items-center text-2xl font-bold text-dark">
+                <i class="fa fa-comments mr-3 text-primary"></i>AI 技术顾问
+              </h2>
+              <p class="mt-2 text-sm text-gray-500">
+                回答基于当前地块的设备、环境、灌溉、预警和任务上下文。
+              </p>
+            </div>
+            <span v-if="currentConversation"
+              class="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+              {{ currentConversation.status === 'active' ? '进行中' : '已归档' }}
+            </span>
+          </div>
+
+          <div v-if="messages.length === 0"
+            class="rounded-xl border border-dashed border-gray-200 py-16 text-center text-gray-500">
+            <i class="fa fa-comment-o mb-3 text-4xl text-gray-300"></i>
+            <p>当前地块暂无 AI 对话</p>
+          </div>
+
+          <div v-else class="space-y-5">
+            <article v-for="message in messages" :key="message.id" class="rounded-xl border p-5" :class="message.role === 'assistant'
+              ? 'border-green-100 bg-green-50/40'
+              : 'border-blue-100 bg-blue-50/40'">
+              <div class="mb-3 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-8 w-8 items-center justify-center rounded-full"
+                    :class="message.role === 'assistant' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'">
+                    <i class="fa" :class="message.role === 'assistant' ? 'fa-leaf' : 'fa-user'"></i>
+                  </div>
+                  <span class="font-semibold text-gray-800">
+                    {{ message.role === 'assistant' ? 'AI 技术顾问' : '农场主' }}
+                  </span>
+                </div>
+                <time class="text-xs text-gray-500">{{ formatDate(message.createdAt) }}</time>
+              </div>
+
+              <p class="whitespace-pre-wrap leading-relaxed text-gray-700">{{ message.content }}</p>
+
+              <div v-if="message.references.length > 0" class="mt-5 border-t border-gray-200 pt-4">
+                <h3 class="mb-3 text-sm font-semibold text-gray-700">参考数据</h3>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div v-for="reference in message.references"
+                    :key="`${reference.type}:${reference.sourceId}:${reference.label}`"
+                    class="rounded-lg bg-white p-3 text-sm shadow-sm">
+                    <p class="text-gray-500">{{ reference.label }}</p>
+                    <p class="mt-1 font-semibold text-gray-800">
+                      {{ reference.value }}{{ reference.unit }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="message.taskDraft" class="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                  <h3 class="font-semibold text-orange-900">农事任务草稿</h3>
+                  <span class="rounded-full bg-orange-100 px-2 py-1 text-xs text-orange-700">
+                    {{ message.taskDraft.priority }}
+                  </span>
+                </div>
+                <p class="font-medium text-gray-800">{{ message.taskDraft.title }}</p>
+                <p class="mt-2 text-sm leading-relaxed text-gray-600">{{ message.taskDraft.description }}</p>
+                <div v-if="taskDraftForms[message.id]" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label class="text-sm text-gray-700">
+                    <span class="mb-1 block">负责人</span>
+                    <input v-model="taskDraftForms[message.id].assignee" type="text" placeholder="请输入负责人"
+                      :disabled="createdTaskMessageIds.has(message.id)"
+                      class="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 outline-none focus:border-orange-400">
+                  </label>
+                  <label class="text-sm text-gray-700">
+                    <span class="mb-1 block">截止时间</span>
+                    <input v-model="taskDraftForms[message.id].deadline" type="datetime-local"
+                      :disabled="createdTaskMessageIds.has(message.id)"
+                      class="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 outline-none focus:border-orange-400">
+                  </label>
+                </div>
+                <div class="mt-4 flex items-center justify-between gap-3">
+                  <p class="text-xs text-orange-700">
+                    {{ createdTaskMessageIds.has(message.id) ? '已创建为正式农事任务。' : '填写执行信息并确认后创建正式任务。' }}
+                  </p>
+                  <button type="button" :disabled="isTaskDraftSubmitDisabled(message)"
+                    @click="confirmTaskDraft(message)"
+                    class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    {{ creatingTaskMessageId === message.id ? '创建中...' : createdTaskMessageIds.has(message.id) ? '已创建'
+                    : '确认创建' }}
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="mt-8 rounded-xl bg-light p-5 text-sm text-gray-500">
+            <div v-if="!currentConversation">
+              当前地块暂无对话
+            </div>
+            <div v-else>
+              输入消息询问 AI 技术顾问
+            </div>
+            <input type="text" placeholder="请输入内容" :disabled="!currentLandId" v-model="messageText"
+              @keyup.enter.prevent="sendMessage">
+            <button type="button" :disabled="!currentLandId || !messageText.trim()" @click="sendMessage">发送</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
-import { toast } from "../utils/toast";
+import { computed, ref, reactive, watch } from 'vue';
+import { useFarmStore } from '../composables/useFarmStore';
+import { generateMockAiResponse } from '../utils/mock-ai-agent';
+import { buildAiContext } from '../utils/ai-context';
 
-const adviceForm = ref({
-    advisorName: '',
-    content: ''
-})
+const {
+  lands,
+  devices,
+  sensorReadings,
+  environmentThresholds,
+  irrigationConfigs,
+  irrigationRecords,
+  alerts,
+  farmTasks,
+  plans,
+  aiConversations,
+  appendAiMessage,
+  createAiConversation,
+  createFarmTaskFromAiDraft
+} = useFarmStore();
 
-const submittingAdvice = ref(false);
-
-const lands = ref([]);
-const currentLandId = ref('');
-const currentLand = computed(() => lands.value.find(land => land.id === currentLandId.value));
-const messages = ref([]);
-const adviceHistory = ref([]);
+const defaultLandId = aiConversations.value[0]?.landId ?? lands.value[0]?.id ?? '';
+const currentLandId = ref(defaultLandId);
 const messageText = ref('');
-const sendingMessage = ref(false);
+const taskDraftForms = reactive({});
+const creatingTaskMessageId = ref('');
 
-onMounted(() => {
-    loadLands();
-})
+const createdTaskMessageIds = computed(() => new Set(
+  farmTasks.value
+    .filter(task => task.sourceType === 'aiMessage')
+    .map(task => task.sourceId)
+));
 
-watch(currentLandId, (newId) => {
-    messages.value = [];
-    adviceHistory.value = [];
+const currentLand = computed(() =>
+  lands.value.find(land => land.id === currentLandId.value) ?? null
+);
 
-    if (!newId) {
-        return;
+const currentConversation = computed(() =>
+  aiConversations.value.find(conversation =>
+    conversation.landId === currentLandId.value && conversation.status === 'active'
+  ) ?? null
+);
+
+const messages = computed(() => currentConversation.value?.messages ?? []);
+
+const currentAiContext = computed(() => buildAiContext({
+  landId: currentLandId.value,
+  lands: lands.value,
+  devices: devices.value,
+  sensorReadings: sensorReadings.value,
+  environmentThresholds: environmentThresholds.value,
+  irrigationConfigs: irrigationConfigs.value,
+  irrigationRecords: irrigationRecords.value,
+  alerts: alerts.value,
+  farmTasks: farmTasks.value,
+  plans: plans.value
+}));
+
+watch(messages, (currentMessages) => {
+  currentMessages.forEach(message => {
+    if (!message.taskDraft) {
+      return;
     }
-
-    loadMessages(newId);
-    loadAdvice(newId);
-})
-
-const formatDate = (value) => {
-    if (!value) {
-        return '';
+    if (taskDraftForms[message.id]) {
+      return;
     }
+    taskDraftForms[message.id] = {
+      assignee: message.taskDraft.assignee ?? '',
+      deadline: message.taskDraft.deadline ?? ''
+    };
+  });
+}, { immediate: true, deep: true });
 
-    return new Date(value).toLocaleString('zh-CN');
-}
-
-const sendMessage = async () => {
-    const text = messageText.value.trim();
-
-    if (!currentLandId.value || !text || sendingMessage.value) {
-        return;
-    }
-
-    sendingMessage.value = true;
-
-    try {
-        const res = await fetch('/api/advice/message', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                landId: Number(currentLandId.value),
-                sender: 'advisor',
-                text
-            })
-        });
-
-        if (!res.ok) {
-            throw new Error('发送消息失败');
-        }
-
-        messageText.value = '';
-        await loadMessages(currentLandId.value);
-    } catch (error) {
-        console.error('发送消息失败', error);
-        toast('发送消息失败', 'bg-red-500');
-    } finally {
-        sendingMessage.value = false;
-    }
-}
-
-const loadMessages = async (landId) => {
-    try {
-        const res = await fetch(`/api/advice/messages/${landId}`);
-
-        if (!res.ok) {
-            throw new Error('加载消息失败');
-        }
-
-        messages.value = await res.json();
-    } catch (error) {
-        console.error('加载消息失败：', error);
-    }
-}
-
-const loadAdvice = async (landId) => {
-    try {
-        const res = await fetch(`/api/advice/land/${landId}`);
-
-        if (!res.ok) {
-            throw new Error("加载技术方案失败");
-        }
-
-        adviceHistory.value = await res.json();
-    } catch (error) {
-        console.error('加载技术方案失败：', error);
-    }
-}
-
-const loadLands = async () => {
-    try {
-        const res = await fetch('/api/lands');
-
-        if (!res.ok) {
-            throw new Error('加载土地失败');
-        }
-
-        lands.value = await res.json();
-
-        if (lands.value.length > 0) {
-            currentLandId.value = lands.value[0].id;
-        }
-    } catch (error) {
-        console.error('加载土地失败', error);
-    }
+const formatDate = value => {
+  if (!value) return '';
+  return new Date(value).toLocaleString('zh-CN');
 };
 
-const submitAdvice = async () => {
-    const advisorName = adviceForm.value.advisorName.trim();
-    const content = adviceForm.value.content.trim();
+const sendMessage = () => {
+  const text = messageText.value.trim();
+  if (!text) {
+    alert('发送内容不能为空');
+    return;
+  }
 
-    if (!currentLandId.value || !advisorName || !content || submittingAdvice.value) {
-        return;
+  if (!currentLand.value || !currentAiContext.value) {
+    alert('未选择地块、上下文信息不足');
+    return;
+  }
+
+  try {
+    const response = generateMockAiResponse({
+      question: text,
+      context: currentAiContext.value
+    });
+
+    let conversation = currentConversation.value ?? null;
+
+    if (!conversation) {
+      conversation = createAiConversation({
+        landId: currentLandId.value,
+        title: text
+      });
     }
 
-    submittingAdvice.value = true;
+    appendAiMessage(conversation.id,
+      {
+        role: 'user',
+        content: text
+      });
 
-    try {
-        const res = await fetch('/api/advice', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                landId: Number(currentLandId.value),
-                advisorName,
-                content
-            })
-        });
+    appendAiMessage(conversation.id,
+      {
+        role: 'assistant',
+        content: response.content,
+        references: response.references,
+        taskDraft: response.taskDraft
+      }
+    );
+    messageText.value = '';
+  } catch (error) {
+    console.error(error);
+    alert(error.message);
+  }
+};
 
-        if (!res.ok) {
-            throw new Error("提交技术方案失败");
-        }
+const isTaskDraftSubmitDisabled = (message) => {
+  const form = taskDraftForms[message.id];
+  return !form ||
+    !form.assignee.trim() ||
+    !form.deadline ||
+    creatingTaskMessageId.value === message.id ||
+    createdTaskMessageIds.value.has(message.id);
+};
 
-        adviceForm.value.content = '';
+const confirmTaskDraft = (message) => {
+  const form = taskDraftForms[message.id];
 
-        toast('技术方案提交成功');
+  if (!currentConversation.value || !form || !message.taskDraft) {
+    alert("任务草稿不存在");
+    return;
+  }
 
-        await fetch('/api/advice/message', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                landId: Number(currentLandId.value),
-                sender: 'advisor',
-                text: `${advisorName} 提交了新的技术方案，请查看。`
-            })
-        });
+  if (!form.deadline || !form.deadline.trim()) {
+    alert("日期为空!");
+    return;
+  }
 
-        await loadAdvice(currentLandId.value);
-        await loadMessages(currentLandId.value);
-    } catch (error) {
-        console.error("提交技术方案失败：", error);
-        toast('提交技术方案失败', 'bg-red-500');
-    } finally {
-        submittingAdvice.value = false;
-    }
-}
+  const deadlineDate = new Date(form.deadline);
+
+  if (Number.isNaN(deadlineDate.getTime())) {
+    alert("日期无效");
+    return;
+  }
+
+  const validDeadline = deadlineDate.toISOString();
+
+  creatingTaskMessageId.value = message.id;
+
+  try {
+    createFarmTaskFromAiDraft({
+      conversationId: currentConversation.value.id,
+      messageId: message.id,
+      assignee: form.assignee,
+      deadline: validDeadline
+    });
+  } catch (error) {
+    alert("创建失败，原因是：" + error.message);
+    console.error(error);
+  } finally {
+    creatingTaskMessageId.value = '';
+  }
+};
 </script>

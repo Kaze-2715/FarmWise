@@ -331,6 +331,34 @@
                         </div>
                     </div>
                 </div>
+                <div v-if="currentReport.snapshot?.aiAdvice && shouldShowSnapshotSection('aiAdvice')"
+                    class="rounded-lg border border-emerald-100 bg-emerald-50/30 p-4">
+                    <h4 class="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <i class="fa fa-leaf text-emerald-600"></i>
+                        AI 顾问建议
+                    </h4>
+                    <div v-if="currentReport.snapshot.aiAdvice.length" class="space-y-3">
+                        <article v-for="advice in currentReport.snapshot.aiAdvice" :key="advice.messageId"
+                            class="rounded-lg border border-emerald-100 bg-white p-4">
+                            <p class="whitespace-pre-wrap text-sm leading-6 text-gray-700">{{ advice.content }}</p>
+                            <div v-if="advice.references?.length"
+                                class="mt-4 grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-2">
+                                <div v-for="reference in advice.references"
+                                    :key="`${reference.type}:${reference.sourceId}:${reference.label}`"
+                                    class="rounded-md bg-gray-50 px-3 py-2">
+                                    <p class="text-xs text-gray-400">{{ reference.label }}</p>
+                                    <p class="mt-1 text-sm font-medium text-gray-700">
+                                        {{ reference.value }}{{ reference.unit }}
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="mt-3 text-xs text-gray-400">{{ formatReportTime(advice.createdAt) }}</p>
+                        </article>
+                    </div>
+                    <p v-else class="rounded-lg bg-white px-4 py-8 text-center text-sm text-gray-500">
+                        当前报告时间范围内暂无 AI 建议
+                    </p>
+                </div>
                 <div class="pt-3 border-t border-gray-100 text-sm text-gray-500">
                     作者：{{ currentReport.creator }}
                 </div>
@@ -381,7 +409,8 @@ const {
     environmentThresholds,
     alerts,
     farmTasks,
-    reports
+    reports,
+    aiConversations
 } = useFarmStore();
 const types = ref(['comprehensive', 'device', 'environment', 'alert', 'task']);
 const allStatus = ref(['draft', 'generated', 'archived']);
@@ -523,6 +552,18 @@ const buildReportSnapshot = (landId, startDate, endDate) => {
         task.landId === landId &&
         isWithinDateRange(task.createdAt, startDate, endDate)
     );
+    const periodAiAdvice = aiConversations.value
+        .filter(conversation => conversation.landId === landId)
+        .flatMap(conversation => conversation.messages)
+        .filter(message =>
+            message.role === 'assistant' &&
+            isWithinDateRange(message.createdAt, startDate, endDate))
+        .map(message => ({
+            messageId: message.id,
+            content: message.content,
+            createdAt: message.createdAt,
+            references: message.references.map(reference => ({ ...reference }))
+        }));
 
     return {
         land: {
@@ -553,7 +594,8 @@ const buildReportSnapshot = (landId, startDate, endDate) => {
             processing: periodTasks.filter(task => task.status === 'processing').length,
             completed: periodTasks.filter(task => task.status === 'completed').length,
             cancelled: periodTasks.filter(task => task.status === 'cancelled').length
-        }
+        },
+        aiAdvice: periodAiAdvice
     };
 };
 
@@ -563,11 +605,16 @@ const buildReportSummary = (type, snapshot) => {
     ).length;
     const activeAlertCount = snapshot.alerts.pending + snapshot.alerts.processing;
     const activeTaskCount = snapshot.tasks.pending + snapshot.tasks.processing;
+    const aiAdviceCount = snapshot.aiAdvice.length;
+    const aiAdviceSummary = aiAdviceCount > 0
+        ? `本期收录了 ${aiAdviceCount} 条 AI 顾问建议。`
+        : '本期暂无 AI 顾问建议。';
 
     const summaryBuilders = {
         comprehensive: () =>
             `本期记录 ${snapshot.environment.length} 项环境指标，其中 ${abnormalEnvironmentCount} 项异常；` +
-            `存在 ${activeAlertCount} 条未结束预警和 ${activeTaskCount} 项未结束农事任务。`,
+            `存在 ${activeAlertCount} 条未结束预警和 ${activeTaskCount} 项未结束农事任务。` +
+            aiAdviceSummary,
         device: () =>
             `当前地块共有 ${snapshot.devices.total} 台设备，${snapshot.devices.online} 台在线，` +
             `${snapshot.devices.offline} 台离线，${snapshot.devices.lowBattery} 台处于低电量状态。`,
