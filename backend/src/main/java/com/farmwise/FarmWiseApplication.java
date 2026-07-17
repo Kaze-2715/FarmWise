@@ -1,4 +1,4 @@
-package com.agri.farmwise;
+package com.farmwise;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

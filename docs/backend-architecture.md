@@ -5,7 +5,7 @@
 后端重构采用前后端分离的模块化单体。业务模块在同一个 Spring Boot 应用中独立组织，共享本地事务；当前不引入微服务、服务注册、配置中心和分布式事务。
 
 ```text
-com.agri.farmwise
+com.farmwise
 ├── common
 ├── security
 ├── land
