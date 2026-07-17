@@ -1,0 +1,250 @@
+INSERT INTO roles (
+      code,
+      name,
+      description,
+      created_at
+  ) VALUES (
+        'farm_owner',
+        '农场主',
+        '管理地块、设备和农业生产业务',
+        UTC_TIMESTAMP(3)
+    ),
+    (
+        'data_analyst',
+        '数据分析员',
+        '查看监测数据、预警和报告',
+        UTC_TIMESTAMP(3)
+    ),
+    (
+        'sys_admin',
+        '系统管理员',
+        '管理用户、角色和系统权限',
+        UTC_TIMESTAMP(3)
+    );
+
+INSERT INTO permissions (
+    code,
+    name,
+    module,
+    description
+) VALUES
+    (
+        'land:read',
+        '查看地块',
+        'land',
+        '查看当前用户拥有的地块'
+    ),
+    (
+        'land:create',
+        '新增地块',
+        'land',
+        '为当前用户新增地块'
+    ),
+    (
+        'land:update',
+        '修改地块',
+        'land',
+        '修改当前用户拥有的地块'
+    ),
+    (
+        'land:delete',
+        '删除地块',
+        'land',
+        '删除当前用户拥有的地块'
+    ),
+    (
+        'device:read',
+        '查看设备',
+        'device',
+        '查看当前用户拥有的设备'
+    ),
+    (
+        'device:create',
+        '新增设备',
+        'device',
+        '为当前用户新增设备'
+    ),
+    (
+        'device:update',
+        '修改设备',
+        'device',
+        '修改当前用户拥有的设备'
+    ),
+    (
+        'device:delete',
+        '删除设备',
+        'device',
+        '删除当前用户拥有的设备'
+    ),
+    (
+        'device:control',
+        '控制设备',
+        'device',
+        '向当前用户拥有的设备发送控制指令'
+    );
+
+INSERT INTO permissions (
+    code,
+    name,
+    module,
+    description
+) VALUES
+    (
+        'planting_plan:read',
+        '查看种植计划',
+        'planting',
+        '查看地块的种植计划'
+    ),
+    (
+        'planting_plan:manage',
+        '管理种植计划',
+        'planting',
+        '新增、修改和删除种植计划'
+    ),
+    (
+        'environment:read',
+        '查看环境监测',
+        'monitoring',
+        '查看传感器读数和环境监测信息'
+    ),
+    (
+        'environment_threshold:manage',
+        '管理环境阈值',
+        'monitoring',
+        '新增、修改和删除地块环境阈值'
+    ),
+    (
+        'irrigation:read',
+        '查看灌溉信息',
+        'irrigation',
+        '查看智能灌溉配置和执行记录'
+    ),
+    (
+        'irrigation:configure',
+        '配置智能灌溉',
+        'irrigation',
+        '配置和删除地块智能灌溉规则'
+    ),
+    (
+        'alert:read',
+        '查看异常预警',
+        'alert',
+        '查看地块异常预警记录'
+    ),
+    (
+        'alert:manage',
+        '处理异常预警',
+        'alert',
+        '创建、处理、解决和忽略异常预警'
+    ),
+    (
+        'farm_task:read',
+        '查看农事任务',
+        'task',
+        '查看地块农事任务'
+    ),
+    (
+        'farm_task:manage',
+        '管理农事任务',
+        'task',
+        '创建和处理农事任务'
+    ),
+    (
+        'ai_advisor:use',
+        '使用 AI 顾问',
+        'ai',
+        '使用 AI 技术顾问和管理顾问对话'
+    ),
+    (
+        'report:read',
+        '查看报告',
+        'report',
+        '查看已生成的农业报告和快照'
+    ),
+    (
+        'report:generate',
+        '生成报告',
+        'report',
+        '生成农业业务报告和只读快照'
+    ),
+    (
+        'report:archive',
+        '归档报告',
+        'report',
+        '归档已生成的农业报告'
+    ),
+    (
+        'user:read',
+        '查看用户',
+        'security',
+        '查看系统用户及其角色信息'
+    ),
+    (
+        'user:grant',
+        '配置用户角色',
+        'security',
+        '配置系统用户拥有的角色'
+    ),
+    (
+        'role:read',
+        '查看角色权限',
+        'security',
+        '查看系统角色和权限信息'
+    ),
+    (
+        'role:manage',
+        '管理角色权限',
+        'security',
+        '配置系统角色拥有的权限'
+    );
+
+INSERT INTO role_permissions (
+    role_code,
+    permission_code,
+    created_at
+)
+SELECT
+    'farm_owner',
+    code,
+    UTC_TIMESTAMP(3)
+FROM permissions
+WHERE code NOT IN (
+    'report:read',
+    'report:generate',
+    'report:archive',
+    'user:read',
+    'user:grant',
+    'role:read',
+    'role:manage'
+);
+
+INSERT INTO role_permissions (
+    role_code,
+    permission_code,
+    created_at
+)
+SELECT
+    'data_analyst',
+    code,
+    UTC_TIMESTAMP(3)
+FROM permissions
+WHERE code IN (
+    'environment:read',
+    'alert:read',
+    'farm_task:read',
+    'ai_advisor:use',
+    'report:read',
+    'report:generate',
+    'report:archive'
+);
+
+INSERT INTO role_permissions (
+    role_code,
+    permission_code,
+    created_at
+)
+SELECT
+    'sys_admin',
+    code,
+    UTC_TIMESTAMP(3)
+FROM permissions;

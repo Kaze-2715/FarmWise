@@ -2,7 +2,7 @@ spring:
   application:
     name: farmwise-backend
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/farmwise_v2?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/farmwise_dev?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
     username: ${DB_USERNAME:farmwise}
     password: ${DB_PASSWORD:farmwise}
   data:
