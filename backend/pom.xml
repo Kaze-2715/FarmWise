@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.agri</groupId>
+    <groupId>com.farmwise</groupId>
     <artifactId>farmwise-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>farmwise-backend</name>

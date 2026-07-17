@@ -1,4 +1,4 @@
-package com.agri.farmwise.common.exception;
+package com.farmwise.common.exception;
 
 public class BizException extends RuntimeException {
 
