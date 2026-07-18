@@ -28,3 +28,10 @@ management:
 
 server:
   port: ${SERVER_PORT:8080}
+
+farmwise:
+  security:
+    jwt:
+      issuer: farmwise
+      access-token-ttl: 15m
+      secret: ${JWT_SECRET}
