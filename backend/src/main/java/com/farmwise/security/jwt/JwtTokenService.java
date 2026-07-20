@@ -49,4 +49,8 @@ public class JwtTokenService {
 
         return jwtEncoder.encode(parameters).getTokenValue();
     }
+
+    public long accessTokenTtlSeconds() {
+        return properties.accessTokenTtl().toSeconds();
+    }
 }
