@@ -35,3 +35,7 @@ farmwise:
       issuer: farmwise
       access-token-ttl: 15m
       secret: ${JWT_SECRET}
+    refresh-token:
+      ttl: 30d
+      cookie-name: farmwise_refresh_token
+      secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}

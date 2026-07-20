@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import com.farmwise.security.handler.RestAccessDeniedHandler;
 import com.farmwise.security.handler.RestAuthenticationEntryPoint;
 import com.farmwise.security.jwt.JwtProperties;
+import com.farmwise.security.token.RefreshTokenProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +29,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({
+        JwtProperties.class,
+        RefreshTokenProperties.class
+})
 public class SecurityConfig {
 
     @Bean
