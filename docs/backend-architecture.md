@@ -6,8 +6,10 @@
 
 ```text
 com.farmwise
+├── auth
 ├── common
 ├── security
+├── user
 ├── land
 ├── device
 ├── monitoring
@@ -89,10 +91,10 @@ Spring Boot 4.1 支持 Java 17 至 26；MyBatis Starter 4 对应 Spring Boot 4.x
 
 ## 实施顺序
 
-1. 设计 ER 关系、字段、索引和删除约束。
-2. 清理 `pom.xml`，建立 Spring Boot 4.1 模块化骨架。
-3. 引入 Flyway，创建 `farmwise_v2` 第一版结构和演示数据。
-4. 完成 Spring Security、JWT 和 RBAC 基础能力。
-5. 按 [接口文档](api-contract.md) 顺序实现地块到报告模块。
-6. 接入 Redis、EMQX/MQTT 和 Spring AI。
-7. 最后补充 Docker Compose 与可观测性配置。
+1. [x] 设计 ER 关系、字段、索引和删除约束。
+2. [x] 清理 `pom.xml`，建立 Spring Boot 4.1 模块化骨架。
+3. [x] 引入 Flyway，创建第一版结构以及角色和权限种子数据。
+4. [x] 完成 Spring Security、JWT、RBAC 和认证接口。
+5. [ ] 完成用户资料和文件接口，再按 [接口文档](api-contract.md) 顺序实现地块到报告模块。
+6. [ ] 接入设备状态、EMQX/MQTT 和 Spring AI 业务能力。
+7. [ ] 补充 Docker Compose 与可观测性配置。

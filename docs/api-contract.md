@@ -45,15 +45,17 @@
 
 ## 实现顺序
 
+下表中的“已实现”表示后端代码已合并到 `main` 并通过编译，不代表已经完成前后端和外部服务联调；“已确认”表示接口契约已经确定但后端尚未实现。
+
 ### 认证与 RBAC 基础
 
 | 顺序 | 接口 | 权限 | 状态 |
 | --- | --- | --- | --- |
-| 1 | `POST /api/auth/verification-codes` | 无 | 已确认 |
-| 2 | `POST /api/auth/register` | 无 | 已确认 |
-| 3 | `POST /api/auth/login` | 无 | 已确认 |
-| 4 | `POST /api/auth/refresh` | 无 | 已确认 |
-| 5 | `POST /api/auth/logout` | 已登录 | 已确认 |
+| 1 | `POST /api/auth/verification-codes` | 无 | 已实现 |
+| 2 | `POST /api/auth/register` | 无 | 已实现 |
+| 3 | `POST /api/auth/login` | 无 | 已实现 |
+| 4 | `POST /api/auth/refresh` | 无 | 已实现 |
+| 5 | `POST /api/auth/logout` | 已登录 | 已实现 |
 | 6 | `GET /api/users/me` | 已登录 | 已确认 |
 | 7 | `PUT /api/users/me` | 已登录 | 已确认 |
 | 8 | `POST /api/files` | 已登录 | 已确认 |
