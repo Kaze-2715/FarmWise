@@ -2,6 +2,9 @@ package com.farmwise.user.model;
 
 import java.time.LocalDateTime;
 
+import lombok.Builder;
+
+@Builder(toBuilder = true)
 public record User(
         String id,
         String username,
@@ -19,6 +22,7 @@ public record User(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime lastLoginAt) {
+
     public static User registered(
             String id,
             String username,

@@ -63,6 +63,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/error",
                                 "/actuator/health")
+                                        .permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                                "/api/files/*/content"
+                                        )
                         .permitAll()
                         .anyRequest()
                         .authenticated())

@@ -15,6 +15,10 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:}
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 mybatis:
   configuration:
@@ -39,3 +43,7 @@ farmwise:
       ttl: 30d
       cookie-name: farmwise_refresh_token
       secure: ${REFRESH_TOKEN_COOKIE_SECURE:false}
+  file:
+    storage:
+      local:
+        root-directory: ${FILE_STORAGE_ROOT:./data/uploads}

@@ -3,6 +3,7 @@ package com.farmwise.user.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.farmwise.file.dto.FileUrls;
 import com.farmwise.user.model.User;
 
 public record UserProfile(
@@ -35,7 +36,8 @@ public record UserProfile(
                 user.email(),
                 user.emailVerified(),
                 user.phone(),
-                null,
+                user.avatarFileId() == null ? null :
+                FileUrls.content(user.avatarFileId()),
                 user.organization(),
                 user.province(),
                 user.city(),

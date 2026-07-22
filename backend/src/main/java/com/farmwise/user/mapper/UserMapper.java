@@ -99,4 +99,39 @@ public interface UserMapper {
     int updateLastLoginAt(
             @Param("userId") String userId,
             @Param("lastLoginAt") LocalDateTime lastLoginAt);
+
+    @Select("""
+            SELECT EXISTS(
+                SELECT * FROM users WHERE username = #{username} AND id <> #{userId}
+            )
+            """)
+    boolean existsByUsernameAndIdNot(
+            @Param("username") String username,
+            @Param("userId") String userId);
+
+    @Select("""
+            SELECT EXISTS(
+                SELECT * FROM users WHERE email = #{email} AND id <> #{userId}
+            )
+            """)
+    boolean existsByEmailAndIdNot(
+            @Param("email") String email,
+            @Param("userId") String userId);
+
+    @Update("""
+            UPDATE users
+            SET username = #{username},
+                real_name = #{realName},
+                email = #{email},
+                email_verified = #{emailVerified},
+                phone = #{phone},
+                avatar_file_id = #{avatarFileId},
+                organization = #{organization},
+                province = #{province},
+                city = #{city},
+                position = #{position},
+                updated_at = #{updatedAt}
+            WHERE id = #{id}
+            """)
+    int updateProfile(User user);
 }

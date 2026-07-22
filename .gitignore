@@ -20,3 +20,5 @@ Thumbs.db
 
 # Agent files
 AGENTS.md
+/data/uploads/
+/backend/data/uploads/

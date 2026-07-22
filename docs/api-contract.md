@@ -56,9 +56,10 @@
 | 3 | `POST /api/auth/login` | 无 | 已实现 |
 | 4 | `POST /api/auth/refresh` | 无 | 已实现 |
 | 5 | `POST /api/auth/logout` | 已登录 | 已实现 |
-| 6 | `GET /api/users/me` | 已登录 | 已确认 |
-| 7 | `PUT /api/users/me` | 已登录 | 已确认 |
-| 8 | `POST /api/files` | 已登录 | 已确认 |
+| 6 | `GET /api/users/me` | 已登录 | 已实现 |
+| 7 | `PUT /api/users/me` | 已登录 | 已实现 |
+| 8 | `POST /api/files` | 已登录 | 已实现 |
+| 9 | `GET /api/files/{fileId}/content` | 无 | 已实现 |
 
 ### 农业业务
 
@@ -133,6 +134,7 @@
 | `GET /api/users/me` | 无 | `UserProfile` |
 | `PUT /api/users/me` | `username, realName?, email, phone?, organization?, province?, city?, position?, avatarFileId?, verificationCode?` | `UserProfile`；修改邮箱时必须提交新邮箱的 `change_email` 验证码；未修改邮箱时忽略验证码 |
 | `POST /api/files` | `multipart/form-data`：`file, purpose`；当前 `purpose=avatar` | `201 FileResource`；头像只允许 JPEG、PNG、WebP，最大 5 MB；上传成功不自动修改用户资料 |
+| `GET /api/files/{fileId}/content` | 路径参数 `fileId` | 返回文件二进制内容；当前头像内容公开读取，附件接入时另行补充用途授权 |
 
 密码只保存哈希值。访问令牌过期时间和刷新令牌有效期由配置决定；退出后访问令牌最多存活到自身过期。
 
