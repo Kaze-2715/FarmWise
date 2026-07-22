@@ -48,7 +48,7 @@ Spring Boot 4.1 支持 Java 17 至 26；MyBatis Starter 4 对应 Spring Boot 4.x
 - 设备通过 MQTT 与 EMQX 通信；浏览器只调用 REST API，不直接连接设备。
 - AI 完整聊天历史保存在 MySQL，Spring AI Chat Memory 只负责模型需要的短期上下文。
 - 报告快照和 AI 参考数据使用 MySQL JSON 字段，生成后保持只读。
-- 用户头像和业务附件通过统一文件服务管理；MySQL 保存文件元数据和业务关联，二进制内容由可替换的对象存储实现保存。
+- 用户头像和业务附件通过统一文件服务管理；MySQL 保存文件元数据和业务关联，二进制内容当前由可替换的本地存储实现保存。
 - REST 接口只使用文件 ID 关联业务对象，不暴露对象存储路径；后续接入 OSS 时不改变用户资料和附件接口。
 - 数据库时间统一保存 UTC，面向用户时转换为北京时间。
 
@@ -96,6 +96,6 @@ Spring Boot 4.1 支持 Java 17 至 26；MyBatis Starter 4 对应 Spring Boot 4.x
 3. [x] 引入 Flyway，创建第一版结构以及角色和权限种子数据。
 4. [x] 完成 Spring Security、JWT、RBAC 和认证接口。
 5. [x] 完成用户资料和本地头像文件接口。
-6. [ ] 按 [接口文档](api-contract.md) 顺序实现地块到报告模块。
+6. [ ] 按 [接口文档](api-contract.md) 顺序实现地块到报告模块；地块基础 CRUD 已完成，下一步实现设备接口。
 7. [ ] 接入设备状态、EMQX/MQTT 和 Spring AI 业务能力。
 8. [ ] 补充 Docker Compose 与可观测性配置。

@@ -13,7 +13,7 @@ FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆
 - 可观测性：Actuator、Micrometer
 - 部署：Docker Compose、Nginx、Spring Boot
 
-项目采用前后端分离的模块化单体架构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。后端已完成数据库基础、认证授权和认证接口，农业业务接口尚待实现；架构、选型理由和淘汰项见 [后端架构说明](docs/backend-architecture.md)。
+项目采用前后端分离的模块化单体架构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。后端已完成数据库基础、认证授权、认证接口、当前用户资料、本地头像文件接口和地块基础 CRUD；下一步实现设备接口。架构、选型理由和淘汰项见 [后端架构说明](docs/backend-architecture.md)。
 
 ## 开发计划
 
@@ -50,7 +50,7 @@ FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆
 - [x] 完成 Spring Security、JWT、RBAC、统一 401/403 响应和接口权限拦截基础。
 - [x] 实现验证码、注册、登录、访问令牌、刷新令牌轮换和退出接口，并使用 Redis 管理验证码与刷新令牌。
 - [x] 实现当前用户资料和头像文件接口，并使用可替换存储接口管理本地头像文件。
-- [ ] 按接口文档顺序实现地块、设备、监测、灌溉、预警、任务、AI 顾问和报告接口。
+- [ ] 按接口文档顺序实现地块、设备、监测、灌溉、预警、任务、AI 顾问和报告接口；地块基础 CRUD 已完成，下一步实现设备接口。
 - [ ] 使用 Redis 管理设备状态和短期 AI 上下文。
 - [ ] 使用 EMQX + MQTT 处理设备数据和控制指令。
 - [ ] 使用 Spring AI 实现技术顾问的上下文、工具调用和任务草稿。
