@@ -1,0 +1,28 @@
+services:
+  emqx:
+    image: emqx/emqx:5.8.8
+    restart: unless-stopped
+
+    environment:
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:?请配置EMQX控制台密码}
+      EMQX_AUTHORIZATION__NO_MATCH: deny
+
+    ports:
+      - "1883:1883"
+      - "8083:8083"
+      - "18083:18083"
+
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+volumes:
+  emqx-data:
+  emqx-log:

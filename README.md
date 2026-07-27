@@ -13,7 +13,33 @@ FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆
 - 可观测性：Actuator、Micrometer
 - 部署：Docker Compose、Nginx、Spring Boot
 
-项目采用前后端分离的模块化单体架构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。后端已完成数据库基础、认证授权、认证接口、当前用户资料、本地头像文件接口和地块基础 CRUD；下一步实现设备接口。架构、选型理由和淘汰项见 [后端架构说明](docs/backend-architecture.md)。
+项目采用前后端分离的模块化单体架构：后端位于 `backend/`，前端位于 `frontend/farmwise-vue/`。后端已完成数据库基础、认证授权、认证接口、当前用户资料、本地头像文件接口、地块基础 CRUD、设备 CRUD、MQTT 设备通信和灌溉控制；下一步实现种植计划和环境监测接口。架构、选型理由和淘汰项见 [后端架构说明](docs/backend-architecture.md)。
+
+## 本地启动后端
+
+首次启动时复制本地环境变量模板：
+
+```bash
+cp .env.example .env
+```
+
+使用 `openssl rand -base64 32` 生成 JWT 密钥，并在 `.env` 中填写邮件、EMQX 等本地凭据。`.env` 已被 Git 忽略，不得提交真实凭据。
+
+以后统一从项目根目录运行：
+
+```bash
+./run-backend-local.sh
+```
+
+该脚本会自动加载 `.env`，检查 JWT、邮件和 MQTT 的必需配置，然后启动 Spring Boot。无需在每个新终端中重复执行 `source .env`。
+
+需要运行虚拟设备集群时，在另一个终端执行：
+
+```bash
+./run-simulator-local.sh
+```
+
+模拟器读取 `simulator/devices.json`，连接 EMQX 并持续产生传感器遥测，同时模拟灌溉控制器接收命令和返回执行回执。
 
 ## 开发计划
 
@@ -50,9 +76,10 @@ FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆
 - [x] 完成 Spring Security、JWT、RBAC、统一 401/403 响应和接口权限拦截基础。
 - [x] 实现验证码、注册、登录、访问令牌、刷新令牌轮换和退出接口，并使用 Redis 管理验证码与刷新令牌。
 - [x] 实现当前用户资料和头像文件接口，并使用可替换存储接口管理本地头像文件。
-- [ ] 按接口文档顺序实现地块、设备、监测、灌溉、预警、任务、AI 顾问和报告接口；地块基础 CRUD 已完成，下一步实现设备接口。
+- [x] 完成地块基础 CRUD、设备 CRUD、MQTT 遥测与状态处理、虚拟设备集群、人工和自动灌溉控制。
+- [ ] 按接口文档继续实现种植计划、环境监测、预警、任务、AI 顾问和报告接口。
 - [ ] 使用 Redis 管理设备状态和短期 AI 上下文。
-- [ ] 使用 EMQX + MQTT 处理设备数据和控制指令。
+- [x] 使用 EMQX + MQTT 处理设备数据和控制指令。
 - [ ] 使用 Spring AI 实现技术顾问的上下文、工具调用和任务草稿。
 - [ ] 使用 Docker Compose 编排 MySQL、Redis、EMQX 和应用服务。
 

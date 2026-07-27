@@ -47,3 +47,19 @@ farmwise:
     storage:
       local:
         root-directory: ${FILE_STORAGE_ROOT:./data/uploads}
+
+  mqtt:
+    enabled: ${MQTT_ENABLED:false}
+    broker-uri: ${MQTT_BROKER_URI:tcp://localhost:1883}
+    client-id: ${MQTT_CLIENT_ID:farmwise-backend-local}
+    telemetry-topic: ${MQTT_TELEMETRY_TOPIC:farmwise/v1/devices/+/telemetry}
+    status-topic: ${MQTT_STATUS_TOPIC:farmwise/v1/devices/+/status}
+    command-topic: ${MQTT_COMMAND_TOPIC:farmwise/v1/devices/%s/commands}
+    command-ack-topic: ${MQTT_COMMAND_ACK_TOPIC:farmwise/v1/devices/+/command-acks}
+    qos: ${MQTT_QOS:1}
+    connection-timeout-seconds: ${MQTT_CONNECTION_TIMEOUT_SECONDS:10}
+    offline-timeout-seconds: ${MQTT_OFFLINE_TIMEOUT_SECONDS:60}
+    offline-scan-interval-milliseconds: ${MQTT_OFFLINE_SCAN_INTERVAL_MILLISECONDS:30000}
+    keep-alive-seconds: ${MQTT_KEEP_ALIVE_SECONDS:30}
+    username: ${MQTT_USERNAME:}
+    password: ${MQTT_PASSWORD:}

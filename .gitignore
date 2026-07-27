@@ -22,3 +22,8 @@ Thumbs.db
 AGENTS.md
 /data/uploads/
 /backend/data/uploads/
+
+# Local environment variables
+.env
+/simulator/devices.json
+/simulator/target/

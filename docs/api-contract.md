@@ -82,31 +82,33 @@
 | 15 | `POST /api/lands/{landId}/environment-thresholds` | `environment_threshold:manage` | 已确认 |
 | 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已确认 |
 | 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已确认 |
-| 18 | `GET /api/lands/{landId}/irrigation-config` | `irrigation:read` | 已确认 |
-| 19 | `PUT /api/lands/{landId}/irrigation-config` | `irrigation:configure` | 已确认 |
-| 20 | `DELETE /api/lands/{landId}/irrigation-config` | `irrigation:configure` | 已确认 |
-| 21 | `GET /api/irrigation-records` | `irrigation:read` | 已确认 |
-| 22 | `POST /api/irrigations` | `device:control` | 已确认 |
-| 23 | `POST /api/irrigations/{recordId}/stop` | `device:control` | 已确认 |
-| 24 | `GET /api/alerts` | `alert:read` | 已确认 |
-| 25 | `POST /api/alerts` | `alert:manage` | 已确认 |
-| 26 | `POST /api/alerts/{alertId}/start` | `alert:manage` | 已确认 |
-| 27 | `POST /api/alerts/{alertId}/resolve` | `alert:manage` | 已确认 |
-| 28 | `POST /api/alerts/{alertId}/ignore` | `alert:manage` | 已确认 |
-| 29 | `GET /api/farm-tasks` | `farm_task:read` | 已确认 |
-| 30 | `POST /api/farm-tasks` | `farm_task:manage` | 已确认 |
-| 31 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已确认 |
-| 32 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已确认 |
-| 33 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已确认 |
-| 34 | `GET /api/ai/conversations` | `ai_advisor:use` | 已确认 |
-| 35 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
-| 36 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
-| 37 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已确认 |
-| 38 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已确认 |
-| 39 | `GET /api/reports` | `report:read` | 已确认 |
-| 40 | `GET /api/reports/{reportId}` | `report:read` | 已确认 |
-| 41 | `POST /api/reports` | `report:generate` | 已确认 |
-| 42 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已确认 |
+| 18 | `GET /api/lands/{landId}/irrigation-configs` | `irrigation:read` | 已确认 |
+| 19 | `POST /api/lands/{landId}/irrigation-configs` | `irrigation:configure` | 已确认 |
+| 20 | `PUT /api/lands/{landId}/irrigation-configs/{configId}` | `irrigation:configure` | 已确认 |
+| 21 | `POST /api/lands/{landId}/irrigation-configs/{configId}/enable` | `irrigation:configure` | 已确认 |
+| 22 | `DELETE /api/lands/{landId}/irrigation-configs/{configId}` | `irrigation:configure` | 已确认 |
+| 23 | `GET /api/irrigation-records` | `irrigation:read` | 已确认 |
+| 24 | `POST /api/irrigations` | `device:control` | 已确认 |
+| 25 | `POST /api/irrigations/{recordId}/stop` | `device:control` | 已确认 |
+| 26 | `GET /api/alerts` | `alert:read` | 已确认 |
+| 27 | `POST /api/alerts` | `alert:manage` | 已确认 |
+| 28 | `POST /api/alerts/{alertId}/start` | `alert:manage` | 已确认 |
+| 29 | `POST /api/alerts/{alertId}/resolve` | `alert:manage` | 已确认 |
+| 30 | `POST /api/alerts/{alertId}/ignore` | `alert:manage` | 已确认 |
+| 31 | `GET /api/farm-tasks` | `farm_task:read` | 已确认 |
+| 32 | `POST /api/farm-tasks` | `farm_task:manage` | 已确认 |
+| 33 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已确认 |
+| 34 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已确认 |
+| 35 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已确认 |
+| 36 | `GET /api/ai/conversations` | `ai_advisor:use` | 已确认 |
+| 37 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
+| 38 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
+| 39 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已确认 |
+| 40 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已确认 |
+| 41 | `GET /api/reports` | `report:read` | 已确认 |
+| 42 | `GET /api/reports/{reportId}` | `report:read` | 已确认 |
+| 43 | `POST /api/reports` | `report:generate` | 已确认 |
+| 44 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已确认 |
 
 ### RBAC 后台管理
 
@@ -209,20 +211,22 @@
 
 ## 7. 智能灌溉
 
-`IrrigationConfig`：`landId`、`controllerDeviceId`、`mode`、`enabled`、`triggerMoisture`、`targetMoisture`、`defaultDuration`、`updatedBy`、`updatedAt`。
+`IrrigationConfig`：`id`、`landId`、`name`、`controllerDeviceIds`、`mode`、`enabled`、`triggerMoisture`、`targetMoisture`、`defaultDuration`、`updatedBy`、`updatedAt`。
 
-`IrrigationRecord`：`id`、`landId`、`controllerDeviceId`、`source`、`status`、`startedAt|null`、`endedAt|null`、`plannedDuration`、`duration`、`waterUsage|null`、`triggerReason`、`operator`。
+`IrrigationRecord`：`id`、`batchId`、`landId`、`controllerDeviceId`、`source`、`status`、`startedAt|null`、`endedAt|null`、`plannedDuration`、`duration`、`waterUsage|null`、`triggerReason`、`operatorId|null`。
 
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
-| `GET /api/lands/{landId}/irrigation-config` | 无 | `IrrigationConfig`；未配置返回 `404` |
-| `PUT /api/lands/{landId}/irrigation-config` | `controllerDeviceId, mode, enabled, triggerMoisture, targetMoisture, defaultDuration` | `IrrigationConfig`；不存在时创建，存在时更新 |
-| `DELETE /api/lands/{landId}/irrigation-config` | 无请求体 | `204`；存在待执行或执行中的灌溉记录时返回 `409`，历史记录保留 |
+| `GET /api/lands/{landId}/irrigation-configs` | 无 | `IrrigationConfig[]`；按更新时间倒序 |
+| `POST /api/lands/{landId}/irrigation-configs` | `name, controllerDeviceIds, mode, enabled, triggerMoisture, targetMoisture, defaultDuration` | `201 IrrigationConfig` |
+| `PUT /api/lands/{landId}/irrigation-configs/{configId}` | 与新增相同 | `IrrigationConfig` |
+| `POST /api/lands/{landId}/irrigation-configs/{configId}/enable` | 无请求体 | `204`；启用目标配置并自动禁用同一地块的其他配置 |
+| `DELETE /api/lands/{landId}/irrigation-configs/{configId}` | 无请求体 | `204`；存在待执行或执行中的灌溉记录时返回 `409`，历史记录保留 |
 | `GET /api/irrigation-records` | 必填 `landId`；可选 `startAt, endAt, status` | `IrrigationRecord[]`，按创建时间倒序 |
-| `POST /api/irrigations` | `landId, controllerDeviceId, plannedDuration` | `202 IrrigationRecord`；创建人工灌溉指令 |
+| `POST /api/irrigations` | `landId, controllerDeviceIds, plannedDuration` | `202 IrrigationBatchResponse`；为每台控制器创建一条人工灌溉记录 |
 | `POST /api/irrigations/{recordId}/stop` | 无请求体 | `202 IrrigationRecord`；只允许停止执行中的记录 |
 
-`triggerMoisture` 和 `targetMoisture` 范围为 `0～100` 且前者小于后者；时长范围为 `1～180` 分钟。控制器必须在线，同一控制器存在待执行或执行中记录时不得重复启动。
+同一地块的配置名称不能重复，最多只能启用一个配置，也允许全部禁用。创建或更新启用配置时，后端在同一事务中自动禁用该地块的其他配置。`triggerMoisture` 和 `targetMoisture` 范围为 `0～100` 且前者小于后者；时长范围为 `1～180` 分钟。控制器必须在线，同一控制器存在待执行或执行中记录时不得重复启动。
 
 ## 8. 异常预警
 
@@ -235,7 +239,7 @@
 | --- | --- | --- |
 | `GET /api/alerts` | 必填 `landId`；可选 `type, severity, status` | `Alert[]`，按发生时间倒序 |
 | `POST /api/alerts` | `landId, type, severity, title, description, suggestion, occurredAt, source` | `201 Alert`；初始 `status=pending` |
-| `POST /api/alerts/{alertId}/start` | `createTask`；为 `true` 时附带 `taskType, priority, assignee, deadline` | `Alert`；状态改为 `processing`，任务与状态变更在同一事务完成 |
+| `POST /api/alerts/{alertId}/start` | `createTask`；为 `true` 时附带 `taskType, priority, assigneeId, deadline` | `Alert`；状态改为 `processing`，任务与状态变更在同一事务完成 |
 | `POST /api/alerts/{alertId}/resolve` | `measure, handledAt, result, remark?` | `Alert`；状态改为 `resolved` |
 | `POST /api/alerts/{alertId}/ignore` | `remark` | `Alert`；状态改为 `ignored` |
 
@@ -243,12 +247,12 @@
 
 ## 9. 农事任务
 
-`FarmTask`：`id`、`landId`、`sourceType`、`sourceId|null`、`taskType`、`title`、`description`、`priority`、`status`、`assignee`、`deadline`、`createdAt`、`completedAt|null`、`result`、`remark`。
+`FarmTask`：`id`、`landId`、`sourceType`、`sourceId|null`、`taskType`、`title`、`description`、`priority`、`status`、`assigneeId`、`deadline`、`createdAt`、`completedAt|null`、`result`、`remark`。
 
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
 | `GET /api/farm-tasks` | 必填 `landId`；可选 `taskType, priority, status` | `FarmTask[]`，按创建时间倒序 |
-| `POST /api/farm-tasks` | `landId, taskType, title, description, priority, assignee, deadline, remark?` | `201 FarmTask`；后端设置 `sourceType=manual, status=pending` |
+| `POST /api/farm-tasks` | `landId, taskType, title, description, priority, assigneeId, deadline, remark?` | `201 FarmTask`；后端设置 `sourceType=manual, status=pending` |
 | `POST /api/farm-tasks/{taskId}/start` | 无请求体 | `FarmTask`；`pending → processing` |
 | `POST /api/farm-tasks/{taskId}/complete` | `result` | `FarmTask`；`processing → completed` |
 | `POST /api/farm-tasks/{taskId}/cancel` | `reason` | `FarmTask`；`pending/processing → cancelled` |
@@ -262,21 +266,21 @@
 `AiMessage`：`id`、`role`、`content`、`createdAt`、`references`、`taskDraft|null`。
 
 - `references` 项：`{ type, sourceId, label, value, unit }`
-- `taskDraft`：`{ taskType, title, description, priority, assignee, deadline }`
+- `taskDraft`：`{ taskType, title, description, priority, assigneeId, deadline }`
 
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
 | `GET /api/ai/conversations` | 必填 `landId`；可选 `status`，默认 `active` | `AiConversation[]` |
 | `POST /api/ai/conversations` | `landId, title` | `201 AiConversation`；同一地块只能有一个进行中对话 |
 | `POST /api/ai/conversations/{conversationId}/messages` | `content` | `{ userMessage, assistantMessage }`；后端构建上下文、调用模型并保存两条消息 |
-| `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `assignee, deadline` | `201 FarmTask`；从该 AI 消息保存的任务草稿创建 |
+| `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `assigneeId, deadline` | `201 FarmTask`；从该 AI 消息保存的任务草稿创建 |
 | `POST /api/ai/conversations/{conversationId}/close` | 无请求体 | `AiConversation`；仅允许将 `active`（进行中）改为 `closed`（已结束） |
 
 前端只提交问题，不提交上下文、AI 回复、参考数据或任务草稿。同一 AI 消息最多生成一个任务。
 
 ## 11. 报告中心
 
-`ReportSummary`：`id`、`landId`、`type`、`title`、`startDate`、`endDate`、`status`、`creator`、`createdAt`、`generatedAt`、`summary`。
+`ReportSummary`：`id`、`landId`、`type`、`title`、`startDate`、`endDate`、`status`、`creatorId`、`createdAt`、`generatedAt`、`summary`。
 
 `Report` 在 `ReportSummary` 基础上增加只读 `snapshot`：
 
