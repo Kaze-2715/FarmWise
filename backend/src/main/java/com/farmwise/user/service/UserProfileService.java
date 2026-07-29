@@ -109,8 +109,8 @@ public class UserProfileService {
     private User buildUpdatedUser(
             User currentUser,
             UpdateUserProfileRequest request) {
-        String username = request.username().trim();
-        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        String username = request.username().strip();
+        String email = request.email().strip().toLowerCase(Locale.ROOT);
         String realName = normalizeOptional(request.realName());
         String phone = normalizeOptional(request.phone());
         String organization = normalizeOptional(request.organization());
@@ -146,7 +146,7 @@ public class UserProfileService {
         if (value == null) {
             return null;
         }
-        value = value.trim();
+        value = value.strip();
         if (value.isBlank()) {
             return null;
         }

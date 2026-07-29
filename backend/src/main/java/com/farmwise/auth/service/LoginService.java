@@ -63,7 +63,7 @@ public class LoginService {
     }
 
     private User findUser(LoginRequest request) {
-        String account = request.account().trim();
+        String account = request.account().strip();
 
         Optional<User> user;
 

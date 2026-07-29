@@ -34,7 +34,7 @@ public class VerificationCodeStore {
     }
 
     private String buildKey(String email, String scene) {
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        String normalizedEmail = email.strip().toLowerCase(Locale.ROOT);
 
         return "auth:verification-code:%s:%s".formatted(scene, normalizedEmail);
     }

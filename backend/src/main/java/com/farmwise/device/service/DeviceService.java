@@ -170,7 +170,7 @@ public class DeviceService {
         if (value == null) {
             return null;
         }
-        value = value.trim();
+        value = value.strip();
         if (value.isBlank()) {
             return null;
         }

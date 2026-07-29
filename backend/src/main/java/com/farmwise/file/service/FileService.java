@@ -84,7 +84,7 @@ public class FileService {
         if (originalName == null) {
             return "avatar";
         }
-        originalName = StringUtils.cleanPath(originalName.trim());
+        originalName = StringUtils.cleanPath(originalName.strip());
         originalName = StringUtils.getFilename(originalName);
 
         if (originalName.isBlank()) {

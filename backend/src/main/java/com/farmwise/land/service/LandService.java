@@ -145,7 +145,7 @@ public class LandService {
             throw new BizException(HttpStatus.BAD_REQUEST, "字符串对象不应为空");
         }
 
-        value = value.trim();
+        value = value.strip();
 
         if (value.isBlank()) {
             throw new BizException(HttpStatus.BAD_REQUEST, "字符串内容不应为空");
@@ -158,7 +158,7 @@ public class LandService {
         if (value == null) {
             return null;
         }
-        value = value.trim();
+        value = value.strip();
         if (value.isBlank()) {
             return null;
         }

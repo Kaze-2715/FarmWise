@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.farmwise.device.capability.DeviceMetricCapabilities;
 import com.farmwise.device.event.SoilMoistureReportedEvent;
 import com.farmwise.device.mapper.DeviceMapper;
 import com.farmwise.device.mapper.TelemetryMapper;
@@ -37,20 +38,6 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class MqttService {
     private static final String TOPIC_FILTER = "farmwise/v1/devices/+/";
-
-    private static final Map<String, Set<String>> ALLOWED_METRICS_BY_DEVICE_TYPE =
-            Map.of("soil_moisture_sensor",
-                   Set.of("soil_moisture"),
-                   "air_temp_humidity_sensor",
-                   Set.of("air_temperature", "air_humidity"),
-                   "light_sensor",
-                   Set.of("light"),
-                   "soil_ph_sensor",
-                   Set.of("soil_ph"),
-                   "pest_camera",
-                   Set.of(),
-                   "irrigation_controller",
-                   Set.of());
 
     private static final Map<String, String> UNIT_BY_METRIC =
             Map.of("soil_moisture",
@@ -278,7 +265,8 @@ public class MqttService {
             throw new IllegalArgumentException("readings 不能为空");
         }
 
-        Set<String> allowedMetrics = ALLOWED_METRICS_BY_DEVICE_TYPE.get(device.deviceType());
+        Set<String> allowedMetrics =
+                DeviceMetricCapabilities.sensorMetricsForDeviceType(device.deviceType());
 
         if (allowedMetrics == null) {
             throw new IllegalArgumentException("不支持的设备类型：" + device.deviceType());
@@ -305,11 +293,11 @@ public class MqttService {
 
         private String extractDeviceId(String topic, String type) {
             String[] levels = topic.split("/", -1);
-            if (type == null || type.trim().isBlank()) {
+            if (type == null || type.isBlank()) {
                 throw new IllegalArgumentException("topic 的类型不正确");
             }
 
-            type = type.trim();
+            type = type.strip();
 
             if (levels.length != 5 || !"farmwise".equals(levels[0]) || !"v1".equals(levels[1])
                 || !"devices".equals(levels[2]) || !type.equals(levels[4])) {

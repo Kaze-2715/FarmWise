@@ -62,20 +62,20 @@ public interface DeviceMapper {
                 created_at,
                 updated_at
             ) VALUES (
-#{id },
-#{ownerId },
-#{landId },
-#{name },
-#{deviceType },
-#{status },
-#{battery },
-#{lastReportedAt },
-#{model },
-#{installDate },
-#{longitude },
-#{latitude },
-#{createdAt },
-#{updatedAt }
+                #{id },
+                #{ownerId },
+                #{landId },
+                #{name },
+                #{deviceType },
+                #{status },
+                #{battery },
+                #{lastReportedAt },
+                #{model },
+                #{installDate },
+                #{longitude },
+                #{latitude },
+                #{createdAt },
+                #{updatedAt }
             )
             """)
     int addDevice(Device device);
@@ -193,4 +193,11 @@ public interface DeviceMapper {
             ORDER BY controller.created_at, device.id
             """)
     List<Device> findByIrrigationConfigId(@Param("configId") String configId);
+
+    @Select("""
+            SELECT DISTINCT device_type
+            FROM devices
+            WHERE land_id = #{landId}
+            """)
+    List<String> findTypesByLandId(@Param("landId") String landId);
 }

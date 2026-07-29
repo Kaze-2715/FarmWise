@@ -34,7 +34,7 @@ public class RegistrationService {
 
     @Transactional
     public UserProfile register(RegisterRequest request) {
-        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        String email = request.email().strip().toLowerCase(Locale.ROOT);
 
         if (userMapper.existsByEmail(email)) {
             throw new BizException(HttpStatus.CONFLICT, "邮箱已被注册");
