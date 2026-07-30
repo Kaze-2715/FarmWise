@@ -45,7 +45,7 @@
 
 ## 实现顺序
 
-下表中的“已实现”表示后端代码已合并到 `main` 并通过编译，不代表已经完成前后端和外部服务联调；“已确认”表示接口契约已经确定但后端尚未实现。
+下表中的“已实现”表示当前开发分支的后端代码已完成并通过编译，不代表已经合并到 `main`，也不代表已经完成前后端和外部服务联调；“已确认”表示接口契约已经确定但后端尚未实现。
 
 ### 认证与 RBAC 基础
 
@@ -65,41 +65,41 @@
 
 | 顺序 | 接口 | 权限 | 状态 |
 | --- | --- | --- | --- |
-| 1 | `GET /api/lands` | `land:read` | 已确认 |
-| 2 | `POST /api/lands` | `land:create` | 已确认 |
-| 3 | `PUT /api/lands/{landId}` | `land:update` | 已确认 |
-| 4 | `DELETE /api/lands/{landId}` | `land:delete` | 已确认 |
-| 5 | `GET /api/devices` | `device:read` | 已确认 |
-| 6 | `POST /api/devices` | `device:create` | 已确认 |
-| 7 | `PUT /api/devices/{deviceId}` | `device:update` | 已确认 |
-| 8 | `DELETE /api/devices/{deviceId}` | `device:delete` | 已确认 |
-| 9 | `GET /api/planting-plans` | `planting_plan:read` | 已确认 |
-| 10 | `POST /api/planting-plans` | `planting_plan:manage` | 已确认 |
-| 11 | `PUT /api/planting-plans/{planId}` | `planting_plan:manage` | 已确认 |
-| 12 | `DELETE /api/planting-plans/{planId}` | `planting_plan:manage` | 已确认 |
-| 13 | `GET /api/sensor-readings` | `environment:read` | 已确认 |
-| 14 | `GET /api/lands/{landId}/environment-thresholds` | `environment:read` | 已确认 |
-| 15 | `POST /api/lands/{landId}/environment-thresholds` | `environment_threshold:manage` | 已确认 |
-| 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已确认 |
-| 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已确认 |
-| 18 | `GET /api/lands/{landId}/irrigation-configs` | `irrigation:read` | 已确认 |
-| 19 | `POST /api/lands/{landId}/irrigation-configs` | `irrigation:configure` | 已确认 |
-| 20 | `PUT /api/lands/{landId}/irrigation-configs/{configId}` | `irrigation:configure` | 已确认 |
-| 21 | `POST /api/lands/{landId}/irrigation-configs/{configId}/enable` | `irrigation:configure` | 已确认 |
-| 22 | `DELETE /api/lands/{landId}/irrigation-configs/{configId}` | `irrigation:configure` | 已确认 |
-| 23 | `GET /api/irrigation-records` | `irrigation:read` | 已确认 |
-| 24 | `POST /api/irrigations` | `device:control` | 已确认 |
-| 25 | `POST /api/irrigations/{recordId}/stop` | `device:control` | 已确认 |
+| 1 | `GET /api/lands` | `land:read` | 已实现 |
+| 2 | `POST /api/lands` | `land:create` | 已实现 |
+| 3 | `PUT /api/lands/{landId}` | `land:update` | 已实现 |
+| 4 | `DELETE /api/lands/{landId}` | `land:delete` | 已实现 |
+| 5 | `GET /api/devices` | `device:read` | 已实现 |
+| 6 | `POST /api/devices` | `device:create` | 已实现 |
+| 7 | `PUT /api/devices/{deviceId}` | `device:update` | 已实现 |
+| 8 | `DELETE /api/devices/{deviceId}` | `device:delete` | 已实现 |
+| 9 | `GET /api/planting-plans` | `planting_plan:read` | 已实现 |
+| 10 | `POST /api/planting-plans` | `planting_plan:manage` | 已实现 |
+| 11 | `PUT /api/planting-plans/{planId}` | `planting_plan:manage` | 已实现 |
+| 12 | `DELETE /api/planting-plans/{planId}` | `planting_plan:manage` | 已实现 |
+| 13 | `GET /api/sensor-readings` | `environment:read` | 已实现 |
+| 14 | `GET /api/lands/{landId}/environment-thresholds` | `environment:read` | 已实现 |
+| 15 | `POST /api/lands/{landId}/environment-thresholds` | `environment_threshold:manage` | 已实现 |
+| 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已实现 |
+| 17 | `DELETE /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已实现 |
+| 18 | `GET /api/lands/{landId}/irrigation-configs` | `irrigation:read` | 已实现 |
+| 19 | `POST /api/lands/{landId}/irrigation-configs` | `irrigation:configure` | 已实现 |
+| 20 | `PUT /api/lands/{landId}/irrigation-configs/{configId}` | `irrigation:configure` | 已实现 |
+| 21 | `POST /api/lands/{landId}/irrigation-configs/{configId}/enable` | `irrigation:configure` | 已实现 |
+| 22 | `DELETE /api/lands/{landId}/irrigation-configs/{configId}` | `irrigation:configure` | 已实现 |
+| 23 | `GET /api/irrigation-records` | `irrigation:read` | 已实现 |
+| 24 | `POST /api/irrigations` | `device:control` | 已实现 |
+| 25 | `POST /api/irrigations/{recordId}/stop` | `device:control` | 已实现 |
 | 26 | `GET /api/alerts` | `alert:read` | 已确认 |
 | 27 | `POST /api/alerts` | `alert:manage` | 已确认 |
 | 28 | `POST /api/alerts/{alertId}/start` | `alert:manage` | 已确认 |
 | 29 | `POST /api/alerts/{alertId}/resolve` | `alert:manage` | 已确认 |
 | 30 | `POST /api/alerts/{alertId}/ignore` | `alert:manage` | 已确认 |
-| 31 | `GET /api/farm-tasks` | `farm_task:read` | 已确认 |
-| 32 | `POST /api/farm-tasks` | `farm_task:manage` | 已确认 |
-| 33 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已确认 |
-| 34 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已确认 |
-| 35 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已确认 |
+| 31 | `GET /api/farm-tasks` | `farm_task:read` | 已实现 |
+| 32 | `POST /api/farm-tasks` | `farm_task:manage` | 已实现 |
+| 33 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已实现 |
+| 34 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已实现 |
+| 35 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已实现 |
 | 36 | `GET /api/ai/conversations` | `ai_advisor:use` | 已确认 |
 | 37 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
 | 38 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
@@ -114,11 +114,11 @@
 
 | 顺序 | 接口 | 权限 | 状态 |
 | --- | --- | --- | --- |
-| 1 | `GET /api/admin/users` | `user:read` | 已确认 |
-| 2 | `PUT /api/admin/users/{userId}/roles` | `user:grant` | 已确认 |
-| 3 | `GET /api/admin/roles` | `role:read` | 已确认 |
-| 4 | `GET /api/admin/permissions` | `role:read` | 已确认 |
-| 5 | `PUT /api/admin/roles/{roleCode}/permissions` | `role:manage` | 已确认 |
+| 1 | `GET /api/admin/users` | `user:read` | 已实现 |
+| 2 | `PUT /api/admin/users/{userId}/roles` | `user:grant` | 已实现 |
+| 3 | `GET /api/admin/roles` | `role:read` | 已实现 |
+| 4 | `GET /api/admin/permissions` | `role:read` | 已实现 |
+| 5 | `PUT /api/admin/roles/{roleCode}/permissions` | `role:manage` | 已实现 |
 
 ## 1. 认证与用户
 

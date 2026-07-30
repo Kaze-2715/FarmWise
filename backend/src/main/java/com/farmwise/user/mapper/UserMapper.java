@@ -1,6 +1,7 @@
 package com.farmwise.user.mapper;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import com.farmwise.user.model.User;
@@ -134,4 +135,44 @@ public interface UserMapper {
             WHERE id = #{id}
             """)
     int updateProfile(User user);
+
+    @Select("""
+            <script>
+            SELECT *
+            FROM users u
+            <where>
+                <if test="keyword != null">
+                    AND (
+                        u.id LIKE CONCAT('%', #{keyword}, '%')
+                        OR u.username LIKE CONCAT('%', #{keyword}, '%')
+                        OR u.email LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </if>
+                <if test="status != null">
+                    AND u.status = #{status}
+                </if>
+                <if test="roleCode != null">
+                    AND EXISTS (
+                        SELECT 1
+                        FROM user_roles ur
+                        WHERE ur.user_id = u.id
+                        AND ur.role_code = #{roleCode}
+                    )
+                </if>
+            </where>
+            ORDER BY u.created_at DESC, u.id DESC
+            </script>
+            """)
+    List<User> findByCondition(
+            @Param("keyword") String keyword,
+            @Param("status") String status,
+            @Param("roleCode") String roleCode);
+
+    @Select("""
+            SELECT *
+            FROM users
+            WHERE id = #{userId}
+            FOR UPDATE
+            """)
+    Optional<User> findByIdForUpdate(@Param("userId") String userId);
 }

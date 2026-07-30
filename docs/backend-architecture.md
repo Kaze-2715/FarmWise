@@ -96,6 +96,7 @@ Spring Boot 4.1 支持 Java 17 至 26；MyBatis Starter 4 对应 Spring Boot 4.x
 3. [x] 引入 Flyway，创建第一版结构以及角色和权限种子数据。
 4. [x] 完成 Spring Security、JWT、RBAC 和认证接口。
 5. [x] 完成用户资料和本地头像文件接口。
-6. [ ] 按 [接口文档](api-contract.md) 顺序实现地块到报告模块；地块基础 CRUD 已完成，下一步实现设备接口。
-7. [ ] 接入设备状态、EMQX/MQTT 和 Spring AI 业务能力。
-8. [ ] 补充 Docker Compose 与可观测性配置。
+6. [ ] 按 [接口文档](api-contract.md) 实现业务模块；地块、设备、种植计划、环境监测、智能灌溉和农事任务已完成，预警、AI 顾问和报告待实现。
+7. [x] 完成 RBAC 后台管理接口。
+8. [ ] 接入 Spring AI 业务能力；设备状态和 EMQX/MQTT 已完成。
+9. [ ] 补充 Docker Compose 与可观测性配置。
