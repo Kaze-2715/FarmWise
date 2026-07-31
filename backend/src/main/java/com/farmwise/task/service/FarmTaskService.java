@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import com.farmwise.task.dto.CancelFarmTaskRequest;
 import com.farmwise.task.dto.CompleteFarmTaskRequest;
 import com.farmwise.task.dto.CreateFarmTaskRequest;
 import com.farmwise.task.dto.FarmTaskResponse;
+import com.farmwise.task.event.FarmTaskStatusChangedEvent;
 import com.farmwise.task.mapper.FarmTaskMapper;
 import com.farmwise.task.model.FarmTask;
 import com.farmwise.user.mapper.UserMapper;
@@ -42,6 +44,8 @@ public class FarmTaskService {
     private final FarmTaskMapper farmTaskMapper;
     private final LandMapper landMapper;
     private final UserMapper userMapper;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public FarmTaskResponse createFarmTask(
@@ -189,6 +193,8 @@ public class FarmTaskService {
             throw new BizException(HttpStatus.INTERNAL_SERVER_ERROR, "完成农事任务失败");
         }
 
+        eventPublisher.publishEvent(new FarmTaskStatusChangedEvent(task.sourceType(), task.sourceId(), "completed", now));
+
         FarmTask completedTask = new FarmTask(
                 task.id(),
                 task.landId(),
@@ -232,6 +238,9 @@ public class FarmTaskService {
         if (affectedRows != 1) {
             throw new BizException(HttpStatus.INTERNAL_SERVER_ERROR, "更新任务状态失败");
         }
+
+        eventPublisher
+                .publishEvent(new FarmTaskStatusChangedEvent(task.sourceType(), task.sourceId(), "cancelled", now));
 
         return FarmTaskResponse.from(new FarmTask(
                 task.id(),

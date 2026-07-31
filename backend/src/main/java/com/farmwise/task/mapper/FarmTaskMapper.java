@@ -153,4 +153,15 @@ public interface FarmTaskMapper {
             @Param("taskId") String taskId,
             @Param("reason") String reason,
             @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Select("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM farm_tasks
+                WHERE source_type = 'alert'
+                  AND source_id = #{alertId}
+                  AND status IN ('pending', 'processing')
+            )""")
+    boolean existsActiveByAlertId(
+            @Param("alertId") String alertId);
 }

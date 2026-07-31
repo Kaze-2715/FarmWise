@@ -19,9 +19,9 @@ public interface TelemetryMapper {
                 reported_at,
                 received_at
             ) VALUES (
-#{deviceId },
-#{messageId },
-#{reportedAt },
+                #{deviceId },
+                #{messageId },
+                #{reportedAt },
                 UTC_TIMESTAMP(3)
             )
             """)
@@ -43,12 +43,12 @@ public interface TelemetryMapper {
             ) VALUES
             <foreach collection="readings" item="reading" separator=",">
                 (
-#{reading.deviceId },
-#{reading.landId },
-#{reading.recordedAt },
-#{reading.metric },
-#{reading.unit },
-#{reading.value },
+                    #{reading.deviceId },
+                    #{reading.landId },
+                    #{reading.recordedAt },
+                    #{reading.metric },
+                    #{reading.unit },
+                    #{reading.value },
                     UTC_TIMESTAMP(3)
                 )
             </foreach>

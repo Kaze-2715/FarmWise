@@ -96,6 +96,7 @@ public class MonitoringService {
 
         String metric = validateMetric(request.metric());
         validateThresholdRange(request.min(), request.max());
+        validateBatteryThreshold(metric, request.min(), request.max());
         validateMetricAvailable(landId, metric);
 
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
@@ -127,6 +128,7 @@ public class MonitoringService {
         validateLand(landId, userId);
         metric = validateMetric(metric);
         validateThresholdRange(request.min(), request.max());
+        validateBatteryThreshold(metric, request.min(), request.max());
 
         if (request.enabled()) {
             validateMetricAvailable(landId, metric);
@@ -161,6 +163,16 @@ public class MonitoringService {
             BigDecimal max) {
         if (min.compareTo(max) >= 0) {
             throw new BizException(HttpStatus.BAD_REQUEST, "阈值下限必须小于阈值上限");
+        }
+    }
+
+    private void validateBatteryThreshold(String metric, BigDecimal min, BigDecimal max) {
+        if ("battery".equals(metric)
+                && (min.compareTo(BigDecimal.ZERO) < 0
+                        || max.compareTo(BigDecimal.valueOf(100)) != 0)) {
+            throw new BizException(
+                    HttpStatus.BAD_REQUEST,
+                    "电量阈值下限不能小于 0，上限必须为 100");
         }
     }
 

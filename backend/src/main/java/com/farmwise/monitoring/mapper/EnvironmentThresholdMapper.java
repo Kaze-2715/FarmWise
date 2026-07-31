@@ -98,4 +98,13 @@ public interface EnvironmentThresholdMapper {
     int deleteByLandIdAndMetric(
             @Param("landId") String landId,
             @Param("metric") String metric);
+
+    @Select("""
+            SELECT *
+            FROM environment_thresholds
+            WHERE land_id = #{landId}
+            AND enabled = TRUE
+            """)
+    List<EnvironmentThreshold> findEnabledByLandId(
+            @Param("landId") String landId);
 }

@@ -40,4 +40,26 @@ public interface SensorReadingMapper {
             @Param("startedAt") LocalDateTime startedAt,
             @Param("endedAt") LocalDateTime endedAt
     );
+
+    @Select("""
+            SELECT device_id,
+                land_id,
+                recorded_at,
+                metric,
+                unit,
+                value
+            FROM sensor_readings
+            WHERE land_id = #{landId}
+            AND device_id = #{deviceId}
+            AND metric = #{metric}
+            AND recorded_at > #{startedAt}
+            AND recorded_at < #{endedAt}
+            ORDER BY recorded_at ASC, id ASC
+            """)
+    List<SensorReading> findForAlertStateRebuild(
+            @Param("landId") String landId,
+            @Param("deviceId") String deviceId,
+            @Param("metric") String metric,
+            @Param("startedAt") LocalDateTime startedAt,
+            @Param("endedAt") LocalDateTime endedAt);
 }

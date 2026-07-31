@@ -55,6 +55,14 @@ public interface LandMapper {
             @Param("landId") String landId,
             @Param("ownerId") String ownerId);
 
+    @Select("""
+            SELECT id
+            FROM lands
+            WHERE id = #{landId}
+            FOR UPDATE
+            """)
+    String findIdForUpdate(@Param("landId") String landId);
+
     @Update("""
             UPDATE lands
             SET name = #{name},

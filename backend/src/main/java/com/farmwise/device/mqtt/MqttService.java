@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.farmwise.device.capability.DeviceMetricCapabilities;
+import com.farmwise.device.event.SensorReadingsSavedEvent;
 import com.farmwise.device.event.SoilMoistureReportedEvent;
 import com.farmwise.device.mapper.DeviceMapper;
 import com.farmwise.device.mapper.TelemetryMapper;
@@ -39,19 +40,18 @@ import tools.jackson.databind.ObjectMapper;
 public class MqttService {
     private static final String TOPIC_FILTER = "farmwise/v1/devices/+/";
 
-    private static final Map<String, String> UNIT_BY_METRIC =
-            Map.of("soil_moisture",
-                   "%",
-                   "air_temperature",
-                   "℃",
-                   "air_humidity",
-                   "%",
-                   "light",
-                   "lux",
-                   "soil_ph",
-                   "pH",
-                   "battery",
-                   "%");
+    private static final Map<String, String> UNIT_BY_METRIC = Map.of("soil_moisture",
+            "%",
+            "air_temperature",
+            "℃",
+            "air_humidity",
+            "%",
+            "light",
+            "lux",
+            "soil_ph",
+            "pH",
+            "battery",
+            "%");
 
     private final ObjectMapper objectMapper;
     private final DeviceMapper deviceMapper;
@@ -79,8 +79,8 @@ public class MqttService {
         StatusPayload statusPayload = parsePayload(payload, StatusPayload.class);
 
         if (statusPayload == null
-            || !("online".equals(statusPayload.status())
-                 || "offline".equals(statusPayload.status()))) {
+                || !("online".equals(statusPayload.status())
+                        || "offline".equals(statusPayload.status()))) {
             throw new IllegalArgumentException("status 只能是 online 或 offline");
         }
 
@@ -103,8 +103,7 @@ public class MqttService {
 
     @Scheduled(fixedDelayString = "${farmwise.mqtt.offline-scan-interval-milliseconds:30000}")
     public void markTimedOutDevicesOffline() {
-        LocalDateTime cutoff =
-                LocalDateTime.now(ZoneOffset.UTC).minusSeconds(properties.offlineTimeoutSeconds());
+        LocalDateTime cutoff = LocalDateTime.now(ZoneOffset.UTC).minusSeconds(properties.offlineTimeoutSeconds());
 
         int affectedRows = deviceMapper.markTimedOutDevicesOffline(cutoff);
 
@@ -123,30 +122,33 @@ public class MqttService {
             return;
         }
 
-        List<SensorReading> readings =
-                Stream.concat(telemetry.readings().stream().map(
-                                      reading
-                                      -> new SensorReading(
-                                              device.id(),
-                                              device.landId(),
-                                              reportedAt,
-                                              reading.metric(),
-                                              UNIT_BY_METRIC.get(reading.metric()),
-                                              reading.value())),
-                              Optional.ofNullable(telemetry.battery())
-                                      .stream()
-                                      .map(battery
-                                           -> new SensorReading(
-                                                   device.id(),
-                                                   device.landId(),
-                                                   reportedAt,
-                                                   "battery",
-                                                   UNIT_BY_METRIC.get("battery"),
-                                                   battery)))
-                        .toList();
+        List<SensorReading> readings = Stream.concat(telemetry.readings().stream().map(
+                reading -> new SensorReading(
+                        device.id(),
+                        device.landId(),
+                        reportedAt,
+                        reading.metric(),
+                        UNIT_BY_METRIC.get(reading.metric()),
+                        reading.value())),
+                Optional.ofNullable(telemetry.battery())
+                        .stream()
+                        .map(battery -> new SensorReading(
+                                device.id(),
+                                device.landId(),
+                                reportedAt,
+                                "battery",
+                                UNIT_BY_METRIC.get("battery"),
+                                battery)))
+                .toList();
         telemetryMapper.insertReadings(readings);
 
         deviceMapper.updateStateFromTelemetry(device.id(), telemetry.battery(), reportedAt);
+
+        if (device.landId() != null) {
+            eventPublisher.publishEvent(
+                new SensorReadingsSavedEvent(telemetry.messageId().toString(), readings)
+            );
+        }
 
         if (device.landId() != null) {
             telemetry.readings()
@@ -154,8 +156,7 @@ public class MqttService {
                     .filter(reading -> "soil_moisture".equals(reading.metric()))
                     .findFirst()
                     .ifPresent(
-                            reading
-                            -> eventPublisher.publishEvent(new SoilMoistureReportedEvent(
+                            reading -> eventPublisher.publishEvent(new SoilMoistureReportedEvent(
                                     telemetry.messageId().toString(),
                                     device.id(),
                                     device.landId(),
@@ -265,8 +266,7 @@ public class MqttService {
             throw new IllegalArgumentException("readings 不能为空");
         }
 
-        Set<String> allowedMetrics =
-                DeviceMetricCapabilities.sensorMetricsForDeviceType(device.deviceType());
+        Set<String> allowedMetrics = DeviceMetricCapabilities.sensorMetricsForDeviceType(device.deviceType());
 
         if (allowedMetrics == null) {
             throw new IllegalArgumentException("不支持的设备类型：" + device.deviceType());
@@ -275,48 +275,48 @@ public class MqttService {
         Set<String> receivedMetrics = new HashSet<>();
 
         for (TelemetryPayload.Reading reading : telemetry.readings()) {
-                    if (reading == null || reading.metric() == null || reading.metric().isBlank()
-                        || reading.value() == null) {
-                        throw new IllegalArgumentException("reading 的 metric 和 value 都不能为空");
-                    }
-
-                    if (!allowedMetrics.contains(reading.metric())) {
-                        throw new IllegalArgumentException("设备类型不支持指标");
-                    }
-
-                    if (!receivedMetrics.add(reading.metric())) {
-                        throw new IllegalArgumentException(
-                                "同一消息不能重复上报指标: " + reading.metric());
-                    }
-                }
-        }
-
-        private String extractDeviceId(String topic, String type) {
-            String[] levels = topic.split("/", -1);
-            if (type == null || type.isBlank()) {
-                throw new IllegalArgumentException("topic 的类型不正确");
+            if (reading == null || reading.metric() == null || reading.metric().isBlank()
+                    || reading.value() == null) {
+                throw new IllegalArgumentException("reading 的 metric 和 value 都不能为空");
             }
 
-            type = type.strip();
+            if (!allowedMetrics.contains(reading.metric())) {
+                throw new IllegalArgumentException("设备类型不支持指标");
+            }
 
-            if (levels.length != 5 || !"farmwise".equals(levels[0]) || !"v1".equals(levels[1])
-                || !"devices".equals(levels[2]) || !type.equals(levels[4])) {
+            if (!receivedMetrics.add(reading.metric())) {
                 throw new IllegalArgumentException(
-                        "topic 格式不正确，正确格式 %s".formatted(TOPIC_FILTER + type));
+                        "同一消息不能重复上报指标: " + reading.metric());
             }
-
-            final UUID deviceId;
-
-            try {
-                deviceId = UUID.fromString(levels[3]);
-            } catch (IllegalArgumentException exception) {
-                throw new IllegalArgumentException("设备 ID 不是合法 UUID");
-            }
-
-            if (!deviceId.toString().equalsIgnoreCase(levels[3])) {
-                throw new IllegalArgumentException("设备 UUID 不是标准 UUID");
-            }
-
-            return deviceId.toString();
         }
     }
+
+    private String extractDeviceId(String topic, String type) {
+        String[] levels = topic.split("/", -1);
+        if (type == null || type.isBlank()) {
+            throw new IllegalArgumentException("topic 的类型不正确");
+        }
+
+        type = type.strip();
+
+        if (levels.length != 5 || !"farmwise".equals(levels[0]) || !"v1".equals(levels[1])
+                || !"devices".equals(levels[2]) || !type.equals(levels[4])) {
+            throw new IllegalArgumentException(
+                    "topic 格式不正确，正确格式 %s".formatted(TOPIC_FILTER + type));
+        }
+
+        final UUID deviceId;
+
+        try {
+            deviceId = UUID.fromString(levels[3]);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("设备 ID 不是合法 UUID");
+        }
+
+        if (!deviceId.toString().equalsIgnoreCase(levels[3])) {
+            throw new IllegalArgumentException("设备 UUID 不是标准 UUID");
+        }
+
+        return deviceId.toString();
+    }
+}
