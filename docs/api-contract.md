@@ -90,11 +90,11 @@
 | 23 | `GET /api/irrigation-records` | `irrigation:read` | 已实现 |
 | 24 | `POST /api/irrigations` | `device:control` | 已实现 |
 | 25 | `POST /api/irrigations/{recordId}/stop` | `device:control` | 已实现 |
-| 26 | `GET /api/alerts` | `alert:read` | 已确认 |
-| 27 | `POST /api/alerts` | `alert:manage` | 已确认 |
-| 28 | `POST /api/alerts/{alertId}/start` | `alert:manage` | 已确认 |
-| 29 | `POST /api/alerts/{alertId}/resolve` | `alert:manage` | 已确认 |
-| 30 | `POST /api/alerts/{alertId}/ignore` | `alert:manage` | 已确认 |
+| 26 | `GET /api/alerts` | `alert:read` | 已实现 |
+| 27 | `POST /api/alerts` | `alert:manage` | 已实现 |
+| 28 | `POST /api/alerts/{alertId}/start` | `alert:manage` | 已实现 |
+| 29 | `POST /api/alerts/{alertId}/resolve` | `alert:manage` | 已实现 |
+| 30 | `POST /api/alerts/{alertId}/ignore` | `alert:manage` | 已实现 |
 | 31 | `GET /api/farm-tasks` | `farm_task:read` | 已实现 |
 | 32 | `POST /api/farm-tasks` | `farm_task:manage` | 已实现 |
 | 33 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已实现 |
@@ -243,7 +243,7 @@
 | `POST /api/alerts/{alertId}/resolve` | `measure, handledAt, result, remark?` | `Alert`；状态改为 `resolved` |
 | `POST /api/alerts/{alertId}/ignore` | `remark` | `Alert`；状态改为 `ignored` |
 
-只有 `pending` 预警可以开始处理。仍有关联 `pending` 或 `processing` 任务时不能解决预警；`cancelled` 任务不阻塞。
+只有 `pending` 预警可以开始处理或忽略，只有 `processing` 预警可以解决。仍有关联 `pending` 或 `processing` 任务时不能解决预警；`completed` 和 `cancelled` 任务不阻塞。人工解决或忽略不直接清理 Redis 异常状态，相关设备连续恢复正常后再解除屏蔽并重新武装自动预警。
 
 ## 9. 农事任务
 

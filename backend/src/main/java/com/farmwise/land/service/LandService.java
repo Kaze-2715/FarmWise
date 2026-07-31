@@ -1,5 +1,8 @@
 package com.farmwise.land.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateOptional;
+import static com.farmwise.common.util.ValidationUtil.validateRequired;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -44,17 +47,17 @@ public class LandService {
     public LandResponse createLand(String ownerId, CreateLandRequest request) {
         String landId = UUID.randomUUID().toString();
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        String name = validateRequired(request.name());
-        String landType = validateRequired(request.landType());
+        String name = validateRequired(request.name(), "地块名称不能为空");
+        String landType = validateRequired(request.landType(), "地块类型不能为空");
         if (!ALLOWED_LAND_TYPES.contains(landType)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的土壤类型");
         }
         String crop = validateOptional(request.crop());
-        String status = validateRequired(request.status());
+        String status = validateRequired(request.status(), "地块状态不能为空");
         if (!ALLOWED_STATUS.contains(status)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的地块状态");
         }
-        String location = validateRequired(request.location());
+        String location = validateRequired(request.location(), "地块位置不能为空");
 
         Land land = new Land(
                 landId,
@@ -88,17 +91,17 @@ public class LandService {
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "请求更新的地块不存在"));
 
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
-        String name = validateRequired(request.name());
-        String landType = validateRequired(request.landType());
+        String name = validateRequired(request.name(), "地块名称不能为空");
+        String landType = validateRequired(request.landType(), "地块类型不能为空");
         if (!ALLOWED_LAND_TYPES.contains(landType)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的土壤类型");
         }
         String crop = validateOptional(request.crop());
-        String status = validateRequired(request.status());
+        String status = validateRequired(request.status(), "地块状态不能为空");
         if (!ALLOWED_STATUS.contains(status)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的地块状态");
         }
-        String location = validateRequired(request.location());
+        String location = validateRequired(request.location(), "地块位置不能为空");
 
         Land newLand = new Land(
                 oldLand.id(),
@@ -140,28 +143,4 @@ public class LandService {
         }
     }
 
-    private String validateRequired(String value) {
-        if (value == null) {
-            throw new BizException(HttpStatus.BAD_REQUEST, "字符串对象不应为空");
-        }
-
-        value = value.strip();
-
-        if (value.isBlank()) {
-            throw new BizException(HttpStatus.BAD_REQUEST, "字符串内容不应为空");
-        }
-
-        return value;
-    }
-
-    private String validateOptional(String value) {
-        if (value == null) {
-            return null;
-        }
-        value = value.strip();
-        if (value.isBlank()) {
-            return null;
-        }
-        return value;
-    }
 }

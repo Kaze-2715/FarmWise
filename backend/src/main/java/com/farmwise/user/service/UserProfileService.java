@@ -1,5 +1,7 @@
 package com.farmwise.user.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateOptional;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -111,13 +113,13 @@ public class UserProfileService {
             UpdateUserProfileRequest request) {
         String username = request.username().strip();
         String email = request.email().strip().toLowerCase(Locale.ROOT);
-        String realName = normalizeOptional(request.realName());
-        String phone = normalizeOptional(request.phone());
-        String organization = normalizeOptional(request.organization());
-        String province = normalizeOptional(request.province());
-        String city = normalizeOptional(request.city());
-        String position = normalizeOptional(request.position());
-        String avatarFileId = normalizeOptional(request.avatarFileId());
+        String realName = validateOptional(request.realName());
+        String phone = validateOptional(request.phone());
+        String organization = validateOptional(request.organization());
+        String province = validateOptional(request.province());
+        String city = validateOptional(request.city());
+        String position = validateOptional(request.position());
+        String avatarFileId = validateOptional(request.avatarFileId());
 
         validateUniqueFields(currentUser.id(), username, email);
 
@@ -142,14 +144,4 @@ public class UserProfileService {
                 .build();
     }
 
-    private String normalizeOptional(String value) {
-        if (value == null) {
-            return null;
-        }
-        value = value.strip();
-        if (value.isBlank()) {
-            return null;
-        }
-        return value;
-    }
 }

@@ -1,5 +1,8 @@
 package com.farmwise.task.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateFilter;
+import static com.farmwise.common.util.ValidationUtil.validateRequired;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -53,10 +56,13 @@ public class FarmTaskService {
             CreateFarmTaskRequest request,
             String sourceType,
             String sourceId) {
-        String landId = normalizeRequired(request.landId(), "地块 ID 不能为空");
-        validateLand(userId, landId);
+        String landId = validateRequired(request.landId(), "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
 
-        String assigneeId = normalizeRequired(request.assigneeId(), "执行人 ID 不能为空");
+        String assigneeId = validateRequired(request.assigneeId(), "执行人 ID 不能为空");
 
         User assignee = userMapper.findById(assigneeId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "执行人用户不存在"));
@@ -64,25 +70,25 @@ public class FarmTaskService {
             throw new BizException(HttpStatus.BAD_REQUEST, "执行人账号已被禁用");
         }
 
-        String taskType = normalizeRequired(request.taskType(), "任务类型不能为空");
-        normalizeFilter(taskType, TASK_TYPES, "不支持的任务类型");
+        String taskType = validateRequired(request.taskType(), "任务类型不能为空");
+        validateFilter(taskType, TASK_TYPES, "不支持的任务类型");
 
-        String priority = normalizeRequired(request.priority(), "优先级不能为空");
-        normalizeFilter(priority, PRIORITIES, "不支持的优先级类型");
+        String priority = validateRequired(request.priority(), "优先级不能为空");
+        validateFilter(priority, PRIORITIES, "不支持的优先级类型");
 
-        sourceType = normalizeRequired(sourceType, "任务来源类型不能为空");
-        normalizeFilter(sourceType, SOURCE_TYPES, "不支持的任务来源");
+        sourceType = validateRequired(sourceType, "任务来源类型不能为空");
+        validateFilter(sourceType, SOURCE_TYPES, "不支持的任务来源");
 
         if ("manual".equals(sourceType)) {
             if (sourceId != null) {
                 throw new BizException(HttpStatus.BAD_REQUEST, "手动创建任务不应有关联任务");
             }
         } else {
-            sourceId = normalizeRequired(sourceId, "自动生成任务来源 ID 不能为空");
+            sourceId = validateRequired(sourceId, "自动生成任务来源 ID 不能为空");
         }
 
-        String title = normalizeRequired(request.title(), "任务标题不能为空");
-        String description = normalizeRequired(request.description(), "任务描述不能为空");
+        String title = validateRequired(request.title(), "任务标题不能为空");
+        String description = validateRequired(request.description(), "任务描述不能为空");
         String remark = request.remark() == null ? "" : request.remark().strip();
 
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
@@ -122,12 +128,15 @@ public class FarmTaskService {
             String taskType,
             String priority,
             String status) {
-        landId = normalizeRequired(landId, "地块 ID 不能为空");
-        validateLand(userId, landId);
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
 
-        taskType = normalizeFilter(taskType, TASK_TYPES, "不支持的任务类型");
-        priority = normalizeFilter(priority, PRIORITIES, "不支持的任务优先级");
-        status = normalizeFilter(status, STATUSES, "不支持的任务状态");
+        taskType = validateFilter(taskType, TASK_TYPES, "不支持的任务类型");
+        priority = validateFilter(priority, PRIORITIES, "不支持的任务优先级");
+        status = validateFilter(status, STATUSES, "不支持的任务状态");
 
         return farmTaskMapper.findAllByConditions(landId, taskType, priority, status)
                 .stream()
@@ -137,7 +146,7 @@ public class FarmTaskService {
 
     @Transactional
     public FarmTaskResponse startFarmTask(String userId, String taskId) {
-        taskId = normalizeRequired(taskId, "任务 ID 不能为空");
+        taskId = validateRequired(taskId, "任务 ID 不能为空");
         FarmTask task = farmTaskMapper.findByIdAndOwnerIdForUpdate(taskId, userId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "要更新的任务不存在或不属于当前用户"));
         if (!"pending".equals(task.status())) {
@@ -174,7 +183,7 @@ public class FarmTaskService {
             String userId,
             String taskId,
             CompleteFarmTaskRequest request) {
-        taskId = normalizeRequired(taskId, "任务 ID 不能为空");
+        taskId = validateRequired(taskId, "任务 ID 不能为空");
         FarmTask task = farmTaskMapper.findByIdAndOwnerIdForUpdate(taskId, userId)
                 .orElseThrow(() -> new BizException(
                         HttpStatus.NOT_FOUND,
@@ -220,7 +229,7 @@ public class FarmTaskService {
             String userId,
             String taskId,
             CancelFarmTaskRequest request) {
-        taskId = normalizeRequired(taskId, "任务 ID 不能为空");
+        taskId = validateRequired(taskId, "任务 ID 不能为空");
 
         FarmTask task = farmTaskMapper.findByIdAndOwnerIdForUpdate(taskId, userId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "任务不存在或不属于当前用户"));
@@ -261,32 +270,4 @@ public class FarmTaskService {
                 now));
     }
 
-    private void validateLand(String userId, String landId) {
-        landMapper.findByIdAndOwnerId(landId, userId)
-                .orElseThrow(() -> new BizException(
-                        HttpStatus.NOT_FOUND,
-                        "地块不存在或不属于当前用户"));
-    }
-
-    private String normalizeRequired(String value, String errorMessage) {
-        if (value == null || value.isBlank()) {
-            throw new BizException(HttpStatus.BAD_REQUEST, errorMessage);
-        }
-        return value.strip();
-    }
-
-    private String normalizeFilter(
-            String value,
-            Set<String> allowedValues,
-            String errorMessage) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-
-        value = value.strip();
-        if (!allowedValues.contains(value)) {
-            throw new BizException(HttpStatus.BAD_REQUEST, errorMessage + ": " + value);
-        }
-        return value;
-    }
 }

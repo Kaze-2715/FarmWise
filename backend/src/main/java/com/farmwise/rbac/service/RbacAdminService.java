@@ -1,5 +1,7 @@
 package com.farmwise.rbac.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateOptional;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -42,7 +44,7 @@ public class RbacAdminService {
 
     @Transactional(readOnly = true)
     public List<PermissionResponse> listPermissions(String module) {
-        module = normalizeOptional(module);
+        module = validateOptional(module);
 
         return permissionMapper.findAll(module)
                 .stream()
@@ -67,9 +69,9 @@ public class RbacAdminService {
             String keyword,
             String status,
             String roleCode) {
-        keyword = normalizeOptional(keyword);
-        status = normalizeOptional(status);
-        roleCode = normalizeOptional(roleCode);
+        keyword = validateOptional(keyword);
+        status = validateOptional(status);
+        roleCode = validateOptional(roleCode);
 
         if (status != null && !"active".equals(status) && !"disabled".equals(status)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的用户状态: " + status);
@@ -102,13 +104,6 @@ public class RbacAdminService {
                 user -> UserProfile.from(user, rolesByUserId.getOrDefault(user.id(), List.of()),
                         permissionsByUserId.getOrDefault(user.id(), List.of())))
                 .toList();
-    }
-
-    private String normalizeOptional(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.strip();
     }
 
     @Transactional

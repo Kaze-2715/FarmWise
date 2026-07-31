@@ -1,5 +1,8 @@
 package com.farmwise.device.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateOptional;
+import static com.farmwise.common.util.ValidationUtil.validateRequired;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -41,10 +44,10 @@ public class DeviceService {
     @Transactional(readOnly = true)
     public List<DeviceResponse> listDevices(
             String userId, String landId, String deviceType, String status, String keyword) {
-        landId = validate(landId);
-        deviceType = validate(deviceType);
-        status = validate(status);
-        keyword = validate(keyword);
+        landId = validateOptional(landId);
+        deviceType = validateOptional(deviceType);
+        status = validateOptional(status);
+        keyword = validateOptional(keyword);
 
         if (deviceType != null && !ALLOWED_DEVICE_TYPE.contains(deviceType)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的设备类型");
@@ -62,13 +65,13 @@ public class DeviceService {
 
     @Transactional
     public DeviceResponse createDevice(String userId, CreateDeviceRequest request) {
-        String name = validate(request.name());
-        String model = validate(request.model());
-        String type = validate(request.deviceType());
+        String name = validateRequired(request.name(), "设备名称不能为空");
+        String model = validateRequired(request.model(), "设备型号不能为空");
+        String type = validateRequired(request.deviceType(), "设备类型不能为空");
         if (!ALLOWED_DEVICE_TYPE.contains(type)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的设备类型");
         }
-        String landId = validate(request.landId());
+        String landId = validateOptional(request.landId());
         if (landId != null) {
             landMapper.findByIdAndOwnerId(landId, userId)
                     .orElseThrow(
@@ -110,10 +113,10 @@ public class DeviceService {
                 deviceMapper.findByIdAndOwnerId(deviceId, userId)
                         .orElseThrow(
                                 () -> new BizException(HttpStatus.NOT_FOUND, "要修改的设备不存在"));
-        String name = validate(request.name());
-        String model = validate(request.model());
-        String deviceType = validate(request.deviceType());
-        String landId = validate(request.landId());
+        String name = validateRequired(request.name(), "设备名称不能为空");
+        String model = validateRequired(request.model(), "设备型号不能为空");
+        String deviceType = validateRequired(request.deviceType(), "设备类型不能为空");
+        String landId = validateOptional(request.landId());
         if (!ALLOWED_DEVICE_TYPE.contains(deviceType)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的设备类型");
         }
@@ -166,14 +169,4 @@ public class DeviceService {
         }
     }
 
-    private String validate(String value) {
-        if (value == null) {
-            return null;
-        }
-        value = value.strip();
-        if (value.isBlank()) {
-            return null;
-        }
-        return value;
-    }
 }

@@ -1,5 +1,7 @@
 package com.farmwise.planting.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateRequired;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,7 +36,7 @@ public class PlantingPlanService {
 
     @Transactional(readOnly = true)
     public List<PlantingPlanResponse> listPlantingPlans(String userId, String landId) {
-        String normalizedLandId = normalizeRequired(landId, "地块 ID 不能为空");
+        String normalizedLandId = validateRequired(landId, "地块 ID 不能为空");
         findOwnedLand(userId, normalizedLandId);
 
         return plantingPlanMapper.findAllByLandId(normalizedLandId)
@@ -47,10 +49,10 @@ public class PlantingPlanService {
     public PlantingPlanResponse createPlantingPlan(
             String userId,
             CreatePlantingPlanRequest request) {
-        String landId = normalizeRequired(request.landId(), "地块 ID 不能为空");
+        String landId = validateRequired(request.landId(), "地块 ID 不能为空");
         Land land = findOwnedLand(userId, landId);
-        String planName = normalizeRequired(request.planName(), "计划名称不能为空");
-        String cropType = normalizeRequired(request.cropType(), "作物类型不能为空");
+        String planName = validateRequired(request.planName(), "计划名称不能为空");
+        String cropType = validateRequired(request.cropType(), "作物类型不能为空");
         String remark = request.remark() == null ? "" : request.remark();
         validatePlanRules(
                 request.area(),
@@ -87,16 +89,16 @@ public class PlantingPlanService {
             String userId,
             String planId,
             UpdatePlantingPlanRequest request) {
-        String normalizedPlanId = normalizeRequired(planId, "种植计划 ID 不能为空");
+        String normalizedPlanId = validateRequired(planId, "种植计划 ID 不能为空");
         PlantingPlan oldPlan = plantingPlanMapper.findByIdAndOwnerId(normalizedPlanId, userId)
                 .orElseThrow(() -> new BizException(
                         HttpStatus.NOT_FOUND,
                         "种植计划不存在或不属于当前用户"));
 
-        String landId = normalizeRequired(request.landId(), "地块 ID 不能为空");
+        String landId = validateRequired(request.landId(), "地块 ID 不能为空");
         Land land = findOwnedLand(userId, landId);
-        String planName = normalizeRequired(request.planName(), "计划名称不能为空");
-        String cropType = normalizeRequired(request.cropType(), "作物类型不能为空");
+        String planName = validateRequired(request.planName(), "计划名称不能为空");
+        String cropType = validateRequired(request.cropType(), "作物类型不能为空");
         String remark = request.remark() == null ? "" : request.remark();
         validatePlanRules(
                 request.area(),
@@ -127,7 +129,7 @@ public class PlantingPlanService {
 
     @Transactional
     public void deletePlantingPlan(String userId, String planId) {
-        planId = normalizeRequired(planId, "种植计划 ID 不能为空");
+        planId = validateRequired(planId, "种植计划 ID 不能为空");
         plantingPlanMapper.findByIdAndOwnerIdForUpdate(planId, userId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "计划不存在或不属于当前用户"));
         boolean existsTask = farmTaskMapper.existsBySourceTypeAndSourceId("plan", planId);
@@ -148,12 +150,12 @@ public class PlantingPlanService {
             String userId,
             String planId,
             UpdatePlantingPlanStatusRequest request) {
-        planId = normalizeRequired(planId, "种植计划 ID 不能为空");
+        planId = validateRequired(planId, "种植计划 ID 不能为空");
         PlantingPlan plan = plantingPlanMapper.findByIdAndOwnerIdForUpdate(planId, userId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "计划不存在或不属于当前用户"));
 
         String currentStatus = plan.status();
-        String targetStatus = normalizeRequired(request.status(), "目标状态不能为空");
+        String targetStatus = validateRequired(request.status(), "目标状态不能为空");
 
         if (currentStatus.equals(targetStatus)) {
             return PlantingPlanResponse.from(plan);
@@ -205,13 +207,6 @@ public class PlantingPlanService {
                 throw new BizException(HttpStatus.BAD_REQUEST, "不支持的种植计划状态: " + targetStatus);
             }
         }
-    }
-
-    private String normalizeRequired(String value, String errorMessage) {
-        if (value == null || value.isBlank()) {
-            throw new BizException(HttpStatus.BAD_REQUEST, errorMessage);
-        }
-        return value.strip();
     }
 
     private Land findOwnedLand(String userId, String landId) {

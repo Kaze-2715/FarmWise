@@ -1,5 +1,8 @@
 package com.farmwise.monitoring.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateOptional;
+import static com.farmwise.common.util.ValidationUtil.validateRequired;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -39,8 +42,11 @@ public class MonitoringService {
             String userId,
             String landId,
             String metric) {
-        landId = normalize(landId);
-        validateLand(landId, userId);
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
         metric = validateMetric(metric);
 
         int affectedRows = thresholdMapper.deleteByLandIdAndMetric(landId, metric);
@@ -57,10 +63,13 @@ public class MonitoringService {
             String metric,
             LocalDateTime startAt,
             LocalDateTime endAt) {
-        landId = normalize(landId);
-        metric = normalize(metric);
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        metric = validateOptional(metric);
 
-        validateLand(landId, userId);
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
 
         if (metric != null && !DeviceMetricCapabilities.isSupportedMetric(metric)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的指标类型");
@@ -79,8 +88,11 @@ public class MonitoringService {
     public List<EnvironmentThresholdResponse> listEnvironmentThresholds(
             String userId,
             String landId) {
-        landId = normalize(landId);
-        validateLand(landId, userId);
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
         List<EnvironmentThresholdRow> thresholds = thresholdMapper.findAllByLandId(landId);
 
         return thresholds.stream().map(EnvironmentThresholdResponse::from).toList();
@@ -91,8 +103,11 @@ public class MonitoringService {
             String userId,
             String landId,
             CreateEnvironmentThresholdRequest request) {
-        landId = normalize(landId);
-        validateLand(landId, userId);
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
 
         String metric = validateMetric(request.metric());
         validateThresholdRange(request.min(), request.max());
@@ -124,8 +139,11 @@ public class MonitoringService {
             String landId,
             String metric,
             UpdateEnvironmentThresholdRequest request) {
-        landId = normalize(landId);
-        validateLand(landId, userId);
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
         metric = validateMetric(metric);
         validateThresholdRange(request.min(), request.max());
         validateBatteryThreshold(metric, request.min(), request.max());
@@ -151,7 +169,7 @@ public class MonitoringService {
     }
 
     private String validateMetric(String metric) {
-        metric = normalize(metric);
+        metric = validateOptional(metric);
         if (!DeviceMetricCapabilities.isSupportedMetric(metric)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的监测指标类型: " + metric);
         }
@@ -185,20 +203,4 @@ public class MonitoringService {
         }
     }
 
-    private void validateLand(String landId, String userId) {
-        if (landId == null) {
-            throw new BizException(HttpStatus.BAD_REQUEST, "地块 ID 不能为空");
-        }
-        landMapper.findByIdAndOwnerId(landId, userId)
-                .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "地块不存在或不属于当前用户"));
-    }
-
-    private String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        value = value.strip();
-
-        return value.isBlank() ? null : value;
-    }
 }
