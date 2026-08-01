@@ -141,6 +141,7 @@ public class MqttService {
                                 battery)))
                 .toList();
         telemetryMapper.insertReadings(readings);
+        telemetryMapper.upsertLatestReadings(readings);
 
         deviceMapper.updateStateFromTelemetry(device.id(), telemetry.battery(), reportedAt);
 

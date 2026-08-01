@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import com.farmwise.device.model.SensorReading;
+import com.farmwise.monitoring.dto.LatestSensorReadingRow;
 
 @Mapper
 public interface SensorReadingMapper {
@@ -62,4 +63,23 @@ public interface SensorReadingMapper {
             @Param("metric") String metric,
             @Param("startedAt") LocalDateTime startedAt,
             @Param("endedAt") LocalDateTime endedAt);
+
+    @Select("""
+            SELECT
+                latest.device_id,
+                device.name AS device_name,
+                latest.land_id,
+                latest.recorded_at,
+                latest.metric,
+                latest.unit,
+                latest.value
+            FROM latest_sensor_readings latest
+            JOIN devices device
+              ON device.id = latest.device_id
+             AND device.land_id = latest.land_id
+            WHERE latest.land_id = #{landId}
+            ORDER BY latest.metric ASC, latest.device_id ASC
+            """)
+    List<LatestSensorReadingRow> findLatestByLandId(
+            @Param("landId") String landId);
 }

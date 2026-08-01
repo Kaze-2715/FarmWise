@@ -20,6 +20,7 @@ required_variables=(
     SPRING_MAIL_HOST
     SPRING_MAIL_USERNAME
     SPRING_MAIL_PASSWORD
+    AI_API_KEY
 )
 
 if [[ "${MQTT_ENABLED:-false}" == "true" ]]; then

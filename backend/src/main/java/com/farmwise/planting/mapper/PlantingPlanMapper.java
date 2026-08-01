@@ -37,6 +37,26 @@ public interface PlantingPlanMapper {
 
     @Select("""
             SELECT
+                id,
+                land_id,
+                plan_name,
+                crop_type,
+                area,
+                planting_date,
+                expected_harvest_date,
+                status,
+                remark,
+                created_at,
+                updated_at
+            FROM planting_plans
+            WHERE land_id = #{landId}
+              AND status IN ('planned', 'sowing', 'growing')
+            ORDER BY planting_date DESC, id DESC
+            """)
+    List<PlantingPlan> findActiveByLandId(@Param("landId") String landId);
+
+    @Select("""
+            SELECT
                 pp.id,
                 pp.land_id,
                 pp.plan_name,

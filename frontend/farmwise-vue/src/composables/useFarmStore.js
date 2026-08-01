@@ -139,12 +139,6 @@ const createAiConversation = ({
         throw new Error("地块不存在");
     }
 
-    const existsActiveConversation = aiConversations.value.some(conversation => conversation.landId === landId && conversation.status === 'active');
-
-    if (existsActiveConversation) {
-        throw new Error("当前地块已经存在活跃对话");
-    }
-
     if (typeof title !== "string") {
         throw new Error("title的类型应该为字符串，而不是: " + typeof title);
     }

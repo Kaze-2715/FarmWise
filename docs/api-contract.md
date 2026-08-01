@@ -33,7 +33,7 @@
 - 任务 `sourceType`：`manual`（人工创建）、`alert`（预警触发）、`plan`（种植计划）、`system`（系统生成）、`aiMessage`（AI 顾问建议）
 - 任务 `status`：`pending`（待处理）、`processing`（进行中）、`completed`（已完成）、`cancelled`（已取消）
 - AI 对话 `status`：`active`（进行中）、`closed`（已结束）；消息 `role`：`user`（用户）、`assistant`（AI 顾问）
-- AI 引用 `type`：`alert`（预警）、`environmentThreshold`（环境阈值）
+- AI 引用 `type`：`land`（地块）、`plantingPlan`（种植计划）、`device`（设备）、`environmentThreshold`（环境阈值）、`sensorReading`（最新监测数据）、`alert`（预警）、`farmTask`（农事任务）、`irrigationConfig`（灌溉配置）、`irrigationRecord`（灌溉记录）
 - 报告 `type`：`comprehensive`（综合运行）、`device`（设备运行）、`environment`（环境监测）、`alert`（异常预警）、`task`（农事任务）
 - 报告 `status`：`generated`（已生成）、`archived`（已归档）
 - 报告环境项 `status`：`normal`（正常）、`low`（偏低）、`high`（偏高）、`no_data`（无数据）、`unconfigured`（未配置阈值）
@@ -101,14 +101,15 @@
 | 34 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已实现 |
 | 35 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已实现 |
 | 36 | `GET /api/ai/conversations` | `ai_advisor:use` | 已确认 |
-| 37 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
-| 38 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
-| 39 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已确认 |
-| 40 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已确认 |
-| 41 | `GET /api/reports` | `report:read` | 已确认 |
-| 42 | `GET /api/reports/{reportId}` | `report:read` | 已确认 |
-| 43 | `POST /api/reports` | `report:generate` | 已确认 |
-| 44 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已确认 |
+| 37 | `GET /api/ai/conversations/{conversationId}` | `ai_advisor:use` | 已确认 |
+| 38 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
+| 39 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
+| 40 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已确认 |
+| 41 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已确认 |
+| 42 | `GET /api/reports` | `report:read` | 已确认 |
+| 43 | `GET /api/reports/{reportId}` | `report:read` | 已确认 |
+| 44 | `POST /api/reports` | `report:generate` | 已确认 |
+| 45 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已确认 |
 
 ### RBAC 后台管理
 
@@ -224,7 +225,7 @@
 | `DELETE /api/lands/{landId}/irrigation-configs/{configId}` | 无请求体 | `204`；存在待执行或执行中的灌溉记录时返回 `409`，历史记录保留 |
 | `GET /api/irrigation-records` | 必填 `landId`；可选 `startAt, endAt, status` | `IrrigationRecord[]`，按创建时间倒序 |
 | `POST /api/irrigations` | `landId, controllerDeviceIds, plannedDuration` | `202 IrrigationBatchResponse`；为每台控制器创建一条人工灌溉记录 |
-| `POST /api/irrigations/{recordId}/stop` | 无请求体 | `202 IrrigationRecord`；只允许停止执行中的记录 |
+| `POST /api/irrigations/{recordId}/stop` | 无请求体 | `202 Accepted`，无响应体；只表示停止命令已发布，最终状态由设备回执更新 |
 
 同一地块的配置名称不能重复，最多只能启用一个配置，也允许全部禁用。创建或更新启用配置时，后端在同一事务中自动禁用该地块的其他配置。`triggerMoisture` 和 `targetMoisture` 范围为 `0～100` 且前者小于后者；时长范围为 `1～180` 分钟。控制器必须在线，同一控制器存在待执行或执行中记录时不得重复启动。
 
@@ -239,9 +240,9 @@
 | --- | --- | --- |
 | `GET /api/alerts` | 必填 `landId`；可选 `type, severity, status` | `Alert[]`，按发生时间倒序 |
 | `POST /api/alerts` | `landId, type, severity, title, description, suggestion, occurredAt, source` | `201 Alert`；初始 `status=pending` |
-| `POST /api/alerts/{alertId}/start` | `createTask`；为 `true` 时附带 `taskType, priority, assigneeId, deadline` | `Alert`；状态改为 `processing`，任务与状态变更在同一事务完成 |
-| `POST /api/alerts/{alertId}/resolve` | `measure, handledAt, result, remark?` | `Alert`；状态改为 `resolved` |
-| `POST /api/alerts/{alertId}/ignore` | `remark` | `Alert`；状态改为 `ignored` |
+| `POST /api/alerts/{alertId}/start` | `createTask`；为 `true` 时附带 `taskType, priority, assigneeId, deadline` | `{ alert, createdTask|null }`；预警改为 `processing`，任务与状态变更在同一事务完成 |
+| `POST /api/alerts/{alertId}/resolve` | `measure, handledAt, result, remark?` | `204 No Content`；状态改为 `resolved`，前端成功后更新本地状态 |
+| `POST /api/alerts/{alertId}/ignore` | `remark` | `204 No Content`；状态改为 `ignored`，前端成功后更新本地状态 |
 
 只有 `pending` 预警可以开始处理或忽略，只有 `processing` 预警可以解决。仍有关联 `pending` 或 `processing` 任务时不能解决预警；`completed` 和 `cancelled` 任务不阻塞。人工解决或忽略不直接清理 Redis 异常状态，相关设备连续恢复正常后再解除屏蔽并重新武装自动预警。
 
@@ -261,7 +262,9 @@
 
 ## 10. AI 技术顾问
 
-`AiConversation`：`id`、`landId`、`title`、`status`、`createdAt`、`updatedAt`、`messages`。
+`AiConversationSummary`：`id`、`landId`、`title`、`status`、`createdAt`、`updatedAt`。
+
+`AiConversation`：在 `AiConversationSummary` 基础上增加 `messages`。
 
 `AiMessage`：`id`、`role`、`content`、`createdAt`、`references`、`taskDraft|null`。
 
@@ -270,13 +273,17 @@
 
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
-| `GET /api/ai/conversations` | 必填 `landId`；可选 `status`，默认 `active` | `AiConversation[]` |
-| `POST /api/ai/conversations` | `landId, title` | `201 AiConversation`；同一地块只能有一个进行中对话 |
+| `GET /api/ai/conversations` | 必填 `landId`；可选 `status`，默认 `active` | `AiConversationSummary[]`；列表不携带消息正文 |
+| `GET /api/ai/conversations/{conversationId}` | 无 | `AiConversation`；仅加载当前选中的单个对话及其消息 |
+| `POST /api/ai/conversations` | `landId, title` | `201 AiConversation`；新对话状态为 `active`，同一地块允许存在多个进行中对话 |
 | `POST /api/ai/conversations/{conversationId}/messages` | `content` | `{ userMessage, assistantMessage }`；后端构建上下文、调用模型并保存两条消息 |
 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `assigneeId, deadline` | `201 FarmTask`；从该 AI 消息保存的任务草稿创建 |
-| `POST /api/ai/conversations/{conversationId}/close` | 无请求体 | `AiConversation`；仅允许将 `active`（进行中）改为 `closed`（已结束） |
+| `POST /api/ai/conversations/{conversationId}/close` | 无请求体 | `204 No Content`；仅允许将 `active`（进行中）改为 `closed`（已结束），前端成功后更新本地状态 |
 
 前端只提交问题，不提交上下文、AI 回复、参考数据或任务草稿。同一 AI 消息最多生成一个任务。
+
+`active` 表示对话仍可继续发送消息，`closed` 表示对话已结束并保持只读。前端通过
+`conversationId` 记录当前选中的对话，不使用数据库状态表达界面当前选择。
 
 ## 11. 报告中心
 

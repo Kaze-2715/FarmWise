@@ -343,4 +343,28 @@ public interface IrrigationMapper {
             ORDER BY created_at, id
             """)
     List<IrrigationRecord> findActiveAutomaticRecordsByLandId(@Param("landId") String landId);
+
+    @Select("""
+            SELECT
+                id,
+                batch_id,
+                land_id,
+                controller_device_id,
+                source,
+                status,
+                started_at,
+                ended_at,
+                planned_duration,
+                duration,
+                water_usage,
+                trigger_reason,
+                operator_id,
+                created_at,
+                updated_at
+            FROM irrigation_records
+            WHERE land_id = #{landId}
+            ORDER BY created_at DESC, id DESC
+            LIMIT 10
+            """)
+    List<IrrigationRecord> findRecentRecordsByLandId(@Param("landId") String landId);
 }

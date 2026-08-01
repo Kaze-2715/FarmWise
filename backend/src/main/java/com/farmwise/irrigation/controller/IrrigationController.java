@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.farmwise.irrigation.dto.IrrigationBatchResponse;
-import com.farmwise.irrigation.dto.IrrigationRecordResponse;
 import com.farmwise.irrigation.dto.StartIrrigationRequest;
 import com.farmwise.irrigation.service.IrrigationService;
 import com.farmwise.security.permission.RequiredPermission;
@@ -35,12 +34,12 @@ public class IrrigationController {
 
     @PostMapping("/{recordId}/stop")
     @RequiredPermission("device:control")
-    public ResponseEntity<IrrigationRecordResponse> stopIrrigation(
+    public ResponseEntity<Void> stopIrrigation(
             @PathVariable String recordId, Authentication authentication) {
         String userId = authentication.getName();
 
-        IrrigationRecordResponse response = irrigationService.stopIrrigation(userId, recordId);
+        irrigationService.stopIrrigation(userId, recordId);
 
-        return ResponseEntity.accepted().body(response);
+        return ResponseEntity.accepted().build();
     }
 }

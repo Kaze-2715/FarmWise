@@ -54,6 +54,31 @@ public interface FarmTaskMapper {
             @Param("status") String status);
 
     @Select("""
+            SELECT
+                id,
+                land_id,
+                source_type,
+                source_id,
+                task_type,
+                title,
+                description,
+                priority,
+                status,
+                assignee_id,
+                deadline,
+                created_at,
+                completed_at,
+                result,
+                remark,
+                updated_at
+            FROM farm_tasks
+            WHERE land_id = #{landId}
+              AND status IN ('pending', 'processing')
+            ORDER BY deadline IS NULL, deadline, created_at DESC, id DESC
+            """)
+    List<FarmTask> findActiveByLandId(@Param("landId") String landId);
+
+    @Select("""
             SELECT EXISTS (
                 SELECT *
                 FROM farm_tasks

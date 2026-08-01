@@ -18,6 +18,18 @@
             </select>
           </div>
 
+          <div class="mb-6">
+            <label class="mb-3 block font-medium text-gray-700">选择对话</label>
+            <select v-model="currentConversationId"
+              :disabled="!currentLandId"
+              class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-gray-100">
+              <option value="">开始新对话</option>
+              <option v-for="conversation in activeConversations" :key="conversation.id" :value="conversation.id">
+                {{ conversation.title }}
+              </option>
+            </select>
+          </div>
+
           <div v-if="currentLand" class="space-y-4 rounded-xl bg-light p-6">
             <div>
               <h3 class="text-lg font-bold text-dark">{{ currentLand.name }}</h3>
@@ -203,6 +215,10 @@ const {
 
 const defaultLandId = aiConversations.value[0]?.landId ?? lands.value[0]?.id ?? '';
 const currentLandId = ref(defaultLandId);
+const defaultConversationId = aiConversations.value.find(conversation =>
+  conversation.landId === defaultLandId && conversation.status === 'active'
+)?.id ?? '';
+const currentConversationId = ref(defaultConversationId);
 const messageText = ref('');
 const taskDraftForms = reactive({});
 const creatingTaskMessageId = ref('');
@@ -217,9 +233,17 @@ const currentLand = computed(() =>
   lands.value.find(land => land.id === currentLandId.value) ?? null
 );
 
+const activeConversations = computed(() =>
+  aiConversations.value.filter(conversation =>
+    conversation.landId === currentLandId.value && conversation.status === 'active'
+  )
+);
+
 const currentConversation = computed(() =>
   aiConversations.value.find(conversation =>
-    conversation.landId === currentLandId.value && conversation.status === 'active'
+    conversation.id === currentConversationId.value &&
+    conversation.landId === currentLandId.value &&
+    conversation.status === 'active'
   ) ?? null
 );
 
@@ -237,6 +261,13 @@ const currentAiContext = computed(() => buildAiContext({
   farmTasks: farmTasks.value,
   plans: plans.value
 }));
+
+watch(currentLandId, (landId) => {
+  currentConversationId.value = aiConversations.value.find(conversation =>
+    conversation.landId === landId && conversation.status === 'active'
+  )?.id ?? '';
+  messageText.value = '';
+});
 
 watch(messages, (currentMessages) => {
   currentMessages.forEach(message => {
@@ -283,6 +314,7 @@ const sendMessage = () => {
         landId: currentLandId.value,
         title: text
       });
+      currentConversationId.value = conversation.id;
     }
 
     appendAiMessage(conversation.id,
@@ -313,6 +345,7 @@ const archiveCurrentConversation = () => {
 
   try {
     closeAiConversation(currentConversation.value.id);
+    currentConversationId.value = activeConversations.value[0]?.id ?? '';
     messageText.value = '';
   } catch (error) {
     console.error(error);

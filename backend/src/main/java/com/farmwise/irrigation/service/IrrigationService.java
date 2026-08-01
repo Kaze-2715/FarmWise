@@ -214,7 +214,7 @@ public class IrrigationService {
         return IrrigationConfigResponse.from(config);
     }
 
-    public IrrigationRecordResponse stopIrrigation(String userId, String recordId) {
+    public void stopIrrigation(String userId, String recordId) {
         if (!mqttClientManager.isAvailable()) {
             throw new BizException(HttpStatus.SERVICE_UNAVAILABLE, "MQTT 服务当前不可用");
         }
@@ -231,8 +231,6 @@ public class IrrigationService {
         mqttClientManager.publishCommand(
                 record.controllerDeviceId(),
                 new IrrigationCommand(record.id(), "stop", null, Instant.now()));
-
-        return IrrigationRecordResponse.from(record);
     }
 
     public IrrigationBatchResponse startIrrigation(String userId, StartIrrigationRequest request) {

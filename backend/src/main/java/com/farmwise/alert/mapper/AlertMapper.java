@@ -60,6 +60,35 @@ public interface AlertMapper {
             @Param("status") String status);
 
     @Select("""
+            SELECT
+                id,
+                land_id,
+                type,
+                severity,
+                title,
+                description,
+                suggestion,
+                status,
+                occurred_at,
+                source_device_id,
+                source_metric,
+                source_value,
+                source_unit,
+                handle_measure,
+                handled_at,
+                handle_result,
+                handle_remark,
+                handle_operator_id,
+                created_at,
+                updated_at
+            FROM alerts
+            WHERE land_id = #{landId}
+              AND status IN ('pending', 'processing')
+            ORDER BY occurred_at DESC, id DESC
+            """)
+    List<Alert> findActiveByLandId(@Param("landId") String landId);
+
+    @Select("""
             SELECT id, status, source_device_id, handled_at
             FROM alerts
             WHERE type = #{type}
@@ -232,30 +261,4 @@ public interface AlertMapper {
             @Param("handledAt") LocalDateTime handledAt,
             @Param("updatedAt") LocalDateTime updatedAt);
 
-    @Select("""
-            SELECT
-                a.id,
-                a.land_id,
-                a.type,
-                a.severity,
-                a.title,
-                a.description,
-                a.suggestion,
-                a.status,
-                a.occurred_at,
-                a.source_device_id,
-                a.source_metric,
-                a.source_value,
-                a.source_unit,
-                a.handle_measure,
-                a.handled_at,
-                a.handle_result,
-                a.handle_remark,
-                COALESCE(NULLIF(u.real_name, ''), u.username) AS handle_operator
-            FROM alerts a
-            LEFT JOIN users u
-              ON u.id = a.handle_operator_id
-            WHERE a.id = #{alertId}
-            """)
-    AlertQueryRow findRowById(@Param("alertId") String alertId);
 }

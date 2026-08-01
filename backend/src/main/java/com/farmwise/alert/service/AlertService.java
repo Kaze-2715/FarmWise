@@ -14,13 +14,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.farmwise.alert.dto.AlertQueryRow;
 import com.farmwise.alert.dto.AlertResponse;
 import com.farmwise.alert.dto.AlertSourceRequest;
 import com.farmwise.alert.dto.CreateAlertRequest;
 import com.farmwise.alert.dto.IgnoreAlertRequest;
 import com.farmwise.alert.dto.ResolveAlertRequest;
 import com.farmwise.alert.dto.StartAlertRequest;
+import com.farmwise.alert.dto.StartAlertResponse;
 import com.farmwise.alert.mapper.AlertMapper;
 import com.farmwise.alert.model.Alert;
 import com.farmwise.common.exception.BizException;
@@ -28,6 +28,7 @@ import com.farmwise.device.mapper.DeviceMapper;
 import com.farmwise.device.model.Device;
 import com.farmwise.land.mapper.LandMapper;
 import com.farmwise.task.mapper.FarmTaskMapper;
+import com.farmwise.task.dto.FarmTaskResponse;
 import com.farmwise.task.model.FarmTask;
 import com.farmwise.user.mapper.UserMapper;
 import com.farmwise.user.model.User;
@@ -157,7 +158,7 @@ public class AlertService {
     }
 
     @Transactional
-    public AlertResponse startAlert(String userId, String alertId, StartAlertRequest request) {
+    public StartAlertResponse startAlert(String userId, String alertId, StartAlertRequest request) {
         Alert alert = alertMapper.findByIdForUpdate(alertId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "预警不存在"));
         landMapper.findByIdAndOwnerId(alert.landId(), userId)
@@ -165,6 +166,7 @@ public class AlertService {
         if (!"pending".equals(alert.status())) {
             throw new BizException(HttpStatus.BAD_REQUEST, "只有 pending 状态可以启动");
         }
+        FarmTaskResponse createdTask = null;
         if (request.createTask()) {
             String taskType = validateRequired(request.taskType(), "任务类型不能为空");
             validateFilter(taskType, TASK_TYPES, "不支持的任务类型");
@@ -185,23 +187,40 @@ public class AlertService {
             }
             LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
             String id = UUID.randomUUID().toString();
-            int affectedRows = taskMapper
-                    .addTask(new FarmTask(id, alert.landId(), "alert", alert.id(), taskType, alert.title(),
-                            alert.description(), priority, "pending", assigneeId, ddl, now, null, "", "", now));
+            FarmTask task = new FarmTask(
+                    id,
+                    alert.landId(),
+                    "alert",
+                    alert.id(),
+                    taskType,
+                    alert.title(),
+                    alert.description(),
+                    priority,
+                    "pending",
+                    assigneeId,
+                    ddl,
+                    now,
+                    null,
+                    "",
+                    "",
+                    now);
+            int affectedRows = taskMapper.addTask(task);
             if (affectedRows != 1) {
                 throw new BizException(HttpStatus.INTERNAL_SERVER_ERROR, "创建农事任务失败");
             }
+            createdTask = FarmTaskResponse.from(task);
         }
         int affectedRows = alertMapper.startIfPending(alertId);
         if (affectedRows != 1) {
             throw new BizException(HttpStatus.INTERNAL_SERVER_ERROR, "启动预警失败");
         }
-        AlertQueryRow row = alertMapper.findRowById(alertId);
-        return AlertResponse.from(row);
+        return new StartAlertResponse(
+                AlertResponse.from(alert, "processing"),
+                createdTask);
     }
 
     @Transactional
-    public AlertResponse resolveAlert(String userId, String alertId, ResolveAlertRequest request) {
+    public void resolveAlert(String userId, String alertId, ResolveAlertRequest request) {
         Alert alert = alertMapper.findByIdForUpdate(alertId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "预警不存在"));
         landMapper.findByIdAndOwnerId(alert.landId(), userId)
@@ -234,12 +253,10 @@ public class AlertService {
                     "解决预警失败");
         }
 
-        AlertQueryRow row = alertMapper.findRowById(alertId);
-        return AlertResponse.from(row);
     }
 
     @Transactional
-    public AlertResponse ignoreAlert(String userId, String alertId, IgnoreAlertRequest request) {
+    public void ignoreAlert(String userId, String alertId, IgnoreAlertRequest request) {
         Alert alert = alertMapper.findByIdForUpdate(alertId)
                 .orElseThrow(() -> new BizException(HttpStatus.NOT_FOUND, "预警不存在"));
         landMapper.findByIdAndOwnerId(alert.landId(), userId)
@@ -260,7 +277,5 @@ public class AlertService {
             throw new BizException(HttpStatus.INTERNAL_SERVER_ERROR, "忽略预警失败");
         }
 
-        AlertQueryRow row = alertMapper.findRowById(alertId);
-        return AlertResponse.from(row);
     }
 }

@@ -18,6 +18,7 @@ import com.farmwise.alert.dto.CreateAlertRequest;
 import com.farmwise.alert.dto.IgnoreAlertRequest;
 import com.farmwise.alert.dto.ResolveAlertRequest;
 import com.farmwise.alert.dto.StartAlertRequest;
+import com.farmwise.alert.dto.StartAlertResponse;
 import com.farmwise.alert.service.AlertService;
 import com.farmwise.security.permission.RequiredPermission;
 
@@ -62,37 +63,37 @@ public class AlertController {
 
     @PostMapping("/{alertId}/start")
     @RequiredPermission("alert:manage")
-    public ResponseEntity<AlertResponse> startAlert(
+    public ResponseEntity<StartAlertResponse> startAlert(
             @PathVariable String alertId,
             @RequestBody StartAlertRequest request,
             Authentication authentication) {
         String userId = authentication.getName();
-        AlertResponse response = alertService.startAlert(userId, alertId, request);
+        StartAlertResponse response = alertService.startAlert(userId, alertId, request);
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{alertId}/resolve")
     @RequiredPermission("alert:manage")
-    public ResponseEntity<AlertResponse> resolveAlert(
+    public ResponseEntity<Void> resolveAlert(
             @PathVariable String alertId,
             @Valid @RequestBody ResolveAlertRequest request,
             Authentication authentication) {
         String userId = authentication.getName();
-        AlertResponse response = alertService.resolveAlert(userId, alertId, request);
+        alertService.resolveAlert(userId, alertId, request);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{alertId}/ignore")
     @RequiredPermission("alert:manage")
-    public ResponseEntity<AlertResponse> ignoreAlert(
+    public ResponseEntity<Void> ignoreAlert(
             @PathVariable String alertId,
             @Valid @RequestBody IgnoreAlertRequest request,
             Authentication authentication) {
         String userId = authentication.getName();
-        AlertResponse response = alertService.ignoreAlert(userId, alertId, request);
+        alertService.ignoreAlert(userId, alertId, request);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.noContent().build();
     }
 }

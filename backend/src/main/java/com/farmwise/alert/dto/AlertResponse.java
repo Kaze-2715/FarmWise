@@ -17,6 +17,10 @@ public record AlertResponse(
         AlertSourceResponse source,
         AlertHandleRecordResponse handleRecord) {
     public static AlertResponse from(Alert alert) {
+        return from(alert, alert.status());
+    }
+
+    public static AlertResponse from(Alert alert, String status) {
         return new AlertResponse(
                 alert.id(),
                 alert.landId(),
@@ -25,7 +29,7 @@ public record AlertResponse(
                 alert.title(),
                 alert.description(),
                 alert.suggestion(),
-                alert.status(),
+                status,
                 alert.occurredAt(),
                 new AlertSourceResponse(
                         alert.sourceDeviceId(),

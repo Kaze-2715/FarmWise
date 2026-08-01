@@ -55,4 +55,56 @@ public interface TelemetryMapper {
             </script>
             """)
     int insertReadings(@Param("readings") List<SensorReading> readings);
+
+    @Insert("""
+            <script>
+            INSERT INTO latest_sensor_readings (
+                device_id,
+                metric,
+                land_id,
+                recorded_at,
+                unit,
+                value,
+                updated_at
+            ) VALUES
+            <foreach collection="readings" item="reading" separator=",">
+                (
+                    #{reading.deviceId},
+                    #{reading.metric},
+                    #{reading.landId},
+                    #{reading.recordedAt},
+                    #{reading.unit},
+                    #{reading.value},
+                    UTC_TIMESTAMP(3)
+                )
+            </foreach>
+            AS incoming
+            ON DUPLICATE KEY UPDATE
+                land_id = IF(
+                    incoming.recorded_at &gt;= latest_sensor_readings.recorded_at,
+                    incoming.land_id,
+                    latest_sensor_readings.land_id
+                ),
+                unit = IF(
+                    incoming.recorded_at &gt;= latest_sensor_readings.recorded_at,
+                    incoming.unit,
+                    latest_sensor_readings.unit
+                ),
+                value = IF(
+                    incoming.recorded_at &gt;= latest_sensor_readings.recorded_at,
+                    incoming.value,
+                    latest_sensor_readings.value
+                ),
+                updated_at = IF(
+                    incoming.recorded_at &gt;= latest_sensor_readings.recorded_at,
+                    UTC_TIMESTAMP(3),
+                    latest_sensor_readings.updated_at
+                ),
+                recorded_at = GREATEST(
+                    latest_sensor_readings.recorded_at,
+                    incoming.recorded_at
+                )
+            </script>
+            """)
+    int upsertLatestReadings(@Param("readings") List<SensorReading> readings);
 }
