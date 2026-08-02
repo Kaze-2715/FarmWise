@@ -3,9 +3,9 @@ backend/target/
 backend/*.log
 
 # Frontend (Node/Vue)
-frontend/*/node_modules/
-frontend/*/dist/
-frontend/*/.vite/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 frontend/static/
 frontend-static-legacy.tar.gz
 
