@@ -20,6 +20,44 @@ import com.farmwise.irrigation.model.IrrigationRecord;
 @Mapper
 public interface IrrigationMapper {
     @Select("""
+            <script>
+            SELECT
+                id,
+                batch_id,
+                land_id,
+                controller_device_id,
+                source,
+                status,
+                started_at,
+                ended_at,
+                planned_duration,
+                duration,
+                water_usage,
+                trigger_reason,
+                operator_id,
+                created_at,
+                updated_at
+            FROM irrigation_records
+            WHERE land_id = #{landId}
+            <if test="startAt != null">
+                AND created_at &gt;= #{startAt}
+            </if>
+            <if test="endAt != null">
+                AND created_at &lt;= #{endAt}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            ORDER BY created_at DESC, id DESC
+            </script>
+            """)
+    List<IrrigationRecord> findRecordsByConditions(
+            @Param("landId") String landId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt,
+            @Param("status") String status);
+
+    @Select("""
             SELECT *
             FROM irrigation_records
             WHERE id = #{recordId}

@@ -1,6 +1,6 @@
 <template>
-  <main class="container mx-auto px-4 py-8">
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+  <main class="container mx-auto h-full min-h-0 px-4 py-2">
+    <div class="grid h-full min-h-0 grid-cols-1 gap-8 lg:grid-cols-3">
       <aside class="lg:col-span-1">
         <div class="rounded-2xl bg-white p-8 shadow-lg">
           <h2 class="mb-6 flex items-center text-2xl font-bold text-dark">
@@ -13,7 +13,7 @@
               class="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20">
               <option v-if="lands.length === 0" value="" disabled>暂无地块</option>
               <option v-for="land in lands" :key="land.id" :value="land.id">
-                {{ land.name }} | {{ land.area }} ㎡ | {{ land.type }}
+                {{ land.name }} | {{ land.area }} 亩 | {{ getLandTypeLabel(land.landType) }}
               </option>
             </select>
           </div>
@@ -43,7 +43,7 @@
               </div>
               <div>
                 <p class="text-sm text-gray-500">土地类型</p>
-                <p class="font-semibold">{{ currentLand.type }}</p>
+                <p class="font-semibold">{{ getLandTypeLabel(currentLand.landType) }}</p>
               </div>
               <div>
                 <p class="text-sm text-gray-500">设备</p>
@@ -66,9 +66,9 @@
         </div>
       </aside>
 
-      <section class="lg:col-span-2">
-        <div class="min-h-full rounded-2xl bg-white p-8 shadow-lg">
-          <div class="mb-8 flex items-start justify-between gap-4">
+      <section class="min-h-0 lg:col-span-2">
+        <div class="flex h-full min-h-0 flex-col rounded-2xl bg-white p-8 shadow-lg">
+          <div class="mb-6 flex shrink-0 items-start justify-between gap-4">
             <div>
               <h2 class="flex items-center text-2xl font-bold text-dark">
                 <i class="fa fa-comments mr-3 text-primary"></i>AI 技术顾问
@@ -89,13 +89,14 @@
             </div>
           </div>
 
-          <div v-if="messages.length === 0"
-            class="rounded-xl border border-dashed border-gray-200 py-16 text-center text-gray-500">
-            <i class="fa fa-comment-o mb-3 text-4xl text-gray-300"></i>
-            <p>当前地块暂无 AI 对话</p>
-          </div>
+          <div ref="messageListElement" class="min-h-0 flex-1 overflow-y-auto pr-2">
+            <div v-if="messages.length === 0"
+              class="rounded-xl border border-dashed border-gray-200 py-16 text-center text-gray-500">
+              <i class="fa fa-comment-o mb-3 text-4xl text-gray-300"></i>
+              <p>当前地块暂无 AI 对话</p>
+            </div>
 
-          <div v-else class="space-y-5">
+            <div v-else class="space-y-5">
             <div v-for="message in messages" :key="message.id" class="flex"
               :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
               <article class="w-fit max-w-[88%] border p-5 sm:max-w-[78%]" :class="message.role === 'assistant'
@@ -116,19 +117,34 @@
 
               <p class="whitespace-pre-wrap leading-relaxed text-gray-700">{{ message.content }}</p>
 
-              <div v-if="message.references.length > 0" class="mt-5 border-t border-gray-200 pt-4">
-                <h3 class="mb-3 text-sm font-semibold text-gray-700">参考数据</h3>
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <details v-if="message.role === 'assistant' && message.references?.length"
+                class="group mt-5 overflow-hidden rounded-xl border border-green-200 bg-white/80">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-gray-700">
+                  <span class="flex items-center gap-2">
+                    <i class="fa fa-database text-green-600"></i>
+                    参考设备与数据
+                    <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      {{ message.references.length }} 项
+                    </span>
+                  </span>
+                  <i class="fa fa-chevron-down text-xs text-gray-400 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <div class="grid grid-cols-1 gap-3 border-t border-green-100 p-4 sm:grid-cols-2">
                   <div v-for="reference in message.references"
                     :key="`${reference.type}:${reference.sourceId}:${reference.label}`"
-                    class="rounded-lg bg-white p-3 text-sm shadow-sm">
-                    <p class="text-gray-500">{{ reference.label }}</p>
+                    class="rounded-lg border border-gray-100 bg-white p-3 text-sm shadow-sm">
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="text-gray-500">{{ reference.label }}</p>
+                      <span class="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-500">
+                        {{ getReferenceTypeLabel(reference.type) }}
+                      </span>
+                    </div>
                     <p class="mt-1 font-semibold text-gray-800">
                       {{ reference.value }}{{ reference.unit }}
                     </p>
                   </div>
                 </div>
-              </div>
+              </details>
 
               <div v-if="message.taskDraft" class="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
                 <div class="mb-3 flex items-center justify-between gap-3">
@@ -142,7 +158,7 @@
                 <div v-if="taskDraftForms[message.id]" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label class="text-sm text-gray-700">
                     <span class="mb-1 block">负责人</span>
-                    <input v-model="taskDraftForms[message.id].assignee" type="text" placeholder="请输入负责人"
+                    <input v-model="taskDraftForms[message.id].assigneeId" type="text" placeholder="请输入负责人用户 ID"
                       :disabled="createdTaskMessageIds.has(message.id)"
                       class="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 outline-none focus:border-orange-400">
                   </label>
@@ -168,8 +184,9 @@
               </article>
             </div>
           </div>
+          </div>
 
-          <div class="mt-8 rounded-xl border border-green-100 bg-green-50/40 p-5">
+          <div class="mt-5 shrink-0 rounded-xl border border-green-100 bg-green-50/40 p-5">
             <div class="mb-3 flex items-center gap-2 text-sm text-gray-600">
               <i class="fa fa-leaf text-green-600"></i>
               <span>{{ currentConversation ? '输入消息继续咨询 AI 技术顾问' : '输入问题开始新的 AI 对话' }}</span>
@@ -178,9 +195,9 @@
               <input v-model="messageText" type="text" placeholder="例如：当前土壤湿度是否需要灌溉？"
                 :disabled="!currentLandId" @keyup.enter.prevent="sendMessage"
                 class="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400">
-              <button type="button" :disabled="!currentLandId || !messageText.trim()" @click="sendMessage"
+              <button type="button" :disabled="!currentLandId || !messageText.trim() || sending" @click="sendMessage"
                 class="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300">
-                <i class="fa fa-paper-plane mr-2"></i>发送
+                <i class="fa fa-paper-plane mr-2"></i>{{ sending ? '正在生成...' : '发送' }}
               </button>
             </div>
           </div>
@@ -191,10 +208,11 @@
 </template>
 
 <script setup>
-import { computed, ref, reactive, watch } from 'vue';
+import { computed, nextTick, ref, reactive, watch } from 'vue';
 import { useFarmStore } from '../composables/useFarmStore';
-import { generateMockAiResponse } from '../utils/mock-ai-agent';
-import { buildAiContext } from '../utils/ai-context';
+import { useAuthSession } from '../composables/useAuthSession';
+import { getLandTypeLabel } from '../utils/landType';
+import { parseUtcDateTime } from '../utils/dateTime';
 
 const {
   lands,
@@ -207,21 +225,38 @@ const {
   farmTasks,
   plans,
   aiConversations,
-  appendAiMessage,
+  loadLandModules,
+  loadConversations,
+  loadConversation,
   createAiConversation,
+  sendAiMessage,
   closeAiConversation,
   createFarmTaskFromAiDraft
 } = useFarmStore();
+const { currentUser } = useAuthSession();
 
-const defaultLandId = aiConversations.value[0]?.landId ?? lands.value[0]?.id ?? '';
+const defaultLandId = lands.value[0]?.id ?? '';
 const currentLandId = ref(defaultLandId);
-const defaultConversationId = aiConversations.value.find(conversation =>
-  conversation.landId === defaultLandId && conversation.status === 'active'
-)?.id ?? '';
-const currentConversationId = ref(defaultConversationId);
+const currentConversationId = ref('');
 const messageText = ref('');
 const taskDraftForms = reactive({});
 const creatingTaskMessageId = ref('');
+const sending = ref(false);
+const messageListElement = ref(null);
+
+const referenceTypeLabels = {
+  land: '地块',
+  plantingPlan: '种植计划',
+  device: '设备',
+  environmentThreshold: '环境阈值',
+  sensorReading: '监测数据',
+  alert: '预警',
+  farmTask: '农事任务',
+  irrigationConfig: '灌溉配置',
+  irrigationRecord: '灌溉记录'
+};
+
+const getReferenceTypeLabel = type => referenceTypeLabels[type] || '参考数据';
 
 const createdTaskMessageIds = computed(() => new Set(
   farmTasks.value
@@ -232,6 +267,14 @@ const createdTaskMessageIds = computed(() => new Set(
 const currentLand = computed(() =>
   lands.value.find(land => land.id === currentLandId.value) ?? null
 );
+
+watch(lands, (currentLands) => {
+  const currentLandExists = currentLands.some(land => land.id === currentLandId.value);
+
+  if (!currentLandExists) {
+    currentLandId.value = currentLands[0]?.id ?? '';
+  }
+}, { immediate: true });
 
 const activeConversations = computed(() =>
   aiConversations.value.filter(conversation =>
@@ -249,24 +292,47 @@ const currentConversation = computed(() =>
 
 const messages = computed(() => currentConversation.value?.messages ?? []);
 
-const currentAiContext = computed(() => buildAiContext({
-  landId: currentLandId.value,
-  lands: lands.value,
-  devices: devices.value,
-  sensorReadings: sensorReadings.value,
-  environmentThresholds: environmentThresholds.value,
-  irrigationConfigs: irrigationConfigs.value,
-  irrigationRecords: irrigationRecords.value,
-  alerts: alerts.value,
-  farmTasks: farmTasks.value,
-  plans: plans.value
+watch(() => messages.value.length, async () => {
+  await nextTick();
+  const messageList = messageListElement.value;
+  if (messageList) {
+    messageList.scrollTop = messageList.scrollHeight;
+  }
+}, { immediate: true });
+
+const currentAiContext = computed(() => ({
+  devices: devices.value.filter(item => item.landId === currentLandId.value),
+  sensorReadings: sensorReadings.value.filter(item => item.landId === currentLandId.value),
+  activeAlerts: alerts.value.filter(item =>
+    item.landId === currentLandId.value && ['pending', 'processing'].includes(item.status)
+  ),
+  activeTasks: farmTasks.value.filter(item =>
+    item.landId === currentLandId.value && ['pending', 'processing'].includes(item.status)
+  )
 }));
 
-watch(currentLandId, (landId) => {
-  currentConversationId.value = aiConversations.value.find(conversation =>
-    conversation.landId === landId && conversation.status === 'active'
-  )?.id ?? '';
+watch(currentLandId, async landId => {
   messageText.value = '';
+  currentConversationId.value = '';
+  if (!landId) return;
+  try {
+    const conversations = await loadConversations(landId);
+    await loadLandModules(landId);
+    currentConversationId.value = conversations[0]?.id ?? '';
+  } catch (error) {
+    alert(error.message || '加载 AI 对话失败');
+  }
+}, { immediate: true });
+
+watch(currentConversationId, async conversationId => {
+  if (!conversationId) return;
+  const conversation = aiConversations.value.find(item => item.id === conversationId);
+  if (conversation?.messages) return;
+  try {
+    await loadConversation(conversationId);
+  } catch (error) {
+    alert(error.message || '加载对话详情失败');
+  }
 });
 
 watch(messages, (currentMessages) => {
@@ -278,7 +344,7 @@ watch(messages, (currentMessages) => {
       return;
     }
     taskDraftForms[message.id] = {
-      assignee: message.taskDraft.assignee ?? '',
+      assigneeId: message.taskDraft.assigneeId ?? currentUser.value?.id ?? '',
       deadline: message.taskDraft.deadline ?? ''
     };
   });
@@ -286,66 +352,58 @@ watch(messages, (currentMessages) => {
 
 const formatDate = value => {
   if (!value) return '';
-  return new Date(value).toLocaleString('zh-CN');
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(parseUtcDateTime(value));
 };
 
-const sendMessage = () => {
+const sendMessage = async () => {
   const text = messageText.value.trim();
   if (!text) {
     alert('发送内容不能为空');
     return;
   }
 
-  if (!currentLand.value || !currentAiContext.value) {
-    alert('未选择地块、上下文信息不足');
+  if (!currentLand.value) {
+    alert('请选择咨询地块');
     return;
   }
 
+  sending.value = true;
   try {
-    const response = generateMockAiResponse({
-      question: text,
-      context: currentAiContext.value
-    });
-
     let conversation = currentConversation.value ?? null;
 
     if (!conversation) {
-      conversation = createAiConversation({
+      conversation = await createAiConversation({
         landId: currentLandId.value,
         title: text
       });
       currentConversationId.value = conversation.id;
     }
-
-    appendAiMessage(conversation.id,
-      {
-        role: 'user',
-        content: text
-      });
-
-    appendAiMessage(conversation.id,
-      {
-        role: 'assistant',
-        content: response.content,
-        references: response.references,
-        taskDraft: response.taskDraft
-      }
-    );
+    await sendAiMessage(conversation.id, text);
     messageText.value = '';
   } catch (error) {
     console.error(error);
     alert(error.message);
+  } finally {
+    sending.value = false;
   }
 };
 
-const archiveCurrentConversation = () => {
+const archiveCurrentConversation = async () => {
   if (!currentConversation.value) {
     return;
   }
 
   try {
-    closeAiConversation(currentConversation.value.id);
-    currentConversationId.value = activeConversations.value[0]?.id ?? '';
+    await closeAiConversation(currentConversation.value);
+    const conversations = await loadConversations(currentLandId.value);
+    currentConversationId.value = conversations[0]?.id ?? '';
     messageText.value = '';
   } catch (error) {
     console.error(error);
@@ -356,13 +414,13 @@ const archiveCurrentConversation = () => {
 const isTaskDraftSubmitDisabled = (message) => {
   const form = taskDraftForms[message.id];
   return !form ||
-    !form.assignee.trim() ||
+    !form.assigneeId.trim() ||
     !form.deadline ||
     creatingTaskMessageId.value === message.id ||
     createdTaskMessageIds.value.has(message.id);
 };
 
-const confirmTaskDraft = (message) => {
+const confirmTaskDraft = async (message) => {
   const form = taskDraftForms[message.id];
 
   if (!currentConversation.value || !form || !message.taskDraft) {
@@ -387,10 +445,10 @@ const confirmTaskDraft = (message) => {
   creatingTaskMessageId.value = message.id;
 
   try {
-    createFarmTaskFromAiDraft({
+    await createFarmTaskFromAiDraft({
       conversationId: currentConversation.value.id,
       messageId: message.id,
-      assignee: form.assignee,
+      assigneeId: form.assigneeId,
       deadline: validDeadline
     });
   } catch (error) {

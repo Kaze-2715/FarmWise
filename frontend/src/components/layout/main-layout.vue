@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="flex h-screen flex-col overflow-hidden bg-gray-50">
     <!-- 顶部导航 -->
-    <header class="shadow-lg sticky top-0 z-50" style="background-color: rgba(31,41,55,.95);">
+    <header class="sticky top-0 z-50 shrink-0 shadow-lg" style="background-color: rgba(31,41,55,.95);">
       <div class="container mx-auto px-4 py-4">
         <div class="flex justify-between items-center">
           <!-- 左侧 Logo -->
-          <router-link to="/" class="flex items-center space-x-2">
+          <router-link to="/dashboard" class="flex items-center space-x-2">
             <i class="fa fa-leaf text-2xl text-green-500"></i>
             <span class="text-xl font-bold text-white">FarmWise</span>
             <span class="text-gray-300 ml-1">| 智慧农业控制台</span>
@@ -76,25 +76,35 @@
       </div>
     </header>
 
-    <main class="w-full px-4 py-6 min-h-[calc(100vh-80px)]">
+    <main class="min-h-0 w-full flex-1 overflow-y-auto px-4 py-6">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { mockCurrentUserId, mockUsers } from '../../mocks/user-data'
+import { logout as logoutApi } from "../../api/auth";
+import { toast } from "../../utils/toast";
+import { useFarmStore } from '../../composables/useFarmStore'
+import { useAuthSession } from '../../composables/useAuthSession'
 
 const router = useRouter()
-const username = ref('游客')
-const avatarUrl = ref(null)
-const roles = ref([])
+const { loadLands, loadDevices, clearFarmData } = useFarmStore()
+const { currentUser, setCurrentUser, clearCurrentUser } = useAuthSession()
+const username = computed(() => currentUser.value?.username || '游客')
+const avatarUrl = computed(() => currentUser.value?.avatarUrl || null)
+const roles = computed(() => currentUser.value?.roles || [])
 
 const handleProfileUpdated = (event) => {
-  username.value = event.detail?.username || username.value
-  avatarUrl.value = event.detail?.avatarUrl || null
+  if (!currentUser.value) return
+
+  setCurrentUser({
+    ...currentUser.value,
+    username: event.detail?.username || currentUser.value.username,
+    avatarUrl: event.detail?.avatarUrl ?? currentUser.value.avatarUrl
+  })
 }
 
 // 检查角色权限
@@ -103,36 +113,26 @@ const hasRole = (role) => {
 }
 
 // 退出登录
-const logout = () => {
-  localStorage.clear()
-  router.push('/login')
+const logout = async () => {
+  try {
+    await logoutApi();
+    clearCurrentUser();
+    clearFarmData();
+
+    await router.replace('/login');
+  } catch (error) {
+    toast(`退出失败：${error.message}`, 'bg-red-500');
+  }
 }
 
 // 页面加载时读取用户信息
-onMounted(() => {
-  const uname = localStorage.getItem('username')
-  const currentUserId = localStorage.getItem('userId') || mockCurrentUserId
-  const mockUser = mockUsers.find((user) => user.id === currentUserId)
-  const rolesRaw = localStorage.getItem('roles')
-
-  username.value = uname || mockUser?.username || '游客'
-  avatarUrl.value = mockUser?.avatarUrl || null
+onMounted(async () => {
   window.addEventListener('farmwise:user-profile-updated', handleProfileUpdated)
 
-  if (rolesRaw && rolesRaw !== 'undefined') {
-    try {
-      roles.value = JSON.parse(rolesRaw)
-    } catch (e) {
-      console.error('解析角色失败:', e)
-    }
-  } else {
-    // 没有角色，跳转到登录页
-    // console.warn('没有可用角色，跳转登录页')
-    // router.push('/login')
-
-    // mock 数据，测试用
-    roles.value = ['farm_owner', 'data_analyst', 'sys_admin']
-    console.log('使用 mock 角色:', roles.value)
+  try {
+    await Promise.all([loadLands(), loadDevices()])
+  } catch (error) {
+    toast(`加载农场数据失败：${error.message}`, 'bg-red-500')
   }
 })
 

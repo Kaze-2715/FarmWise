@@ -80,7 +80,7 @@
                             <h3 class="font-bold text-lg">{{ report.title }}</h3>
                         </div>
                         <span class="inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium"
-                            :class="reportStatusClasses[report.status] || reportStatusClasses.draft">
+                            :class="reportStatusClasses[report.status] || 'bg-gray-100 text-gray-500'">
                             {{ getStatus(report.status) }}
                         </span>
                     </div>
@@ -88,7 +88,7 @@
                     <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-sm text-gray-500">
                         <span>{{ report.startDate }} 至 {{ report.endDate }}</span>
                         <span>生成时间：{{ formatReportTime(report.generatedAt || report.createdAt) }}</span>
-                        <span>作者：{{ report.creator }}</span>
+                        <span>作者 ID：{{ report.creatorId }}</span>
                     </div>
                     <div class="flex justify-end gap-2 mt-4">
                         <button type="button" @click="viewReport(report)"
@@ -153,11 +153,6 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">结束日期</label>
                             <input v-model="reportForm.endDate" type="date"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">报告作者</label>
-                            <input v-model="reportForm.creator" type="text" placeholder="请输入作者姓名"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
                         </div>
                     </div>
@@ -360,7 +355,7 @@
                     </p>
                 </div>
                 <div class="pt-3 border-t border-gray-100 text-sm text-gray-500">
-                    作者：{{ currentReport.creator }}
+                    作者 ID：{{ currentReport.creatorId }}
                 </div>
             </div>
             </div>
@@ -370,7 +365,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { toast } from '../utils/toast';
 import { useFarmStore } from '../composables/useFarmStore';
 
@@ -380,8 +375,7 @@ const emptyReportForm = {
     type: '',
     title: '',
     startDate: '',
-    endDate: '',
-    creator: ''
+    endDate: ''
 };
 
 const emptySearchReportForm = {
@@ -404,18 +398,17 @@ const searchReportForm = ref({ ...emptySearchReportForm });
 
 const {
     lands,
-    devices,
-    sensorReadings,
-    environmentThresholds,
-    alerts,
-    farmTasks,
     reports,
-    aiConversations
+    loadReports,
+    loadReport,
+    createReport,
+    archiveReport: archiveReportRequest
 } = useFarmStore();
 const types = ref(['comprehensive', 'device', 'environment', 'alert', 'task']);
-const allStatus = ref(['draft', 'generated', 'archived']);
+const allStatus = ref(['generated', 'archived']);
 
 const currentReport = ref(null);
+let reportFilterTimer = null;
 
 const reportTypeMap = {
     comprehensive: '综合运行报告',
@@ -426,7 +419,6 @@ const reportTypeMap = {
 };
 
 const reportStatusMap = {
-    draft: '草稿',
     generated: '已生成',
     archived: '已归档',
 };
@@ -448,7 +440,6 @@ const reportTypeIcons = {
 };
 
 const reportStatusClasses = {
-    draft: 'bg-amber-50 text-amber-700',
     generated: 'bg-blue-50 text-blue-700',
     archived: 'bg-gray-100 text-gray-500'
 };
@@ -458,7 +449,8 @@ const metricLabels = {
     air_temperature: '空气温度',
     air_humidity: '空气湿度',
     light: '光照强度',
-    soil_ph: '土壤 pH'
+    soil_ph: '土壤 pH',
+    battery: '电量'
 };
 
 const environmentStatusLabels = {
@@ -494,181 +486,23 @@ const formatReportTime = value => {
     }).format(date);
 };
 
-const isWithinDateRange = (value, startDate, endDate) => {
-    const time = new Date(value).getTime();
-    const startTime = new Date(`${startDate}T00:00:00+08:00`).getTime();
-    const endTime = new Date(`${endDate}T23:59:59.999+08:00`).getTime();
-
-    return Number.isFinite(time) && time >= startTime && time <= endTime;
-};
-
-const getSnapshotReadingStatus = (reading, threshold) => {
-    if (!Number.isFinite(reading.value)) return 'no_data';
-    if (!threshold) return 'unconfigured';
-    if (reading.value <= threshold.min) return 'low';
-    if (reading.value >= threshold.max) return 'high';
-    return 'normal';
-};
-
-const buildReportSnapshot = (landId, startDate, endDate) => {
-    const land = lands.value.find(item => item.id === landId);
-    if (!land) throw new Error('报告所属地块不存在');
-
-    const landDevices = devices.value.filter(device => device.landId === landId);
-    const periodReadings = sensorReadings.value.filter(reading =>
-        reading.landId === landId &&
-        isWithinDateRange(reading.recordedAt, startDate, endDate)
-    );
-
-    const latestReadingByMetric = periodReadings.reduce((result, reading) => {
-        const current = result[reading.metric];
-        if (!current || new Date(reading.recordedAt) > new Date(current.recordedAt)) {
-            result[reading.metric] = reading;
-        }
-        return result;
-    }, {});
-
-    const environment = Object.values(latestReadingByMetric).map(reading => {
-        const threshold = environmentThresholds.value.find(item =>
-            item.landId === landId &&
-            item.metric === reading.metric &&
-            item.enabled
-        );
-
-        return {
-            metric: reading.metric,
-            value: reading.value,
-            unit: reading.unit,
-            status: getSnapshotReadingStatus(reading, threshold),
-            recordedAt: reading.recordedAt
-        };
-    });
-
-    const periodAlerts = alerts.value.filter(alert =>
-        alert.landId === landId &&
-        isWithinDateRange(alert.occurredAt, startDate, endDate)
-    );
-    const periodTasks = farmTasks.value.filter(task =>
-        task.landId === landId &&
-        isWithinDateRange(task.createdAt, startDate, endDate)
-    );
-    const periodAiAdvice = aiConversations.value
-        .filter(conversation => conversation.landId === landId)
-        .flatMap(conversation => conversation.messages)
-        .filter(message =>
-            message.role === 'assistant' &&
-            isWithinDateRange(message.createdAt, startDate, endDate))
-        .map(message => ({
-            messageId: message.id,
-            content: message.content,
-            createdAt: message.createdAt,
-            references: message.references.map(reference => ({ ...reference }))
-        }));
-
-    return {
-        land: {
-            id: land.id,
-            name: land.name,
-            crop: land.crop,
-            area: land.area
-        },
-        devices: {
-            total: landDevices.length,
-            online: landDevices.filter(device => device.status === 'online').length,
-            offline: landDevices.filter(device => device.status === 'offline').length,
-            lowBattery: landDevices.filter(device =>
-                Number.isFinite(device.battery) && device.battery < 20
-            ).length
-        },
-        environment,
-        alerts: {
-            total: periodAlerts.length,
-            pending: periodAlerts.filter(alert => alert.status === 'pending').length,
-            processing: periodAlerts.filter(alert => alert.status === 'processing').length,
-            resolved: periodAlerts.filter(alert => alert.status === 'resolved').length,
-            ignored: periodAlerts.filter(alert => alert.status === 'ignored').length
-        },
-        tasks: {
-            total: periodTasks.length,
-            pending: periodTasks.filter(task => task.status === 'pending').length,
-            processing: periodTasks.filter(task => task.status === 'processing').length,
-            completed: periodTasks.filter(task => task.status === 'completed').length,
-            cancelled: periodTasks.filter(task => task.status === 'cancelled').length
-        },
-        aiAdvice: periodAiAdvice
-    };
-};
-
-const buildReportSummary = (type, snapshot) => {
-    const abnormalEnvironmentCount = snapshot.environment.filter(reading =>
-        reading.status === 'low' || reading.status === 'high'
-    ).length;
-    const activeAlertCount = snapshot.alerts.pending + snapshot.alerts.processing;
-    const activeTaskCount = snapshot.tasks.pending + snapshot.tasks.processing;
-    const aiAdviceCount = snapshot.aiAdvice.length;
-    const aiAdviceSummary = aiAdviceCount > 0
-        ? `本期收录了 ${aiAdviceCount} 条 AI 顾问建议。`
-        : '本期暂无 AI 顾问建议。';
-
-    const summaryBuilders = {
-        comprehensive: () =>
-            `本期记录 ${snapshot.environment.length} 项环境指标，其中 ${abnormalEnvironmentCount} 项异常；` +
-            `存在 ${activeAlertCount} 条未结束预警和 ${activeTaskCount} 项未结束农事任务。` +
-            aiAdviceSummary,
-        device: () =>
-            `当前地块共有 ${snapshot.devices.total} 台设备，${snapshot.devices.online} 台在线，` +
-            `${snapshot.devices.offline} 台离线，${snapshot.devices.lowBattery} 台处于低电量状态。`,
-        environment: () =>
-            `本期记录 ${snapshot.environment.length} 项环境指标，其中 ${abnormalEnvironmentCount} 项超出适宜范围。`,
-        alert: () =>
-            `本期共有 ${snapshot.alerts.total} 条异常预警，${snapshot.alerts.pending} 条待处理，` +
-            `${snapshot.alerts.processing} 条处理中，${snapshot.alerts.resolved} 条已解决，` +
-            `${snapshot.alerts.ignored} 条已忽略。`,
-        task: () =>
-            `本期共有 ${snapshot.tasks.total} 项农事任务，${snapshot.tasks.pending} 项待处理，` +
-            `${snapshot.tasks.processing} 项进行中，${snapshot.tasks.completed} 项已完成，` +
-            `${snapshot.tasks.cancelled} 项已取消。`
-    };
-
-    return summaryBuilders[type]?.() || '暂无报告摘要';
-};
-
-const getNextReportId = () => {
-    const largestId = reports.value.reduce((largest, report) => {
-        const numericId = Number.parseInt(String(report.id).replace(/\D/g, ''), 10);
-        return Number.isFinite(numericId) ? Math.max(largest, numericId) : largest;
-    }, 0);
-
-    return `REP-${String(largestId + 1).padStart(3, '0')}`;
-};
-
 // computed
 const selectedReports = computed(() => {
-    const landId = searchReportForm.value.landId;
-    const type = searchReportForm.value.type.trim();
-    const startDate = searchReportForm.value.startDate.trim();
-    const endDate = searchReportForm.value.endDate.trim();
-    const status = searchReportForm.value.status.trim();
-    const keyword = searchReportForm.value.keyword.trim();
+    return reports.value;
+});
 
-    return reports.value.filter(report => {
-        const landMatched = landId === 'all' || report.landId === landId;
-        const typeMatched = !type || type === 'all' || report.type === type;
-        const startDateMatched = !startDate || report.endDate >= startDate;
-        const endDateMatched = !endDate || report.startDate <= endDate;
-        const statusMatched = !status || status === 'all' || report.status === status;
-        const keywordMatched = !keyword || report.title.includes(keyword);
-
-        return landMatched && typeMatched && startDateMatched && endDateMatched && statusMatched && keywordMatched;
-    });
+const loadFilteredReports = () => loadReports({
+    landId: searchReportForm.value.landId === 'all' ? undefined : searchReportForm.value.landId,
+    type: searchReportForm.value.type === 'all' ? undefined : searchReportForm.value.type,
+    status: searchReportForm.value.status === 'all' ? undefined : searchReportForm.value.status,
+    startDate: searchReportForm.value.startDate || undefined,
+    endDate: searchReportForm.value.endDate || undefined,
+    keyword: searchReportForm.value.keyword.trim() || undefined
 });
 
 // 交互方法
 const openGenerateReportModal = () => {
-    reportForm.value = {
-        ...emptyReportForm,
-        creator: localStorage.getItem('username') || ''
-    };
+    reportForm.value = { ...emptyReportForm };
     generateReportModalVisible.value = true;
 };
 
@@ -703,37 +537,22 @@ const validateReport = report => {
         return false;
     }
 
-    if (!report.creator.trim()) {
-        toast('请输入报告作者', 'bg-orange-500');
-        return false;
-    }
-
     return true;
 };
 
-const generateReport = () => {
+const generateReport = async () => {
     const form = { ...reportForm.value };
     if (!validateReport(form)) {
         return;
     }
 
     try {
-        const snapshot = buildReportSnapshot(form.landId, form.startDate, form.endDate);
-        const now = new Date().toISOString();
-
-        reports.value.unshift({
-            id: getNextReportId(),
+        await createReport({
             landId: form.landId,
             type: form.type,
             title: form.title.trim(),
             startDate: form.startDate,
-            endDate: form.endDate,
-            status: 'generated',
-            creator: form.creator.trim(),
-            createdAt: now,
-            generatedAt: now,
-            summary: buildReportSummary(form.type, snapshot),
-            snapshot
+            endDate: form.endDate
         });
         toast('报告生成成功');
 
@@ -755,13 +574,17 @@ const resetQuery = () => {
     searchReportForm.value = { ...emptySearchReportForm };
 };
 
-const viewReport = (report) => {
+const viewReport = async (report) => {
     if (!report) {
         toast('未选中报告', 'bg-orange-500');
         return;
     }
-    currentReport.value = report;
-    viewReportModalVisible.value = true;
+    try {
+        currentReport.value = await loadReport(report.id);
+        viewReportModalVisible.value = true;
+    } catch (error) {
+        toast(`加载报告失败：${error.message}`, 'bg-red-500');
+    }
 };
 
 const quitViewing = () => {
@@ -769,14 +592,13 @@ const quitViewing = () => {
     viewReportModalVisible.value = false;
 };
 
-const archiveReport = report => {
-    const target = reports.value.find(item => item.id === report.id);
-    if (!target) {
-        return toast('报告不存在', 'bg-red-500');
+const archiveReport = async report => {
+    try {
+        await archiveReportRequest(report.id);
+        toast('报告已归档');
+    } catch (error) {
+        toast(`归档失败：${error.message}`, 'bg-red-500');
     }
-
-    target.status = 'archived';
-    toast('报告已归档');
 };
 
 const getType = (type) => {
@@ -790,5 +612,22 @@ const getStatus = (status) => {
 const shouldShowSnapshotSection = section => {
     return currentReport.value?.type === 'comprehensive' || currentReport.value?.type === section;
 };
+
+onMounted(async () => {
+    try {
+        await loadFilteredReports();
+    } catch (error) {
+        toast(`加载报告失败：${error.message}`, 'bg-red-500');
+    }
+});
+
+watch(searchReportForm, () => {
+    clearTimeout(reportFilterTimer);
+    reportFilterTimer = window.setTimeout(() => {
+        loadFilteredReports().catch(error => toast(`加载报告失败：${error.message}`, 'bg-red-500'));
+    }, 250);
+}, { deep: true });
+
+onUnmounted(() => clearTimeout(reportFilterTimer));
 
 </script>

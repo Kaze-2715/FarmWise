@@ -1,10 +1,14 @@
 package com.farmwise.irrigation.service;
 
+import static com.farmwise.common.util.ValidationUtil.validateFilter;
+import static com.farmwise.common.util.ValidationUtil.validateRequired;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,11 +42,39 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class IrrigationService {
+    private static final Set<String> IRRIGATION_RECORD_STATUSES =
+            Set.of("pending", "running", "completed", "failed");
+
     private final IrrigationMapper irrigationMapper;
     private final LandMapper landMapper;
     private final DeviceMapper deviceMapper;
     private final MqttClientManager mqttClientManager;
     private final TransactionTemplate transactionTemplate;
+
+    @Transactional(readOnly = true)
+    public List<IrrigationRecordResponse> listIrrigationRecords(
+            String userId,
+            String landId,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
+            String status) {
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        status = validateFilter(status, IRRIGATION_RECORD_STATUSES, "不支持的灌溉记录状态");
+
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
+
+        if (startAt != null && endAt != null && startAt.isAfter(endAt)) {
+            throw new BizException(HttpStatus.BAD_REQUEST, "起始时间不能晚于结束时间");
+        }
+
+        return irrigationMapper.findRecordsByConditions(landId, startAt, endAt, status)
+                .stream()
+                .map(IrrigationRecordResponse::from)
+                .toList();
+    }
 
     @Transactional
     public void enableConfig(String userId, String landId, String configId) {

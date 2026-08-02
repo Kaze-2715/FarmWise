@@ -5,7 +5,7 @@
       <h2 class="text-xl font-bold">种植规划</h2>
       <button
         class="inline-flex items-center rounded-lg border border-green-500 bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow active:translate-y-0 active:shadow-sm"
-        @click="addPlanModalVisible = true">
+        @click="openAddPlanModal">
         <i class="fa fa-plus mr-1"></i> 新增规划
       </button>
     </div>
@@ -45,18 +45,26 @@
 
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="text-sm">
-                {{ plan.plantingTime }} 至 {{ plan.expectedHarvestTime }}
+                {{ plan.plantingDate }} 至 {{ plan.expectedHarvestDate }}
               </div>
             </td>
 
             <td class="px-6 py-4 whitespace-nowrap">
               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                {{ plan.status }}
+                {{ statusLabels[plan.status] || plan.status }}
               </span>
             </td>
 
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               <div class="flex items-center gap-2">
+                <button v-if="nextStatus(plan.status)" type="button" @click="advancePlan(plan)"
+                  class="rounded-md border border-green-300 px-2.5 py-1 text-green-700 transition-all hover:border-green-500">
+                  {{ nextStatus(plan.status).label }}
+                </button>
+                <button v-if="!['harvested', 'cancelled'].includes(plan.status)" type="button" @click="cancelPlan(plan)"
+                  class="rounded-md border border-amber-300 px-2.5 py-1 text-amber-700 transition-all hover:border-amber-500">
+                  取消计划
+                </button>
                 <button type="button" @click="editPlan(plan)"
                   class="rounded-md border border-primary/30 px-2.5 py-1 text-primary transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-sm active:translate-y-0">
                   编辑
@@ -114,12 +122,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">种植开始时间</label>
-            <input v-model="newPlanForm.plantingTime" type="date"
+            <input v-model="newPlanForm.plantingDate" type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">预计收获时间</label>
-            <input v-model="newPlanForm.expectedHarvestTime" type="date"
+            <input v-model="newPlanForm.expectedHarvestDate" type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
           </div>
         </div>
@@ -189,12 +197,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">种植开始时间</label>
-            <input v-model="editPlanForm.plantingTime" type="date"
+            <input v-model="editPlanForm.plantingDate" type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">预计收获时间</label>
-            <input v-model="editPlanForm.expectedHarvestTime" type="date"
+            <input v-model="editPlanForm.expectedHarvestDate" type="date"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50">
           </div>
         </div>
@@ -265,12 +273,12 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">种植开始时间</label>
             <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">{{
-              selectedPlan.plantingTime }}</div>
+              selectedPlan.plantingDate }}</div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">预计收获时间</label>
             <div class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">{{
-              selectedPlan.expectedHarvestTime }}</div>
+              selectedPlan.expectedHarvestDate }}</div>
           </div>
         </div>
         <div>
@@ -343,7 +351,42 @@ const props = defineProps({
   }
 });
 
-const { plans, lands } = useFarmStore();
+const { plans, lands, addPlan, updatePlan, changePlanStatus, removePlan } = useFarmStore();
+
+const statusLabels = {
+  planned: '待开始',
+  sowing: '播种中',
+  growing: '生长中',
+  harvested: '已收获',
+  cancelled: '已取消'
+};
+
+const statusTransitions = {
+  planned: { status: 'sowing', label: '开始播种' },
+  sowing: { status: 'growing', label: '进入生长期' },
+  growing: { status: 'harvested', label: '确认收获' }
+};
+
+const nextStatus = status => statusTransitions[status] ?? null;
+
+const advancePlan = async plan => {
+  const transition = nextStatus(plan.status);
+  if (!transition || !window.confirm(`确认将“${plan.planName}”更新为“${transition.label}”吗？`)) return;
+  try {
+    await changePlanStatus(plan.id, transition.status);
+  } catch (error) {
+    window.alert(error.message || '更新种植计划状态失败');
+  }
+};
+
+const cancelPlan = async plan => {
+  if (!window.confirm(`确认取消种植计划“${plan.planName}”吗？`)) return;
+  try {
+    await changePlanStatus(plan.id, 'cancelled');
+  } catch (error) {
+    window.alert(error.message || '取消种植计划失败');
+  }
+};
 
 const filteredPlans = computed(() =>
   plans.value.filter(plan => plan.landId === props.landId)
@@ -361,8 +404,8 @@ const createEmptyPlanForm = () => ({
   planName: '',
   cropType: '',
   area: '',
-  plantingTime: '',
-  expectedHarvestTime: '',
+  plantingDate: '',
+  expectedHarvestDate: '',
   landId: '',
   remark: ''
 });
@@ -395,18 +438,32 @@ const validatePlanForm = (form) => {
   if (!form.planName.trim()) return alert('请输入规划名称'), false;
   if (!form.cropType.trim()) return alert('请输入作物类型'), false;
   if (!form.area) return alert('请输入种植面积'), false;
-  if (!form.plantingTime) return alert('请选择种植开始时间'), false;
-  if (!form.expectedHarvestTime) return alert('请选择预计收获时间'), false;
-  if (form.expectedHarvestTime < form.plantingTime) return alert('预计收获时间不能早于种植开始时间'), false;
+  if (!form.plantingDate) return alert('请选择种植开始时间'), false;
+  if (!form.expectedHarvestDate) return alert('请选择预计收获时间'), false;
+  if (form.expectedHarvestDate < form.plantingDate) return alert('预计收获时间不能早于种植开始时间'), false;
   if (!form.landId) return alert('请选择种植地块'), false;
   return true;
 };
 
-const submitNewPlan = () => {
+const toRequest = form => ({
+  landId: form.landId,
+  planName: form.planName.trim(),
+  cropType: form.cropType.trim(),
+  area: Number(form.area),
+  plantingDate: form.plantingDate,
+  expectedHarvestDate: form.expectedHarvestDate,
+  remark: form.remark?.trim() || null
+});
+
+const submitNewPlan = async () => {
   const form = newPlanForm.value;
   if (!validatePlanForm(form)) return;
-  plans.value.push({ ...form, id: Date.now(), status: '待开始' });
-  closeAddPlanModal();
+  try {
+    await addPlan(toRequest(form));
+    closeAddPlanModal();
+  } catch (error) {
+    alert(error.message || '创建种植计划失败');
+  }
 };
 
 const openDeletePlanModal = (plan) => {
@@ -414,10 +471,14 @@ const openDeletePlanModal = (plan) => {
   deletePlanModalVisible.value = true;
 };
 
-const confirmDeletePlan = () => {
+const confirmDeletePlan = async () => {
   if (!selectedDeletePlan.value) return;
-  plans.value = plans.value.filter(plan => plan.id !== selectedDeletePlan.value.id);
-  closeDeletePlanModal();
+  try {
+    await removePlan(selectedDeletePlan.value.id);
+    closeDeletePlanModal();
+  } catch (error) {
+    alert(error.message || '删除种植计划失败');
+  }
 };
 
 const viewPlan = (plan) => {
@@ -431,14 +492,20 @@ const editPlan = (plan) => {
   editPlanModalVisible.value = true;
 };
 
-const submitEditPlan = () => {
+const submitEditPlan = async () => {
   const form = editPlanForm.value;
   if (!validatePlanForm(form)) return;
-  const index = plans.value.findIndex(plan => plan.id === form.id);
-  if (index === -1) return;
-  plans.value[index] = { ...plans.value[index], ...form };
-  closeEditPlanModal();
+  try {
+    await updatePlan(form.id, toRequest(form));
+    closeEditPlanModal();
+  } catch (error) {
+    alert(error.message || '更新种植计划失败');
+  }
 };
 
 const getLandName = (landId) => lands.value.find(land => land.id === landId)?.name || '未知土地';
 </script>
+const openAddPlanModal = () => {
+  newPlanForm.value = { ...createEmptyPlanForm(), landId: props.landId };
+  addPlanModalVisible.value = true;
+};

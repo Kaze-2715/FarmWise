@@ -56,6 +56,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from '../utils/toast';
+import { sendVerificationCode, register as registerApi } from "../api/auth";
 
 const router = useRouter();
 const form = ref({
@@ -66,12 +67,15 @@ const form = ref({
 });
 
 const sendCode = async () => {
-    const email = form.value.account;
+    const email = form.value.account.trim();
     if (!email) {
         return toast('请先输入邮箱', 'bg-orange-500');
     }
     try {
-        await fetch('/api/verify-code/send?target=' + email + '&type=EMAIL', { method: 'POST' });
+        await sendVerificationCode({
+            email,
+            scene: 'register'
+        });
         toast('验证码已发送');
     } catch (e) {
         toast('发送失败：' + e.message, 'bg-red-500');
@@ -79,23 +83,22 @@ const sendCode = async () => {
 }
 
 const register = async () => {
-    const type = 'EMAIL';
-    const login = form.value.account;
-    const code = form.value.code;
-    const pwd = form.value.password;
-    const pwd2 = form.value.password2;
+    const email = form.value.account.trim();
+    const verificationCode = form.value.code.trim();
+    const password = form.value.password;
+    const confirmedPassword = form.value.password2;
 
-    if (pwd !== pwd2) {
+    if (password !== confirmedPassword) {
         return toast('两次密码不一致', 'bg-red-500');
     }
 
     try {
-        const res = await fetch('/api/user/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, login, password: pwd, verifyCode: code })
-        });
-        if (!res.ok) throw new Error(await res.text());
+        await registerApi({
+            email,
+            password,
+            verificationCode
+        })
+
         toast('注册成功！即将跳转登录页');
         setTimeout(() => router.push('/login'), 1200);
 

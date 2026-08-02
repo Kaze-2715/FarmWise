@@ -20,9 +20,13 @@
 
                 <!-- 登录/注册按钮 -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <router-link to="/login"
+                    <router-link v-if="currentUser" to="/dashboard"
+                        class="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-2 font-medium text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-lg">
+                        <i class="fa fa-dashboard mr-2"></i>工作台
+                    </router-link>
+                    <router-link v-else to="/login"
                         class="inline-flex items-center justify-center rounded-full border-2 border-white px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-white hover:text-green-500">登录</router-link>
-                    <router-link to="/register" class="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-2 font-medium text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-lg">免费注册</router-link>
+                    <router-link v-if="!currentUser" to="/register" class="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-2 font-medium text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-lg">免费注册</router-link>
                 </div>
             </div>
         </div>
@@ -273,3 +277,9 @@
         </div>
     </footer>
 </template>
+
+<script setup>
+import { useAuthSession } from '../composables/useAuthSession';
+
+const { currentUser } = useAuthSession();
+</script>

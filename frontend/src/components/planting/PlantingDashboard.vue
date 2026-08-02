@@ -5,8 +5,12 @@
       <h2 class="text-xl font-bold">数据总览</h2>
       <div class="flex space-x-2">
         <button
-          class="inline-flex items-center rounded-lg border border-primary px-3 py-1.5 text-sm text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow active:translate-y-0 active:shadow-sm">
-          <i class="fa fa-refresh mr-1"></i> 刷新
+          type="button"
+          :disabled="refreshing"
+          class="inline-flex items-center rounded-lg border border-primary px-3 py-1.5 text-sm text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow active:translate-y-0 active:shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+          @click="emit('refresh')">
+          <i :class="['fa mr-1', refreshing ? 'fa-spinner fa-spin' : 'fa-refresh']"></i>
+          {{ refreshing ? '刷新中' : '刷新' }}
         </button>
       </div>
     </div>
@@ -97,19 +101,17 @@
     </div>
 
     <!-- 趋势图表 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div>
       <div class="bg-gray-50 rounded-xl p-4">
-        <h3 class="font-medium mb-4">环境数据趋势（7天）</h3>
-        <div
-          class="h-64 flex items-center justify-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-lg">
-          图表待接入
+        <div class="mb-4">
+          <h3 class="font-medium">环境数据趋势（最近 24 小时 · 每 2 小时平均）</h3>
         </div>
-      </div>
-      <div class="bg-gray-50 rounded-xl p-4">
-        <h3 class="font-medium mb-4">作物生长状态</h3>
-        <div
-          class="h-64 flex items-center justify-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-lg">
-          图表待接入
+        <div v-if="environmentTrendSeries.length" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <SensorTrendChart v-for="series in environmentTrendSeries" :key="series.metric"
+            :metric="series.metric" :label="series.label" :unit="series.unit" :color="series.color" :points="series.points" />
+        </div>
+        <div v-else class="flex h-64 items-center justify-center rounded-lg border border-dashed border-gray-200 text-sm text-gray-400">
+          最近 24 小时暂无环境数据
         </div>
       </div>
     </div>
@@ -117,6 +119,8 @@
 </template>
 
 <script setup>
+import SensorTrendChart from './SensorTrendChart.vue'
+
 defineProps({
   dashboardEnvironmentSummary: {
     type: Object,
@@ -141,6 +145,16 @@ defineProps({
   currentLandLowBatteryDeviceCount: {
     type: Number,
     required: true
+  },
+  refreshing: {
+    type: Boolean,
+    required: true
+  },
+  environmentTrendSeries: {
+    type: Array,
+    required: true
   }
 });
+
+const emit = defineEmits(['refresh']);
 </script>

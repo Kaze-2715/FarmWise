@@ -1,5 +1,5 @@
 <template>
-  <main class="mx-auto w-full max-w-7xl space-y-6">
+  <main class="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col gap-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h2 class="flex items-center text-2xl font-bold text-gray-800">
@@ -49,7 +49,7 @@
         </select>
         <select v-model="typeFilter" class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-green-500">
           <option value="all">全部类型</option>
-          <option v-for="type in deviceTypes" :key="type" :value="type">{{ type }}</option>
+          <option v-for="type in deviceTypes" :key="type" :value="type">{{ getDeviceTypeLabel(type) }}</option>
         </select>
         <select v-model="statusFilter" class="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-green-500">
           <option value="all">全部状态</option>
@@ -62,10 +62,10 @@
       </div>
     </section>
 
-    <section class="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-      <div class="overflow-x-auto">
+    <section class="min-h-0 flex-1 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+      <div class="h-full overflow-auto">
         <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+          <thead class="sticky top-0 z-10 bg-gray-50">
             <tr>
               <th class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">设备</th>
               <th class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">类型</th>
@@ -83,7 +83,7 @@
                 <p class="font-medium text-gray-800">{{ device.name }}</p>
                 <p class="mt-1 text-xs text-gray-400">{{ device.id }}</p>
               </td>
-              <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">{{ device.type }}</td>
+              <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">{{ getDeviceTypeLabel(device.deviceType) }}</td>
               <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">{{ getLandName(device.landId) }}</td>
               <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">{{ device.model }}</td>
               <td class="whitespace-nowrap px-5 py-4">
@@ -101,7 +101,7 @@
                 </span>
               </td>
               <td class="whitespace-nowrap px-5 py-4 text-sm text-gray-600">
-                {{ device.lastReportedAt || '尚未上报' }}
+                {{ formatLastReportedAt(device.lastReportedAt) }}
               </td>
               <td class="whitespace-nowrap px-5 py-4 text-right text-sm">
                 <div class="inline-flex items-center gap-2">
@@ -118,7 +118,13 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="filteredDevices.length === 0">
+            <tr v-if="devicesLoading">
+              <td colspan="8" class="px-5 py-14 text-center text-gray-400">
+                <i class="fa fa-spinner fa-spin mb-3 block text-3xl"></i>
+                正在加载设备
+              </td>
+            </tr>
+            <tr v-else-if="filteredDevices.length === 0">
               <td colspan="8" class="px-5 py-14 text-center text-gray-400">
                 <i class="fa fa-inbox mb-3 block text-3xl"></i>
                 没有符合当前条件的设备
@@ -152,7 +158,12 @@
         </label>
         <label class="space-y-2">
           <span class="text-sm font-medium text-gray-700">设备类型</span>
-          <input v-model="deviceForm.type" required class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-500">
+          <select v-model="deviceForm.deviceType" required class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-500">
+            <option value="" disabled>请选择设备类型</option>
+            <option v-for="option in deviceTypeOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
         </label>
         <label class="space-y-2">
           <span class="text-sm font-medium text-gray-700">绑定土地</span>
@@ -167,7 +178,7 @@
         </label>
         <label class="space-y-2">
           <span class="text-sm font-medium text-gray-700">安装时间</span>
-          <input v-model="deviceForm.installTime" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-500">
+          <input v-model="deviceForm.installDate" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-green-500">
         </label>
         <div></div>
         <label class="space-y-2">
@@ -205,15 +216,29 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useFarmStore } from "../composables/useFarmStore";
+import { parseUtcDateTime } from '../utils/dateTime';
 
-const { devices, lands, addDevice, updateDevice, deleteDevice } = useFarmStore();
+const { devices, devicesLoading, lands, addDevice, updateDevice, deleteDevice } = useFarmStore();
+
+const deviceTypeOptions = [
+  { value: 'soil_moisture_sensor', label: '土壤湿度传感器' },
+  { value: 'air_temp_humidity_sensor', label: '空气温湿度传感器' },
+  { value: 'light_sensor', label: '光照传感器' },
+  { value: 'soil_ph_sensor', label: '土壤 pH 传感器' },
+  { value: 'pest_camera', label: '虫情摄像头' },
+  { value: 'irrigation_controller', label: '灌溉控制器' }
+];
+
+const deviceTypeLabels = new Map(
+  deviceTypeOptions.map(option => [option.value, option.label])
+);
 
 const createEmptyDeviceForm = () => ({
   name: '',
-  type: '',
+  deviceType: '',
   landId: '',
   model: '',
-  installTime: '',
+  installDate: '',
   longitude: '',
   latitude: ''
 });
@@ -236,14 +261,14 @@ const offlineDeviceCount = computed(() => devices.value.filter(device => device.
 const lowBatteryDeviceCount = computed(() =>
   devices.value.filter(device => device.battery !== null && device.battery < 20).length
 );
-const deviceTypes = computed(() => [...new Set(devices.value.map(device => device.type).filter(Boolean))]);
+const deviceTypes = computed(() => [...new Set(devices.value.map(device => device.deviceType).filter(Boolean))]);
 
 const filteredDevices = computed(() => {
   const keyword = deviceKeyword.value.trim().toLowerCase();
 
   return devices.value.filter(device => {
     const matchesKeyword = device.name.toLowerCase().includes(keyword);
-    const matchesType = typeFilter.value === 'all' || device.type === typeFilter.value;
+    const matchesType = typeFilter.value === 'all' || device.deviceType === typeFilter.value;
     const matchesStatus = statusFilter.value === 'all' || device.status === statusFilter.value;
 
     let matchesLand = true;
@@ -265,6 +290,25 @@ const getLandName = (landId) => {
   return lands.value.find(land => land.id === landId)?.name || "未知土地";
 };
 
+const getDeviceTypeLabel = (deviceType) => deviceTypeLabels.get(deviceType) || deviceType;
+
+const formatLastReportedAt = value => {
+  if (!value) return '尚未上报';
+  const date = parseUtcDateTime(value);
+  if (Number.isNaN(date.getTime())) return '时间格式异常';
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(date);
+};
+
 const resetFilters = () => {
   deviceKeyword.value = '';
   landFilter.value = 'all';
@@ -283,10 +327,10 @@ const openEditModal = (device) => {
   editingDeviceId.value = device.id;
   deviceForm.value = {
     name: device.name,
-    type: device.type,
+    deviceType: device.deviceType,
     landId: device.landId || '',
     model: device.model,
-    installTime: device.installTime || '',
+    installDate: device.installDate || '',
     longitude: device.longitude,
     latitude: device.latitude
   };
@@ -301,14 +345,14 @@ const closeFormModal = () => {
   formError.value = '';
 };
 
-const submitDevice = () => {
+const submitDevice = async () => {
   formError.value = '';
 
   try {
     if (editingDeviceId.value) {
-      updateDevice(editingDeviceId.value, deviceForm.value);
+      await updateDevice(editingDeviceId.value, deviceForm.value);
     } else {
-      addDevice(deviceForm.value);
+      await addDevice(deviceForm.value);
     }
     closeFormModal();
   } catch (error) {
@@ -328,13 +372,13 @@ const closeDeleteModal = () => {
   deleteError.value = '';
 };
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (!pendingDeleteDevice.value) {
     return;
   }
 
   try {
-    deleteDevice(pendingDeleteDevice.value.id);
+    await deleteDevice(pendingDeleteDevice.value.id);
     closeDeleteModal();
   } catch (error) {
     deleteError.value = error.message || '删除设备失败';

@@ -1,7 +1,7 @@
 <template>
   <!-- 环境监控 -->
-  <section class="bg-white rounded-xl card-shadow p-6">
-    <div class="flex justify-between items-center mb-6">
+  <section class="min-w-0 rounded-xl bg-white p-6 card-shadow">
+    <div class="mb-6 flex items-center justify-between">
       <h2 class="text-xl font-bold">环境监控</h2>
       <div class="flex space-x-2">
         <button
@@ -24,7 +24,7 @@
           <div>
             <h3 class="font-medium text-gray-800">{{ indicator.label }}</h3>
             <p class="mt-1 text-xs text-gray-500">
-              建议区间：{{ indicator.min }} - {{ indicator.max }} {{ indicator.unit }}
+              建议区间：{{ formatSensorMetricValue(indicator.metric, indicator.min) }} - {{ formatSensorMetricValue(indicator.metric, indicator.max) }} {{ indicator.unit }}
             </p>
           </div>
           <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="getSensorStatusClass(indicator.status)">
@@ -33,7 +33,7 @@
         </div>
 
         <div class="flex items-end gap-2">
-          <span class="text-3xl font-bold text-gray-900">{{ indicator.value ?? '--' }}</span>
+          <span class="text-3xl font-bold text-gray-900">{{ formatSensorMetricValue(indicator.metric, indicator.value) }}</span>
           <span class="pb-1 text-sm text-gray-500">{{ indicator.unit }}</span>
         </div>
 
@@ -44,17 +44,13 @@
     </div>
 
     <!-- 历史趋势图表 -->
-    <div class="bg-gray-50 rounded-xl p-4 mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-medium">历史趋势</h3>
+    <div class="mb-6 min-w-0 rounded-xl bg-gray-50 p-4">
+      <div class="mb-4 flex items-center justify-between">
+        <div>
+          <h3 class="font-medium">历史趋势</h3>
+          <p class="mt-1 text-xs text-gray-400">最近 24 小时 · 每 2 小时平均</p>
+        </div>
         <div class="flex items-center gap-2">
-          <select v-model="sensorTrendRange"
-            class="rounded-lg border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50">
-            <option value="day">日</option>
-            <option value="week">周</option>
-            <option value="month">月</option>
-            <option value="season">季</option>
-          </select>
           <select v-model="selectedTrendMetric"
             class="rounded-lg border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/50">
             <option v-for="option in trendMetricOptions" :key="option.value" :value="option.value">
@@ -63,7 +59,7 @@
           </select>
         </div>
       </div>
-      <div class="min-h-80 rounded-lg border border-dashed border-gray-200 bg-white p-4 text-sm">
+      <div class="h-[30rem] min-w-0 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white p-4 text-sm">
         <div class="mb-3 text-gray-600">
           当前范围内共有 {{ filteredTrendReadings.length }} 条传感器数据
         </div>
@@ -72,32 +68,60 @@
           当前时间范围暂无趋势数据
         </div>
 
-        <div v-else-if="visibleTrendMetricSummaries.length === 0"
+        <div v-else-if="trendChartSeries.length === 0"
           class="flex h-64 items-center justify-center text-gray-400">
           当前指标暂无趋势数据
         </div>
 
-        <div v-else class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div v-for="summary in visibleTrendMetricSummaries" :key="summary.metric"
-            class="rounded-lg bg-white p-4 shadow-sm">
-            <div class="mb-3 flex items-start justify-between">
-              <div>
-                <h4 class="font-medium text-gray-800">{{ summary.label }}</h4>
-                <p class="mt-1 text-xs text-gray-500">数据点：{{ summary.count }}</p>
-              </div>
-              <div class="text-right">
-                <div class="text-xl font-bold text-gray-900">
-                  {{ summary.latestValue ?? '--' }} {{ summary.unit }}
+        <div v-else class="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+          <SensorTrendChart v-for="series in trendChartSeries" :key="series.metric"
+            :metric="series.metric" :label="series.label" :unit="series.unit" :color="series.color" :points="series.points" />
+
+          <details class="min-w-0 rounded-xl border border-gray-100 bg-gray-50 md:col-span-2">
+            <summary class="cursor-pointer px-4 py-3 font-medium text-gray-700">查看本页数据明细</summary>
+            <div class="grid min-w-0 grid-cols-1 gap-4 border-t border-gray-100 p-4 lg:grid-cols-2">
+              <div v-for="summary in visibleTrendMetricSummaries" :key="summary.metric"
+                class="min-w-0 rounded-lg bg-white p-4 shadow-sm">
+                <div class="mb-3 flex items-start justify-between">
+                  <div>
+                    <h4 class="font-medium text-gray-800">{{ summary.label }}</h4>
+                    <p class="mt-1 text-xs text-gray-500">本页数据点：{{ summary.count }}</p>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-xl font-bold text-gray-900">
+                      {{ formatSensorMetricValue(summary.metric, summary.latestValue) }} {{ summary.unit }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex min-w-0 flex-wrap gap-2">
+                  <span v-for="point in summary.points" :key="point.time"
+                    class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                    {{ formatSensorMetricValue(summary.metric, point.value) }} ({{ formatTrendPointTime(point.time) }})
+                  </span>
                 </div>
               </div>
             </div>
+          </details>
+        </div>
 
-            <div class="flex flex-wrap gap-2">
-              <span v-for="point in summary.points" :key="point.time"
-                class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                {{ point.value }} ({{ formatTrendPointTime(point.time) }})
-              </span>
-            </div>
+        <div v-if="trendTotalCount > 0"
+          class="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-2 text-sm text-gray-500">
+            <span>共 {{ trendTotalCount }} 条</span>
+            <select v-model.number="trendPageSize"
+              class="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-700">
+              <option :value="50">50 条/页</option>
+              <option :value="100">100 条/页</option>
+              <option :value="200">200 条/页</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" :disabled="trendPage === 1" class="page-button" @click="trendPage = 1">首页</button>
+            <button type="button" :disabled="trendPage === 1" class="page-button" @click="trendPage -= 1">上一页</button>
+            <span class="min-w-24 text-center text-sm text-gray-600">{{ trendPage }} / {{ trendTotalPages }}</span>
+            <button type="button" :disabled="trendPage === trendTotalPages" class="page-button" @click="trendPage += 1">下一页</button>
+            <button type="button" :disabled="trendPage === trendTotalPages" class="page-button" @click="trendPage = trendTotalPages">末页</button>
           </div>
         </div>
       </div>
@@ -159,9 +183,9 @@
     </div>
 
     <!-- 传感器状态表格 -->
-    <div class="overflow-x-auto">
+    <div class="max-h-96 min-w-0 overflow-auto rounded-xl border border-gray-100 bg-white">
       <table class="min-w-full divide-y divide-gray-200">
-        <thead>
+        <thead class="sticky top-0 z-10 bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               传感器编号</th>
@@ -326,6 +350,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useFarmStore } from '../../composables/useFarmStore';
+import SensorTrendChart from './SensorTrendChart.vue';
+import { formatSensorMetricValue } from '../../utils/sensorMetric';
 
 // 双向筛选状态
 const sensorTrendRange = defineModel('sensorTrendRange', {
@@ -335,6 +361,16 @@ const sensorTrendRange = defineModel('sensorTrendRange', {
 
 const selectedTrendMetric = defineModel('selectedTrendMetric', {
   type: String,
+  required: true
+});
+
+const trendPage = defineModel('trendPage', {
+  type: Number,
+  required: true
+});
+
+const trendPageSize = defineModel('trendPageSize', {
+  type: Number,
   required: true
 });
 
@@ -362,6 +398,18 @@ const props = defineProps({
   },
   visibleTrendMetricSummaries: {
     type: Array,
+    required: true
+  },
+  trendChartSeries: {
+    type: Array,
+    required: true
+  },
+  trendTotalCount: {
+    type: Number,
+    required: true
+  },
+  trendTotalPages: {
+    type: Number,
     required: true
   },
   availableMetrics: {
@@ -406,11 +454,14 @@ const emit = defineEmits([
   'export-data'
 ]);
 
-const { environmentThresholds } = useFarmStore();
+const {
+  addThreshold: createThreshold,
+  editThreshold: updateThreshold,
+  removeThreshold
+} = useFarmStore();
 const editThresholdModalVisible = ref(false);
 const addThresholdModalVisible = ref(false);
 const selectedThreshold = ref(null);
-const currentUsername = localStorage.getItem('username') || '游客';
 
 const createThresholdForm = () => ({
   landId: '',
@@ -430,14 +481,14 @@ const editThreshold = (threshold) => {
   editThresholdModalVisible.value = true;
 };
 
-const deleteThreshold = (threshold) => {
+const deleteThreshold = async (threshold) => {
   const metricLabel = props.sensorMetricLabels[threshold.metric] || threshold.metric;
   if (!window.confirm(`确定要删除“${metricLabel}”阈值规则吗？`)) return;
-  const index = environmentThresholds.value.findIndex(item =>
-    item.landId === threshold.landId && item.metric === threshold.metric
-  );
-  if (index === -1) return window.alert('阈值规则不存在！');
-  environmentThresholds.value.splice(index, 1);
+  try {
+    await removeThreshold(threshold.landId, threshold.metric);
+  } catch (error) {
+    window.alert(error.message || '删除阈值失败');
+  }
 };
 
 const quitEditThreshold = () => {
@@ -446,21 +497,21 @@ const quitEditThreshold = () => {
   editThresholdModalVisible.value = false;
 };
 
-const submitEditThreshold = () => {
+const submitEditThreshold = async () => {
   const form = thresholdForm.value;
   if (!selectedThreshold.value) return alert('未选中阈值条目!');
   if (!Number.isFinite(form.min) || !Number.isFinite(form.max)) return alert('数字输入无效!');
   if (form.min >= form.max) return alert('无效的阈值范围!');
-  const index = environmentThresholds.value.findIndex(threshold =>
-    threshold.landId === selectedThreshold.value.landId && threshold.metric === selectedThreshold.value.metric
-  );
-  if (index === -1) return alert('阈值规则不存在！');
-  environmentThresholds.value[index] = {
-    ...environmentThresholds.value[index],
-    ...form,
-    updatedAt: new Date().toISOString()
-  };
-  quitEditThreshold();
+  try {
+    await updateThreshold(selectedThreshold.value.landId, selectedThreshold.value.metric, {
+      min: Number(form.min),
+      max: Number(form.max),
+      enabled: Boolean(form.enabled)
+    });
+    quitEditThreshold();
+  } catch (error) {
+    alert(error.message || '更新阈值失败');
+  }
 };
 
 const addThreshold = () => {
@@ -473,20 +524,42 @@ const quitAddThreshold = () => {
   addThresholdModalVisible.value = false;
 };
 
-const submitAddThreshold = () => {
+const submitAddThreshold = async () => {
   const form = thresholdForm.value;
   if (!form.metric) return alert('必须选择指标类型!');
   if (!Number.isFinite(form.min) || !Number.isFinite(form.max)) return alert('请填写有效数字!');
   if (form.min >= form.max) return alert('无效的阈值范围');
-  const duplicated = environmentThresholds.value.some(threshold =>
-    threshold.landId === form.landId && threshold.metric === form.metric
-  );
-  if (duplicated) return alert('不能对一个指标重复添加阈值!');
-  environmentThresholds.value.push({
-    ...form,
-    creator: currentUsername,
-    updatedAt: new Date().toISOString()
-  });
-  quitAddThreshold();
+  try {
+    await createThreshold(form.landId, {
+      metric: form.metric,
+      min: Number(form.min),
+      max: Number(form.max),
+      enabled: Boolean(form.enabled)
+    });
+    quitAddThreshold();
+  } catch (error) {
+    alert(error.message || '创建阈值失败');
+  }
 };
 </script>
+
+<style scoped>
+.page-button {
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.5rem;
+  background: white;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  color: rgb(55 65 81);
+}
+
+.page-button:hover:not(:disabled) {
+  border-color: rgb(34 197 94);
+  color: rgb(21 128 61);
+}
+
+.page-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+</style>

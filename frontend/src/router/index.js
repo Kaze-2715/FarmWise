@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { loadCurrentUser } from '../composables/useAuthSession';
 import UserProfile from '../components/user-profile.vue'
 import Login from '../components/login.vue'
 import Register from '../components/register.vue'
@@ -22,6 +23,21 @@ const routes = [
         path: '/dashboard',
         component: MainLayout,
         redirect: '/dashboard/planting',
+
+        beforeEnter: async (to) => {
+            try {
+                await loadCurrentUser();
+                return true;
+            } catch {
+                return {
+                    path: '/login',
+                    query: {
+                        redirect: to.fullPath
+                    }
+                };
+            }
+        },
+
         children: [
             {
                 path: 'planting',

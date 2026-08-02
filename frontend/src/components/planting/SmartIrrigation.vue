@@ -1,11 +1,26 @@
 <template>
   <section class="rounded-xl bg-white p-6 card-shadow">
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-xl font-bold text-gray-800">智能灌溉</h2>
-      <span v-if="currentIrrigationConfig" class="rounded-full px-3 py-1 text-xs font-medium"
-        :class="currentIrrigationConfig.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
-        {{ currentIrrigationConfig.enabled ? '自动灌溉已启用' : '自动灌溉未启用' }}
-      </span>
+      <div class="flex flex-wrap items-center gap-2">
+        <select v-if="landIrrigationConfigs.length" v-model="selectedConfigId"
+          class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700">
+          <option v-for="config in landIrrigationConfigs" :key="config.id" :value="config.id">
+            {{ config.name }}{{ config.enabled ? '（已启用）' : '' }}
+          </option>
+        </select>
+        <button v-if="landIrrigationConfigs.length" type="button" :disabled="availableControllers.length === 0"
+          class="rounded-lg border border-blue-200 px-3 py-1.5 text-sm text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          @click="openCreateConfigModal">
+          新增配置
+        </button>
+        <span v-if="currentIrrigationConfig" class="rounded-full px-3 py-1 text-xs font-medium"
+          :class="currentIrrigationConfig.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
+          {{ currentIrrigationConfig.mode === 'manual'
+            ? '手动灌溉配置'
+            : currentIrrigationConfig.enabled ? '自动灌溉已启用' : '自动灌溉未启用' }}
+        </span>
+      </div>
     </div>
 
     <div v-if="!currentIrrigationConfig"
@@ -29,14 +44,14 @@
         <div>
           <p class="text-sm text-gray-500">灌溉控制器</p>
           <h3 class="mt-1 font-semibold text-gray-800">
-            {{ currentController?.name || currentIrrigationConfig.controllerDeviceId }}
+            {{ currentControllerNames }}
           </h3>
         </div>
         <span class="w-fit rounded-full px-2.5 py-1 text-xs font-medium"
-          :class="currentController?.status === 'online'
+          :class="allCurrentControllersOnline
             ? 'bg-green-100 text-green-700'
             : 'bg-gray-200 text-gray-600'">
-          {{ currentController?.status === 'online' ? '设备在线' : '设备离线' }}
+          {{ allCurrentControllersOnline ? '控制器全部在线' : '存在离线控制器' }}
         </span>
       </div>
 
@@ -86,13 +101,19 @@
           {{ formatDateTime(currentIrrigationConfig.updatedAt) }}
         </p>
         <div class="flex items-center gap-2">
-          <button type="button" :disabled="currentController?.status !== 'online'"
+          <button v-for="controller in currentControllers" :key="controller.id" type="button"
+            :disabled="controller.status !== 'online'"
             class="rounded-lg px-4 py-2 text-sm transition-colors"
-            :class="currentController?.status === 'online'
+            :class="controller.status === 'online'
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'cursor-not-allowed bg-gray-200 text-gray-400'"
-            @click="openManualControl(currentController)">
-            {{ getManualControlButtonLabel(currentController?.id) }}
+            @click="openManualControl(controller)">
+            {{ controller.name }}：{{ getManualControlButtonLabel(controller.id) }}
+          </button>
+          <button v-if="currentIrrigationConfig.mode === 'automatic' && !currentIrrigationConfig.enabled" type="button"
+            class="rounded-lg border border-green-200 px-4 py-2 text-sm text-green-700 transition-colors hover:bg-green-50"
+            @click="enableCurrentConfig">
+            设为启用配置
           </button>
           <button type="button"
             class="rounded-lg border border-blue-200 px-4 py-2 text-sm text-blue-700 transition-colors hover:bg-blue-50"
@@ -151,7 +172,7 @@
                 分钟` : '--' }}
               </td>
               <td class="px-3 py-3">
-                {{ record.operator || '未记录' }}
+                {{ record.operatorId || '系统自动执行' }}
               </td>
             </tr>
           </tbody>
@@ -219,9 +240,15 @@
       </div>
 
       <form class="p-6" @submit.prevent="submitIrrigationConfig">
-        <div v-if="isCreatingConfig" class="mb-4">
-          <label class="mb-1.5 block text-sm font-medium text-gray-700">灌溉控制器</label>
-          <select v-model="irrigationConfigForm.controllerDeviceId"
+        <div class="mb-4">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700">配置名称</label>
+          <input v-model.trim="irrigationConfigForm.name" required maxlength="100"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            placeholder="例如：温室默认灌溉方案">
+        </div>
+        <div class="mb-4">
+          <label class="mb-1.5 block text-sm font-medium text-gray-700">灌溉控制器（可多选）</label>
+          <select v-model="irrigationConfigForm.controllerDeviceIds" multiple required size="4"
             class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
             <option v-for="controller in availableControllers" :key="controller.id" :value="controller.id">
               {{ controller.name }}
@@ -321,10 +348,14 @@ const props = defineProps({
 const {
   devices,
   sensorReadings,
+  latestSensorReadings,
   irrigationConfigs,
   irrigationRecords,
   saveIrrigationConfig,
-  deleteIrrigationConfig
+  activateIrrigationConfig,
+  deleteIrrigationConfig,
+  startManualIrrigation: startManualIrrigationApi,
+  stopManualIrrigation: stopManualIrrigationApi
 } = useFarmStore();
 
 const manualDuration = ref(30);
@@ -336,6 +367,7 @@ const configError = ref('');
 const irrigationConfigForm = ref({});
 const deleteConfigModalVisible = ref(false);
 const deleteConfigError = ref('');
+const selectedConfigId = ref('');
 
 const irrigationStatusLabels = {
   pending: '待执行',
@@ -364,12 +396,14 @@ const irrigationNeedClasses = {
   no_data: 'text-gray-400'
 };
 
-const currentIrrigationConfig = computed(() => {
-  return irrigationConfigs.value.find(config => config.landId === props.landId) ?? null;
-});
+const landIrrigationConfigs = computed(() => irrigationConfigs.value.filter(config => config.landId === props.landId));
+
+const currentIrrigationConfig = computed(() => landIrrigationConfigs.value.find(
+  config => config.id === selectedConfigId.value
+) ?? landIrrigationConfigs.value.find(config => config.enabled) ?? landIrrigationConfigs.value[0] ?? null);
 
 const availableControllers = computed(() => devices.value.filter(device =>
-  device.landId === props.landId && device.type === '灌溉控制器'
+  device.landId === props.landId && device.deviceType === 'irrigation_controller'
 ));
 
 const currentIrrigationRecords = computed(() => {
@@ -377,7 +411,10 @@ const currentIrrigationRecords = computed(() => {
 });
 
 const latestSoilMoisture = computed(() => {
-  return sensorReadings.value.reduce((latestReading, reading) => {
+  const currentLatestReadings = latestSensorReadings.value.filter(reading => reading.landId === props.landId);
+  const sourceReadings = currentLatestReadings.length > 0 ? currentLatestReadings : sensorReadings.value;
+
+  return sourceReadings.reduce((latestReading, reading) => {
     if (reading.landId !== props.landId || reading.metric !== 'soil_moisture') {
       return latestReading;
     }
@@ -400,15 +437,16 @@ const irrigationNeedStatus = computed(() => {
     : 'not_needed';
 });
 
-const currentController = computed(() => {
-  const controllerDeviceId = currentIrrigationConfig.value?.controllerDeviceId;
+const currentControllers = computed(() => currentIrrigationConfig.value?.controllerDeviceIds
+  ?.map(id => devices.value.find(device => device.id === id))
+  .filter(Boolean) ?? []);
 
-  if (!controllerDeviceId) {
-    return null;
-  }
+const currentControllerNames = computed(() => currentControllers.value.length
+  ? currentControllers.value.map(controller => controller.name).join('、')
+  : '未绑定控制器');
 
-  return devices.value.find(device => device.id === controllerDeviceId) ?? null;
-});
+const allCurrentControllersOnline = computed(() => currentControllers.value.length > 0
+  && currentControllers.value.every(controller => controller.status === 'online'));
 
 const getRunningRecord = (controllerDeviceId) => {
   return currentIrrigationRecords.value.find(record =>
@@ -445,6 +483,12 @@ watch(currentIrrigationConfig, (config) => {
   manualDuration.value = config?.defaultDuration ?? 30;
 }, { immediate: true });
 
+watch([() => props.landId, landIrrigationConfigs], ([, configs]) => {
+  if (!configs.some(config => config.id === selectedConfigId.value)) {
+    selectedConfigId.value = configs.find(config => config.enabled)?.id ?? configs[0]?.id ?? '';
+  }
+}, { immediate: true });
+
 watch(() => irrigationConfigForm.value.mode, (mode) => {
   if (mode === 'manual') {
     irrigationConfigForm.value.enabled = false;
@@ -466,7 +510,8 @@ const openConfigModal = () => {
   isCreatingConfig.value = false;
   configError.value = '';
   irrigationConfigForm.value = {
-    ...currentIrrigationConfig.value
+    ...currentIrrigationConfig.value,
+    controllerDeviceIds: [...currentIrrigationConfig.value.controllerDeviceIds]
   };
   configModalVisible.value = true;
 };
@@ -480,7 +525,8 @@ const openCreateConfigModal = () => {
   configError.value = '';
   irrigationConfigForm.value = {
     landId: props.landId,
-    controllerDeviceId: availableControllers.value[0].id,
+    name: '默认灌溉方案',
+    controllerDeviceIds: [availableControllers.value[0].id],
     mode: 'manual',
     enabled: false,
     triggerMoisture: 40,
@@ -497,12 +543,26 @@ const closeConfigModal = () => {
   irrigationConfigForm.value = {};
 };
 
-const submitIrrigationConfig = () => {
+const submitIrrigationConfig = async () => {
+  if (!irrigationConfigForm.value.controllerDeviceIds?.length) {
+    configError.value = '请至少选择一台灌溉控制器';
+    return;
+  }
   try {
-    saveIrrigationConfig(irrigationConfigForm.value);
+    const saved = await saveIrrigationConfig(irrigationConfigForm.value);
+    selectedConfigId.value = saved.id;
     closeConfigModal();
   } catch (error) {
     configError.value = error.message || '灌溉配置保存失败';
+  }
+};
+
+const enableCurrentConfig = async () => {
+  if (!currentIrrigationConfig.value) return;
+  try {
+    await activateIrrigationConfig(currentIrrigationConfig.value);
+  } catch (error) {
+    window.alert(error.message || '启用灌溉配置失败');
   }
 };
 
@@ -516,62 +576,54 @@ const closeDeleteConfigModal = () => {
   deleteConfigError.value = '';
 };
 
-const confirmDeleteConfig = () => {
+const confirmDeleteConfig = async () => {
   try {
-    deleteIrrigationConfig(props.landId);
+    await deleteIrrigationConfig(currentIrrigationConfig.value);
     closeDeleteConfigModal();
   } catch (error) {
     deleteConfigError.value = error.message || '灌溉配置删除失败';
   }
 };
 
-const startManualIrrigation = () => {
+const startManualIrrigation = async () => {
   if (manualControlDisabled.value || !selectedController.value) {
     return;
   }
 
-  irrigationRecords.value.unshift({
-    id: `IRR-${crypto.randomUUID()}`,
-    landId: props.landId,
-    controllerDeviceId: selectedController.value.id,
-    source: 'manual',
-    status: 'running',
-    startedAt: new Date().toISOString(),
-    endedAt: '',
-    plannedDuration: manualDuration.value,
-    duration: 0,
-    waterUsage: null,
-    triggerReason: currentIrrigationConfig.value?.mode === 'automatic'
-      ? '自动模式下人工接管'
-      : '手动启动灌溉',
-    operator: localStorage.getItem('username') || '游客'
-  });
+  try {
+    await startManualIrrigationApi(
+      props.landId,
+      selectedController.value.id,
+      manualDuration.value
+    );
+    closeManualControl();
+  } catch (error) {
+    window.alert(error.message || '启动灌溉失败');
+  }
 };
 
-const stopManualIrrigation = () => {
+const stopManualIrrigation = async () => {
   const runningRecord = currentRunningIrrigation.value;
 
   if (!runningRecord || selectedController.value?.status !== 'online') {
     return;
   }
 
-  const endedAt = new Date();
-  const startedAt = new Date(runningRecord.startedAt);
-  const duration = (endedAt.getTime() - startedAt.getTime()) / 60000;
-
-  runningRecord.status = 'completed';
-  runningRecord.endedAt = endedAt.toISOString();
-  runningRecord.duration = Math.max(0, Number(duration.toFixed(1)));
-  closeManualControl();
+  try {
+    await stopManualIrrigationApi(runningRecord);
+    closeManualControl();
+  } catch (error) {
+    window.alert(error.message || '停止灌溉失败');
+  }
 };
 
-const handleManualIrrigation = () => {
+const handleManualIrrigation = async () => {
   if (hasRunningIrrigation.value) {
-    stopManualIrrigation();
+    await stopManualIrrigation();
     return;
   }
 
-  startManualIrrigation();
+  await startManualIrrigation();
 };
 
 const formatDateTime = (dateTime) => {

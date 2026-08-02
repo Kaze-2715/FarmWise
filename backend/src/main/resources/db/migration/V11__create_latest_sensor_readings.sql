@@ -54,7 +54,7 @@ FROM (
         ROW_NUMBER() OVER (
             PARTITION BY sr.device_id, sr.metric
             ORDER BY sr.recorded_at DESC, sr.id DESC
-        ) AS row_number
+        ) AS rn
     FROM sensor_readings sr
 ) ranked
-WHERE ranked.row_number = 1;
+WHERE ranked.rn = 1;

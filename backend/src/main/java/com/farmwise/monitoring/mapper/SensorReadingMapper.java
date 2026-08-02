@@ -31,7 +31,7 @@ public interface SensorReadingMapper {
                 AND recorded_at >= #{startedAt}
             </if>
             <if test="endedAt != null">
-                AND recorded_at <= #{endedAt}
+                AND recorded_at &lt;= #{endedAt}
             </if>
             ORDER BY recorded_at ASC
             </script>

@@ -248,7 +248,7 @@
           </button>
         </div>
         <p class="rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
-          <i class="fa fa-info-circle mr-1.5"></i>前端演示验证码：123456
+          <i class="fa fa-info-circle mr-1.5"></i>验证码将发送至新邮箱，收到后请在此填写
         </p>
         <p v-if="verificationError" class="text-sm text-red-500">{{ verificationError }}</p>
       </div>
@@ -268,15 +268,20 @@
 </template>
 
 <script setup>
-import { computed, onUnmounted, ref } from 'vue'
-import { mockCurrentUserId, mockPermissions, mockRoles, mockUsers } from '../mocks/user-data'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { sendVerificationCode as requestVerificationCode } from '../api/auth'
+import { uploadFile } from '../api/file'
+import { updateCurrentUser } from '../api/user'
+import { useAuthSession } from '../composables/useAuthSession'
 import { toast } from '../utils/toast'
 
-const cloneData = (data) => JSON.parse(JSON.stringify(data))
-const currentUserId = localStorage.getItem('userId') || mockCurrentUserId
-const sourceUser = mockUsers.find((user) => user.id === currentUserId) || mockUsers[0]
+const { currentUser, loadCurrentUser, setCurrentUser } = useAuthSession()
+const emptyUser = {
+  id: '', username: '', email: '', emailVerified: false, status: '',
+  roles: [], permissions: [], avatarUrl: null, createdAt: null, lastLoginAt: null
+}
 
-const savedUser = ref(cloneData(sourceUser))
+const savedUser = ref(currentUser.value ? { ...currentUser.value } : { ...emptyUser })
 const form = ref(editableFields(savedUser.value))
 const errors = ref({})
 const avatarInput = ref(null)
@@ -313,8 +318,8 @@ const isDirty = computed(() => {
 
 const permissionGroups = computed(() => {
   const grouped = new Map()
-  mockPermissions
-    .filter((permission) => savedUser.value.permissions.includes(permission.code))
+  savedUser.value.permissions
+    .map(code => ({ code, name: code, module: code.split(':')[0] || '其他' }))
     .forEach((permission) => {
       if (!grouped.has(permission.module)) grouped.set(permission.module, [])
       grouped.get(permission.module).push(permission)
@@ -322,7 +327,12 @@ const permissionGroups = computed(() => {
   return [...grouped.entries()].map(([module, items]) => ({ module, items }))
 })
 
-const roleName = (roleCode) => mockRoles.find((role) => role.code === roleCode)?.name || roleCode
+const roleLabels = {
+  farm_owner: '农场主',
+  data_analyst: '数据分析员',
+  sys_admin: '系统管理员'
+}
+const roleName = (roleCode) => roleLabels[roleCode] || roleCode
 
 const statusLabel = (status) => status === 'active' ? '正常' : '已停用'
 
@@ -389,15 +399,20 @@ const handleSubmit = () => {
   persistChanges()
 }
 
-const sendVerificationCode = () => {
-  codeSent.value = true
-  codeCountdown.value = 60
-  clearInterval(countdownTimer)
-  countdownTimer = window.setInterval(() => {
-    codeCountdown.value -= 1
-    if (codeCountdown.value <= 0) clearInterval(countdownTimer)
-  }, 1000)
-  toast('验证码已发送')
+const sendVerificationCode = async () => {
+  try {
+    await requestVerificationCode({ email: form.value.email, scene: 'change_email' })
+    codeSent.value = true
+    codeCountdown.value = 60
+    clearInterval(countdownTimer)
+    countdownTimer = window.setInterval(() => {
+      codeCountdown.value -= 1
+      if (codeCountdown.value <= 0) clearInterval(countdownTimer)
+    }, 1000)
+    toast('验证码已发送')
+  } catch (error) {
+    verificationError.value = error.message
+  }
 }
 
 const closeEmailDialog = () => {
@@ -415,46 +430,41 @@ const confirmEmailChange = () => {
     verificationError.value = '请先发送验证码'
     return
   }
-  if (verificationCode.value !== '123456') {
-    verificationError.value = '验证码不正确'
-    return
-  }
-  persistChanges('123456')
+  persistChanges(verificationCode.value)
 }
 
 const persistChanges = async (verificationCodeValue = null) => {
   saving.value = true
-  await new Promise((resolve) => window.setTimeout(resolve, avatarFile.value ? 350 : 180))
+  try {
+    const uploadedAvatar = avatarFile.value ? await uploadFile(avatarFile.value, 'avatar') : null
+    const existingAvatarId = savedUser.value.avatarUrl
+      ?.match(/\/files\/([^/]+)\/content(?:\?|$)/)?.[1]
+    const updatedUser = await updateCurrentUser({
+      ...form.value,
+      phone: form.value.phone || null,
+      realName: form.value.realName || null,
+      organization: form.value.organization || null,
+      province: form.value.province || null,
+      city: form.value.city || null,
+      position: form.value.position || null,
+      avatarFileId: uploadedAvatar?.id || existingAvatarId || null,
+      verificationCode: verificationCodeValue
+    })
 
-  const updatedUser = {
-    ...savedUser.value,
-    ...form.value,
-    phone: form.value.phone || null,
-    realName: form.value.realName || null,
-    organization: form.value.organization || null,
-    province: form.value.province || null,
-    city: form.value.city || null,
-    position: form.value.position || null,
-    avatarUrl: avatarPreview.value || null,
-    emailVerified: emailChanged.value ? Boolean(verificationCodeValue) : savedUser.value.emailVerified
+    savedUser.value = { ...updatedUser }
+    setCurrentUser(updatedUser)
+    form.value = editableFields(savedUser.value)
+    avatarFile.value = null
+    avatarPreview.value = updatedUser.avatarUrl
+    errors.value = {}
+    closeEmailDialog()
+    toast('个人资料保存成功')
+  } catch (error) {
+    verificationError.value = error.message
+    toast(`保存资料失败：${error.message}`, 'bg-red-500')
+  } finally {
+    saving.value = false
   }
-
-  const mockUser = mockUsers.find((user) => user.id === updatedUser.id)
-  if (mockUser) Object.assign(mockUser, cloneData(updatedUser))
-
-  savedUser.value = cloneData(updatedUser)
-  form.value = editableFields(savedUser.value)
-  avatarFile.value = null
-  errors.value = {}
-  saving.value = false
-  closeEmailDialog()
-
-  localStorage.setItem('userId', updatedUser.id)
-  localStorage.setItem('username', updatedUser.username)
-  window.dispatchEvent(new CustomEvent('farmwise:user-profile-updated', {
-    detail: { username: updatedUser.username, avatarUrl: updatedUser.avatarUrl }
-  }))
-  toast('个人资料保存成功')
 }
 
 const resetForm = () => {
@@ -465,6 +475,17 @@ const resetForm = () => {
 }
 
 onUnmounted(() => clearInterval(countdownTimer))
+
+onMounted(async () => {
+  try {
+    const user = await loadCurrentUser()
+    savedUser.value = { ...user }
+    form.value = editableFields(user)
+    avatarPreview.value = user.avatarUrl
+  } catch (error) {
+    toast(`加载个人资料失败：${error.message}`, 'bg-red-500')
+  }
+})
 </script>
 
 <style scoped>

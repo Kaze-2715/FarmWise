@@ -97,7 +97,7 @@
           <div class="grid gap-3 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2">
             <div>
               <p class="text-xs text-gray-400">负责人</p>
-              <p class="mt-1 font-medium text-gray-700">{{ task.assignee || '暂未分配' }}</p>
+              <p class="mt-1 font-medium text-gray-700">{{ task.assigneeId || '暂未分配' }}</p>
             </div>
             <div>
               <p class="text-xs text-gray-400">截止时间</p>
@@ -240,6 +240,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useFarmStore } from '../../composables/useFarmStore';
+import { useAuthSession } from '../../composables/useAuthSession';
 
 const props = defineProps({
   landId: {
@@ -248,7 +249,8 @@ const props = defineProps({
   }
 });
 
-const { farmTasks } = useFarmStore();
+const { farmTasks, addTask, beginTask, finishTask, dismissTask } = useFarmStore();
+const { currentUser } = useAuthSession();
 
 const selectedTaskType = ref('all');
 const selectedStatus = ref('all');
@@ -329,7 +331,10 @@ const formatDateTime = value => {
 };
 
 const openCreateModal = () => {
-  taskForm.value = { ...emptyTaskForm };
+  taskForm.value = {
+    ...emptyTaskForm,
+    assignee: currentUser.value?.id || ''
+  };
   showCreateModal.value = true;
 };
 
@@ -337,7 +342,7 @@ const closeCreateModal = () => {
   showCreateModal.value = false;
 };
 
-const createTask = () => {
+const createTask = async () => {
   if (!taskForm.value.title || !taskForm.value.description || !taskForm.value.assignee || !taskForm.value.deadline) {
     return window.alert('请填写任务标题、任务说明、负责人和截止时间');
   }
@@ -347,33 +352,33 @@ const createTask = () => {
     return window.alert('截止时间格式不正确');
   }
 
-  farmTasks.value.unshift({
-    id: `TASK-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-    landId: props.landId,
-    sourceType: 'manual',
-    sourceId: null,
-    taskType: taskForm.value.taskType,
-    title: taskForm.value.title,
-    description: taskForm.value.description,
-    priority: taskForm.value.priority,
-    status: 'pending',
-    assignee: taskForm.value.assignee,
-    deadline: deadline.toISOString(),
-    createdAt: new Date().toISOString(),
-    completedAt: null,
-    result: '',
-    remark: taskForm.value.remark
-  });
-
-  closeCreateModal();
+  try {
+    await addTask({
+      landId: props.landId,
+      taskType: taskForm.value.taskType,
+      title: taskForm.value.title.trim(),
+      description: taskForm.value.description.trim(),
+      priority: taskForm.value.priority,
+      assigneeId: taskForm.value.assignee.trim(),
+      deadline: deadline.toISOString(),
+      remark: taskForm.value.remark.trim() || null
+    });
+    closeCreateModal();
+  } catch (error) {
+    window.alert(error.message || '创建农事任务失败');
+  }
 };
 
-const startTask = task => {
+const startTask = async task => {
   const target = farmTasks.value.find(item => item.id === task.id);
   if (!target || target.status !== 'pending') {
     return window.alert('任务状态已发生变化，请刷新后重试');
   }
-  target.status = 'processing';
+  try {
+    await beginTask(task.id);
+  } catch (error) {
+    window.alert(error.message || '开始任务失败');
+  }
 };
 
 const openCompleteModal = task => {
@@ -397,7 +402,7 @@ const closeActionModal = () => {
   actionRemark.value = '';
 };
 
-const submitTaskAction = () => {
+const submitTaskAction = async () => {
   if (!actionRemark.value) {
     return window.alert(actionType.value === 'complete' ? '请填写任务完成结果' : '请填写取消原因');
   }
@@ -408,20 +413,18 @@ const submitTaskAction = () => {
     return window.alert('任务状态已发生变化，请刷新后重试');
   }
 
-  if (actionType.value === 'complete') {
+  try {
+    if (actionType.value === 'complete') {
     if (target.status !== 'processing') {
       return window.alert('只有进行中的任务可以完成');
     }
-    target.status = 'completed';
-    target.completedAt = new Date().toISOString();
-    target.result = actionRemark.value;
-  } else {
-    target.status = 'cancelled';
-    target.remark = actionRemark.value;
-    target.completedAt = null;
-    target.result = '';
+      await finishTask(target.id, actionRemark.value.trim());
+    } else {
+      await dismissTask(target.id, actionRemark.value.trim());
+    }
+    closeActionModal();
+  } catch (error) {
+    window.alert(error.message || '更新任务状态失败');
   }
-
-  closeActionModal();
 };
 </script>

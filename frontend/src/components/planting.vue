@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="flex flex-col md:flex-row gap-6">
+    <div class="flex flex-col gap-6 md:flex-row">
       <!-- 左侧导航 -->
-      <aside class="md:w-64 bg-white rounded-xl card-shadow p-4 flex-shrink-0">
+      <aside class="flex-shrink-0 rounded-xl bg-white p-4 card-shadow md:w-64">
         <nav class="space-y-1">
           <button type="button" @click="activeSection = 'dashboard'"
             class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full hover:bg-gray-50 transition-colors"
@@ -67,15 +67,15 @@
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-gray-600">土地类型</span>
-              <span class="font-medium">{{ currentLand.type }}</span>
+              <span class="font-medium">{{ getLandTypeLabel(currentLand?.landType) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">种植面积</span>
-              <span class="font-medium">{{ currentLand.area }} 亩</span>
+              <span class="font-medium">{{ currentLand?.area ?? '--' }} 亩</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">当前作物</span>
-              <span class="font-medium">{{ currentLand.crop }}</span>
+              <span class="font-medium">{{ currentLand?.crop || '暂无' }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600">传感器数量</span>
@@ -90,11 +90,13 @@
       </aside>
 
       <!-- 右侧内容区 -->
-      <main class="flex-1 space-y-8">
+      <main class="min-w-0 flex-1 space-y-8">
         <PlantingDashboard v-if="activeSection === 'dashboard'"
           :dashboard-environment-summary="dashboardEnvironmentSummary" :unhandled-warning-count="unhandledWarningCount"
           :current-land-devices="currentLandDevices" :current-land-online-device-count="currentLandOnlineDeviceCount"
-          :current-land-offline-device-count="currentLandOfflineDeviceCount" :current-land-low-battery-device-count="currentLandLowBatteryDeviceCount" />
+          :current-land-offline-device-count="currentLandOfflineDeviceCount" :current-land-low-battery-device-count="currentLandLowBatteryDeviceCount"
+          :environment-trend-series="dashboardTrendSeries"
+          :refreshing="latestReadingsLoading" @refresh="refreshLatestReadings" />
 
         <PlantingPlan v-if="activeSection === 'planting-plan'" :land-id="selectedLandId" />
 
@@ -102,9 +104,13 @@
         :land-id="selectedLandId"
         v-model:sensor-trend-range="sensorTrendRange"
         v-model:selected-trend-metric="selectedTrendMetric"
+        v-model:trend-page="trendPage"
+        v-model:trend-page-size="trendPageSize"
         :realtime-indicators="realtimeIndicators"
           :sensor-status-labels="sensorStatusLabels" :trend-metric-options="trendMetricOptions"
           :filtered-trend-readings="filteredTrendReadings" :visible-trend-metric-summaries="visibleTrendMetricSummaries"
+          :trend-chart-series="trendChartSeries"
+          :trend-total-count="selectedTrendReadings.length" :trend-total-pages="trendTotalPages"
           :available-metrics="availableMetrics" :current-land-thresholds="currentLandThresholds"
           :sensor-metric-labels="sensorMetricLabels" :current-land-sensor-rows="currentLandSensorRows"
           :device-status-labels="deviceStatusLabels" :get-sensor-status-class="getSensorStatusClass"
@@ -125,8 +131,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, onUnmounted, watch } from "vue";
 import { useFarmStore } from "../composables/useFarmStore";
+import { toast } from '../utils/toast';
+import { parseUtcDateTime } from '../utils/dateTime';
+import { formatSensorMetricValue } from '../utils/sensorMetric';
+import { getLandTypeLabel } from '../utils/landType';
 import PlantingDashboard from "./planting/PlantingDashboard.vue";
 import PlantingPlan from "./planting/PlantingPlan.vue";
 import EnvironmentMonitor from "./planting/EnvironmentMonitor.vue";
@@ -135,14 +145,34 @@ import HandleRecord from "./planting/HandleRecord.vue";
 import SmartIrrigation from "./planting/SmartIrrigation.vue";
 import FarmTask from "./planting/FarmTask.vue";
 
-const { lands, devices, sensorReadings, environmentThresholds, alerts } = useFarmStore();
+const {
+  lands,
+  devices,
+  sensorReadings,
+  latestSensorReadings,
+  environmentThresholds,
+  alerts,
+  latestReadingsLoading,
+  loadLandModules,
+  loadLatestReadings
+} = useFarmStore();
 
 const sensorMetricLabels = {
   soil_moisture: '土壤湿度',
   air_temperature: '空气温度',
   air_humidity: '空气湿度',
   light: '光照强度',
-  soil_ph: '土壤 pH'
+  soil_ph: '土壤 pH',
+  battery: '电量'
+};
+
+const sensorMetricColors = {
+  soil_moisture: '#2563eb',
+  air_temperature: '#ea580c',
+  air_humidity: '#16a34a',
+  light: '#ca8a04',
+  soil_ph: '#9333ea',
+  battery: '#64748b'
 };
 
 const sensorStatusLabels = {
@@ -169,31 +199,65 @@ const selectedTrendMetric = ref('all');
 const activeSection = ref('dashboard');
 const selectedLandId = ref(lands.value[0]?.id || '');
 const sensorTrendRange = ref('day');
+const trendPage = ref(1);
+const trendPageSize = ref(50);
 
-watch(selectedLandId, () => {
+watch(lands, (currentLands) => {
+  const selectedLandExists = currentLands.some(land => land.id === selectedLandId.value);
+
+  if (!selectedLandExists) {
+    selectedLandId.value = currentLands[0]?.id || '';
+  }
+}, { immediate: true });
+
+watch(selectedLandId, async landId => {
   selectedTrendMetric.value = 'all';
-});
+  if (!landId) return;
+  try {
+    await loadLandModules(landId);
+  } catch (error) {
+    toast(`加载地块业务数据失败：${error.message}`, 'bg-red-500');
+  }
+}, { immediate: true });
+
+const refreshLatestReadings = async (showError = true) => {
+  if (!selectedLandId.value) return;
+  try {
+    await loadLatestReadings(selectedLandId.value);
+  } catch (error) {
+    if (showError) {
+      toast(`刷新监测数据失败：${error.message}`, 'bg-red-500');
+    }
+  }
+};
+
+const latestReadingsTimer = window.setInterval(() => refreshLatestReadings(false), 15_000);
+onUnmounted(() => window.clearInterval(latestReadingsTimer));
 
 watch(sensorTrendRange, () => {
   selectedTrendMetric.value = 'all';
 });
 
+watch([sensorTrendRange, selectedTrendMetric, trendPageSize], () => {
+  trendPage.value = 1;
+});
+
 const dashboardEnvironmentSummary = computed(() => {
-  const soilMoisture = latestSensorReadings.value.soil_moisture;
-  const airTemperature = latestSensorReadings.value.air_temperature;
-  const airHumidity = latestSensorReadings.value.air_humidity;
+  const soilMoisture = latestReadingsByMetric.value.soil_moisture;
+  const airTemperature = latestReadingsByMetric.value.air_temperature;
+  const airHumidity = latestReadingsByMetric.value.air_humidity;
 
   return {
     soilMoisture: {
-      value: soilMoisture?.value ?? '--',
+      value: formatSensorMetricValue('soil_moisture', soilMoisture?.value),
       unit: soilMoisture?.unit ?? '%'
     },
     airTemperature: {
-      value: airTemperature?.value ?? '--',
+      value: formatSensorMetricValue('air_temperature', airTemperature?.value),
       unit: airTemperature?.unit ?? '℃'
     },
     airHumidity: {
-      value: airHumidity?.value ?? '--',
+      value: formatSensorMetricValue('air_humidity', airHumidity?.value),
       unit: airHumidity?.unit ?? '%'
     }
   };
@@ -281,7 +345,7 @@ const formatRecordedAt = (recordedAt) => {
     return '暂无数据';
   }
 
-  const recordedTime = new Date(recordedAt);
+  const recordedTime = parseUtcDateTime(recordedAt);
   if (!Number.isFinite(recordedTime.getTime())) {
     return '时间格式异常';
   }
@@ -306,7 +370,7 @@ const formatTrendPointTime = (recordedAt) => {
     return '';
   }
 
-  const recordedTime = new Date(recordedAt);
+  const recordedTime = parseUtcDateTime(recordedAt);
   if (!Number.isFinite(recordedTime.getTime())) {
     return '';
   }
@@ -349,7 +413,7 @@ const warningHandleRate = computed(() => {
 
 const realtimeIndicators = computed(() => {
   return activeCurrentLandThresholds.value.map(threshold => {
-    const reading = latestSensorReadings.value[threshold.metric];
+    const reading = latestReadingsByMetric.value[threshold.metric];
 
     return {
       metric: threshold.metric,
@@ -369,8 +433,69 @@ const filteredTrendReadings = computed(() => {
   const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
 
   return currentLandSensorReadings.value.filter(reading => {
-    return new Date(reading.recordedAt).getTime() >= startTime;
+    return parseUtcDateTime(reading.recordedAt).getTime() >= startTime;
   });
+});
+
+const buildTrendSeries = readings => {
+  const grouped = readings.reduce((result, reading) => {
+    if (!result[reading.metric]) result[reading.metric] = [];
+    const value = reading.metric === 'light'
+      ? Number(reading.value) / 1000
+      : reading.value;
+    result[reading.metric].push({ time: reading.recordedAt, value });
+    return result;
+  }, {});
+
+  return Object.entries(grouped).map(([metric, points]) => ({
+    metric,
+    label: sensorMetricLabels[metric] || metric,
+    unit: metric === 'light' ? 'k' : readings.find(reading => reading.metric === metric)?.unit || '',
+    color: sensorMetricColors[metric] || '#16a34a',
+    points
+  }));
+};
+
+const averageReadingsEveryTwoHours = readings => {
+  const bucketSize = 2 * 60 * 60 * 1000;
+  const currentBucketStart = Math.floor(Date.now() / bucketSize) * bucketSize;
+  const startTime = currentBucketStart - 11 * bucketSize;
+  const buckets = readings.reduce((result, reading) => {
+    const recordedAt = parseUtcDateTime(reading.recordedAt).getTime();
+    const value = Number(reading.value);
+    if (recordedAt < startTime || !Number.isFinite(value)) return result;
+    const bucketStart = Math.floor(recordedAt / bucketSize) * bucketSize;
+    const key = `${reading.metric}:${bucketStart}`;
+    const bucket = result[key] ?? {
+      metric: reading.metric,
+      unit: reading.unit,
+      recordedAt: new Date(bucketStart).toISOString(),
+      sum: 0,
+      count: 0
+    };
+    bucket.sum += value;
+    bucket.count += 1;
+    result[key] = bucket;
+    return result;
+  }, {});
+
+  return Object.values(buckets).map(bucket => ({
+    metric: bucket.metric,
+    unit: bucket.unit,
+    recordedAt: bucket.recordedAt,
+    value: bucket.sum / bucket.count
+  }));
+};
+
+const trendChartSeries = computed(() => buildTrendSeries(
+  averageReadingsEveryTwoHours(selectedTrendReadings.value)
+));
+
+const dashboardTrendSeries = computed(() => {
+  const dashboardMetrics = new Set(['soil_moisture', 'air_temperature', 'air_humidity']);
+  return buildTrendSeries(averageReadingsEveryTwoHours(
+    currentLandSensorReadings.value.filter(reading => dashboardMetrics.has(reading.metric))
+  ));
 });
 
 const trendReadingsByMetric = computed(() => {
@@ -425,11 +550,49 @@ const trendMetricOptions = computed(() => {
   ];
 });
 
+const selectedTrendReadings = computed(() => {
+  const readings = selectedTrendMetric.value === 'all'
+    ? filteredTrendReadings.value
+    : filteredTrendReadings.value.filter(reading => reading.metric === selectedTrendMetric.value);
+
+  return [...readings].sort(
+    (left, right) => parseUtcDateTime(right.recordedAt).getTime() - parseUtcDateTime(left.recordedAt).getTime()
+  );
+});
+
+const trendTotalPages = computed(() => Math.max(
+  1,
+  Math.ceil(selectedTrendReadings.value.length / trendPageSize.value)
+));
+
+const paginatedTrendReadings = computed(() => {
+  const start = (trendPage.value - 1) * trendPageSize.value;
+  return selectedTrendReadings.value.slice(start, start + trendPageSize.value);
+});
+
 const visibleTrendMetricSummaries = computed(() => {
-  if (selectedTrendMetric.value === 'all') {
-    return trendMetricSummaries.value;
-  }
-  return trendMetricSummaries.value.filter(summary => summary.metric === selectedTrendMetric.value);
+  const grouped = paginatedTrendReadings.value.reduce((result, reading) => {
+    if (!result[reading.metric]) result[reading.metric] = [];
+    result[reading.metric].push(reading);
+    return result;
+  }, {});
+
+  return Object.entries(grouped).map(([metric, readings]) => {
+    readings.sort((left, right) => parseUtcDateTime(left.recordedAt).getTime() - parseUtcDateTime(right.recordedAt).getTime());
+    const latestReading = readings[readings.length - 1];
+    return {
+      metric,
+      label: sensorMetricLabels[metric] || metric,
+      unit: latestReading?.unit || '',
+      count: readings.length,
+      latestValue: latestReading?.value ?? null,
+      points: readings.map(reading => ({ time: reading.recordedAt, value: reading.value }))
+    };
+  });
+});
+
+watch(trendTotalPages, totalPages => {
+  if (trendPage.value > totalPages) trendPage.value = totalPages;
 });
 
 const exportableTrendReadings = computed(() => {
@@ -440,10 +603,26 @@ const exportableTrendReadings = computed(() => {
   return filteredTrendReadings.value.filter(reading => reading.metric === selectedTrendMetric.value);
 });
 
-const latestSensorReadings = computed(() => {
-  return currentLandSensorReadings.value.reduce((result, reading) => {
+const currentLatestSensorReadings = computed(() => {
+  const currentLatestReadings = latestSensorReadings.value.filter(
+    reading => reading.landId === selectedLandId.value
+  );
+  if (currentLatestReadings.length > 0) return currentLatestReadings;
+
+  return Object.values(currentLandSensorReadings.value.reduce((result, reading) => {
+    const key = `${reading.deviceId}:${reading.metric}`;
+    const previousReading = result[key];
+    if (!previousReading || parseUtcDateTime(reading.recordedAt).getTime() > parseUtcDateTime(previousReading.recordedAt).getTime()) {
+      result[key] = reading;
+    }
+    return result;
+  }, {}));
+});
+
+const latestReadingsByMetric = computed(() => {
+  return currentLatestSensorReadings.value.reduce((result, reading) => {
     const previousReading = result[reading.metric];
-    if (!previousReading || new Date(reading.recordedAt).getTime() > new Date(previousReading.recordedAt).getTime()) {
+    if (!previousReading || parseUtcDateTime(reading.recordedAt).getTime() > parseUtcDateTime(previousReading.recordedAt).getTime()) {
       result[reading.metric] = reading;
     }
     return result;
@@ -452,14 +631,14 @@ const latestSensorReadings = computed(() => {
 
 const currentLandSensorRows = computed(() => {
   return currentLandDevices.value.map(device => {
-    const latestReadings = Object.values(latestSensorReadings.value).filter(reading => reading.deviceId === device.id);
+    const latestReadings = currentLatestSensorReadings.value.filter(reading => reading.deviceId === device.id);
 
     const latestUpdatedAt = latestReadings.reduce((latestTime, reading) => {
       if (!latestTime) {
         return reading.recordedAt;
       }
 
-      return new Date(reading.recordedAt).getTime() > new Date(latestTime).getTime() ? reading.recordedAt : latestTime;
+      return parseUtcDateTime(reading.recordedAt).getTime() > parseUtcDateTime(latestTime).getTime() ? reading.recordedAt : latestTime;
     }, null);
 
     return {
@@ -467,7 +646,7 @@ const currentLandSensorRows = computed(() => {
       name: device.name,
       location: getLandName(device.landId),
       metrics: latestReadings.map(reading => sensorMetricLabels[reading.metric] || reading.metric).join('、') || '暂无数据',
-      latestData: latestReadings.map(reading => `${sensorMetricLabels[reading.metric] || reading.metric}: ${reading.value} ${reading.unit}`).join('，') || '暂无数据',
+      latestData: latestReadings.map(reading => `${sensorMetricLabels[reading.metric] || reading.metric}: ${formatSensorMetricValue(reading.metric, reading.value)} ${reading.unit}`).join('，') || '暂无数据',
       updatedAt: latestUpdatedAt,
       status: device.status
     };

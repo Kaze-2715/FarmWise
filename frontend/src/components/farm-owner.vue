@@ -54,7 +54,7 @@
                                         </div>
                                         <div>
                                             <p class="text-sm text-gray-500">土壤类型</p>
-                                            <p class="font-semibold">{{ land.type }}</p>
+                                            <p class="font-semibold">{{ getLandTypeLabel(land.landType) }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -121,8 +121,13 @@
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2 font-medium">土地类型</label>
-                            <input v-model="form.type" placeholder="如：水田、旱地、温室" required
+                            <select v-model="form.landType" required
                                 class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
+                                <option value="" disabled>请选择土地类型</option>
+                                <option v-for="option in landTypeOptions" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-gray-700 mb-2 font-medium">面积（亩）</label>
@@ -138,10 +143,9 @@
                             <label class="block text-gray-700 mb-2 font-medium">使用状态</label>
                             <select v-model="form.status" required
                                 class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all">
-                                <option value="未启用">未启用</option>
-                                <option value="正常种植">正常种植</option>
-                                <option value="休耕">休耕</option>
-                                <option value="异常">异常</option>
+                                <option v-for="option in landStatusOptions" :key="option.value" :value="option.value">
+                                    {{ option.label }}
+                                </option>
                             </select>
                         </div>
                         <div>
@@ -206,23 +210,38 @@
 import { computed, ref } from 'vue';
 import { toast } from '../utils/toast';
 import { useFarmStore } from '../composables/useFarmStore';
+import { getLandTypeLabel, landTypeOptions } from '../utils/landType';
 
-const { lands, addLand, updateLand, deleteLand } = useFarmStore();
+const {
+    lands,
+    landsLoading,
+    landsLoadError,
+    addLand,
+    updateLand,
+    deleteLand
+} = useFarmStore();
+
+const landStatusOptions = [
+    { value: 'inactive', label: '未启用' },
+    { value: 'cultivating', label: '正常种植' },
+    { value: 'fallow', label: '休耕' },
+    { value: 'abnormal', label: '异常' }
+];
 
 const form = ref({
     name: '',
-    type: '',
+    landType: '',
     area: '',
     crop: '',
-    status: '未启用',
+    status: 'inactive',
     location: '',
     longitude: '',
     latitude: ''
 });
 
 // 开关
-const loading = ref(false);
-const success = ref(true);
+const loading = landsLoading;
+const success = computed(() => landsLoadError.value === null);
 const submitting = ref(false);
 const addLandModalVisible = ref(false);
 const editingLandId = ref(null);
@@ -232,15 +251,15 @@ const deleteLandError = ref('');
 
 const totalLands = computed(() => lands.value.length);
 const totalArea = computed(() => lands.value.reduce((sum, land) => sum + Number(land.area), 0));
-const soilTypesCount = computed(() => new Set(lands.value.map(land => land.type)).size);
+const soilTypesCount = computed(() => new Set(lands.value.map(land => land.landType)).size);
 
 const resetLandForm = () => {
     form.value = {
         name: '',
-        type: '',
+        landType: '',
         area: '',
         crop: '',
-        status: '未启用',
+        status: 'inactive',
         location: '',
         longitude: '',
         latitude: ''
@@ -257,7 +276,7 @@ const openEditLandModal = (land) => {
     editingLandId.value = land.id;
     form.value = {
         name: land.name,
-        type: land.type,
+        landType: land.landType,
         area: land.area,
         crop: land.crop ?? '',
         status: land.status,
@@ -290,13 +309,13 @@ const closeDeleteLandModal = () => {
     deleteLandModalVisible.value = false;
 };
 
-const confirmDeleteLand = () => {
+const confirmDeleteLand = async () => {
     if (!pendingDeleteLand.value) {
         return;
     }
 
     try {
-        deleteLand(pendingDeleteLand.value.id);
+        await deleteLand(pendingDeleteLand.value.id);
         toast('土地删除成功！');
         closeDeleteLandModal();
     } catch (error) {
@@ -304,7 +323,7 @@ const confirmDeleteLand = () => {
     }
 };
 
-const submitLand = () => {
+const submitLand = async () => {
     if (submitting.value) {
         return;
     }
@@ -312,10 +331,10 @@ const submitLand = () => {
 
     try {
         if (editingLandId.value) {
-            updateLand(editingLandId.value, form.value);
+            await updateLand(editingLandId.value, form.value);
             toast('土地修改成功！');
         } else {
-            addLand(form.value);
+            await addLand(form.value);
             toast('土地添加成功！');
         }
         resetLandForm();

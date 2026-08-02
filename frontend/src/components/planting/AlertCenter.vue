@@ -412,9 +412,19 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useFarmStore } from '../../composables/useFarmStore';
+import { useAuthSession } from '../../composables/useAuthSession';
 
 const props = defineProps({ landId: { type: String, required: true } });
-const { alerts, devices, farmTasks } = useFarmStore();
+const {
+  alerts,
+  devices,
+  farmTasks,
+  addAlert,
+  beginAlert,
+  finishAlert,
+  dismissAlert
+} = useFarmStore();
+const { currentUser } = useAuthSession();
 
 const alertTypeLabels = {
   environment: '环境异常',
@@ -460,7 +470,7 @@ const sensorMetricLabels = {
   air_humidity: '空气湿度',
   light: '光照强度',
   soil_ph: '土壤 pH',
-  battery: '设备电量'
+  battery: '电量'
 };
 
 const alertTypeFilter = ref('all');
@@ -586,7 +596,7 @@ const startProcessing = alert => {
   startTaskForm.value = {
     taskType: getDefaultTaskType(alert),
     priority: alert.severity,
-    assignee: localStorage.getItem('username') || '',
+    assignee: currentUser.value?.id || '',
     deadline: ''
   };
   startModalVisible.value = true;
@@ -599,16 +609,7 @@ const closeStartModal = () => {
   startTaskForm.value = createStartTaskForm();
 };
 
-const getNextTaskId = () => {
-  const largestId = farmTasks.value.reduce((largest, task) => {
-    const numericId = Number.parseInt(String(task.id).replace(/\D/g, ''), 10);
-    return Number.isFinite(numericId) ? Math.max(largest, numericId) : largest;
-  }, 0);
-
-  return `TASK-${String(largestId + 1).padStart(3, '0')}`;
-};
-
-const confirmStartProcessing = () => {
+const confirmStartProcessing = async () => {
   if (!selectedStartAlert.value) return;
 
   const index = getAlertIndex(selectedStartAlert.value.id);
@@ -629,47 +630,26 @@ const confirmStartProcessing = () => {
       return window.alert('截止时间格式不正确');
     }
 
-    const alert = alerts.value[index];
-    farmTasks.value.unshift({
-      id: getNextTaskId(),
-      landId: alert.landId,
-      sourceType: 'alert',
-      sourceId: alert.id,
-      taskType: startTaskForm.value.taskType,
-      title: `处理：${alert.title}`,
-      description: alert.suggestion,
-      priority: startTaskForm.value.priority,
-      status: 'pending',
-      assignee: startTaskForm.value.assignee.trim(),
-      deadline: deadline.toISOString(),
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      result: '',
-      remark: `由预警 ${alert.id} 生成`
-    });
   }
 
-  alerts.value[index] = {
-    ...alerts.value[index],
-    status: 'processing'
-  };
-
-  closeStartModal();
+  try {
+    await beginAlert(selectedStartAlert.value.id, {
+      createTask: shouldCreateTask,
+      taskType: shouldCreateTask ? startTaskForm.value.taskType : null,
+      priority: shouldCreateTask ? startTaskForm.value.priority : null,
+      assigneeId: shouldCreateTask ? startTaskForm.value.assignee.trim() : null,
+      deadline: shouldCreateTask ? new Date(startTaskForm.value.deadline).toISOString() : null
+    });
+    closeStartModal();
+  } catch (error) {
+    window.alert(error.message || '开始处理预警失败');
+  }
 };
 
 const getLocalDateTimeInput = () => {
   const now = new Date();
   const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
   return localTime.toISOString().slice(0, 16);
-};
-
-const getNextAlertId = () => {
-  const largestId = alerts.value.reduce((largest, alert) => {
-    const numericId = Number.parseInt(String(alert.id).replace(/\D/g, ''), 10);
-    return Number.isFinite(numericId) ? Math.max(largest, numericId) : largest;
-  }, 0);
-
-  return `ALT-${String(largestId + 1).padStart(3, '0')}`;
 };
 
 const openCreateAlertModal = () => {
@@ -685,7 +665,7 @@ const closeCreateAlertModal = () => {
   createAlertModalVisible.value = false;
 };
 
-const submitCreateAlert = () => {
+const submitCreateAlert = async () => {
   const form = createAlertForm.value;
   if (!form.title.trim() || !form.description.trim() || !form.suggestion.trim() || !form.occurredAt) {
     return window.alert('请填写预警标题、详细描述、处理建议和发生时间');
@@ -702,26 +682,26 @@ const submitCreateAlert = () => {
     return window.alert('所选设备不属于当前地块');
   }
 
-  alerts.value.unshift({
-    id: getNextAlertId(),
-    landId: props.landId,
-    type: form.type,
-    severity: form.severity,
-    title: form.title.trim(),
-    description: form.description.trim(),
-    suggestion: form.suggestion.trim(),
-    status: 'pending',
-    occurredAt: new Date(form.occurredAt).toISOString(),
-    source: {
-      deviceId: form.deviceId || null,
-      metric: form.metric.trim() || null,
-      value: numericValue,
-      unit: form.unit.trim() || null
-    },
-    handleRecord: null
-  });
-
-  closeCreateAlertModal();
+  try {
+    await addAlert({
+      landId: props.landId,
+      type: form.type,
+      severity: form.severity,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      suggestion: form.suggestion.trim(),
+      occurredAt: new Date(form.occurredAt).toISOString(),
+      source: {
+        deviceId: form.deviceId || null,
+        metric: form.metric.trim() || null,
+        value: numericValue,
+        unit: form.unit.trim() || null
+      }
+    });
+    closeCreateAlertModal();
+  } catch (error) {
+    window.alert(error.message || '创建预警失败');
+  }
 };
 
 const openHandleModal = (alert, action) => {
@@ -740,7 +720,7 @@ const closeHandleModal = () => {
   handleModalVisible.value = false;
 };
 
-const submitHandleAlert = () => {
+const submitHandleAlert = async () => {
   if (!selectedAlert.value) return;
 
   const index = getAlertIndex(selectedAlert.value.id);
@@ -759,18 +739,20 @@ const submitHandleAlert = () => {
   }
 
   const resolved = handleAction.value === 'resolve';
-  alerts.value[index] = {
-    ...alerts.value[index],
-    status: resolved ? 'resolved' : 'ignored',
-    handleRecord: {
-      measure: resolved ? handleForm.value.measure.trim() : '无需处理',
-      handledAt: resolved ? new Date(handleForm.value.handledAt).toISOString() : new Date().toISOString(),
-      result: resolved ? handleForm.value.result.trim() : '已忽略',
-      remark: handleForm.value.remark.trim(),
-      operator: localStorage.getItem('username') || '游客'
+  try {
+    if (resolved) {
+      await finishAlert(selectedAlert.value, {
+        measure: handleForm.value.measure.trim(),
+        handledAt: new Date(handleForm.value.handledAt).toISOString(),
+        result: handleForm.value.result.trim(),
+        remark: handleForm.value.remark.trim() || null
+      });
+    } else {
+      await dismissAlert(selectedAlert.value, { remark: handleForm.value.remark.trim() });
     }
-  };
-
-  closeHandleModal();
+    closeHandleModal();
+  } catch (error) {
+    window.alert(error.message || '处理预警失败');
+  }
 };
 </script>

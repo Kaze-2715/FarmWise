@@ -179,7 +179,7 @@
               </div>
               <span class="rounded-full bg-white px-2 py-1 text-xs text-gray-500 shadow-sm">{{ role.permissions.length }} 项</span>
             </div>
-            <p class="mt-3 text-sm leading-5 text-gray-500">{{ role.description }}</p>
+            <p class="mt-3 text-sm leading-5 text-gray-500">当前包含 {{ role.permissions.length }} 项权限</p>
           </button>
         </aside>
 
@@ -288,7 +288,7 @@
               <span class="font-medium text-gray-800">{{ role.name }}</span>
               <span class="text-xs text-gray-400">{{ role.code }}</span>
             </span>
-            <span class="mt-1 block text-sm text-gray-500">{{ role.description }}</span>
+            <span class="mt-1 block text-sm text-gray-500">当前包含 {{ role.permissions.length }} 项权限</span>
           </span>
         </label>
         <p v-if="roleDraft.length === 0 || roleDialogError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -313,11 +313,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { mockPermissions, mockRoles, mockUsers } from '../mocks/user-data'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { listPermissions, listRoles, listUsers, updateRolePermissions, updateUserRoles } from '../api/rbac'
+import { getCurrentUser } from '../api/user'
+import { useAuthSession } from '../composables/useAuthSession'
 import { toast } from '../utils/toast'
-
-const cloneData = (data) => JSON.parse(JSON.stringify(data))
 
 const tabs = [
   { value: 'users', label: '用户管理', icon: 'fa-user-circle-o' },
@@ -325,10 +325,10 @@ const tabs = [
 ]
 
 const activeTab = ref('users')
-const users = ref(cloneData(mockUsers))
-const roles = ref(cloneData(mockRoles))
-const permissions = cloneData(mockPermissions)
-const currentUserId = localStorage.getItem('userId') || 'U001'
+const users = ref([])
+const roles = ref([])
+const permissions = ref([])
+const { currentUser, setCurrentUser } = useAuthSession()
 
 const filters = ref({ keyword: '', status: '', roleCode: '' })
 const roleDialogVisible = ref(false)
@@ -336,19 +336,11 @@ const editingUser = ref(null)
 const roleDraft = ref([])
 const roleDialogError = ref('')
 
-const selectedRoleCode = ref(roles.value[0].code)
-const permissionDraft = ref([...roles.value[0].permissions])
+const selectedRoleCode = ref('')
+const permissionDraft = ref([])
+let filterTimer = null
 
-const filteredUsers = computed(() => {
-  const keyword = filters.value.keyword.toLowerCase()
-  return users.value.filter((user) => {
-    const matchesKeyword = !keyword || [user.id, user.username, user.email]
-      .some((value) => value.toLowerCase().includes(keyword))
-    const matchesStatus = !filters.value.status || user.status === filters.value.status
-    const matchesRole = !filters.value.roleCode || user.roles.includes(filters.value.roleCode)
-    return matchesKeyword && matchesStatus && matchesRole
-  })
-})
+const filteredUsers = computed(() => users.value)
 
 const userStats = computed(() => [
   { label: '用户总数', value: users.value.length, icon: 'fa-users', iconBackground: 'bg-blue-50', iconColor: 'text-blue-600' },
@@ -367,7 +359,7 @@ const permissionDirty = computed(() => {
 
 const permissionGroups = computed(() => {
   const grouped = new Map()
-  permissions.forEach((permission) => {
+  permissions.value.forEach((permission) => {
     if (!grouped.has(permission.module)) grouped.set(permission.module, [])
     grouped.get(permission.module).push(permission)
   })
@@ -386,6 +378,14 @@ const resetFilters = () => {
   filters.value = { keyword: '', status: '', roleCode: '' }
 }
 
+const loadFilteredUsers = async () => {
+  users.value = await listUsers({
+    keyword: filters.value.keyword || undefined,
+    status: filters.value.status || undefined,
+    roleCode: filters.value.roleCode || undefined
+  })
+}
+
 const openRoleDialog = (user) => {
   editingUser.value = user
   roleDraft.value = [...user.roles]
@@ -400,18 +400,14 @@ const closeRoleDialog = () => {
   roleDialogError.value = ''
 }
 
-const permissionsForRoles = (roleCodes) => [
-  ...new Set(roleCodes.flatMap((roleCode) => roles.value.find((role) => role.code === roleCode)?.permissions || []))
-]
-
-const saveUserRoles = () => {
+const saveUserRoles = async () => {
   roleDialogError.value = ''
   if (roleDraft.value.length === 0) {
     roleDialogError.value = '每位用户至少需要保留一个角色'
     return
   }
 
-  const removesOwnAdminRole = editingUser.value.id === currentUserId
+  const removesOwnAdminRole = editingUser.value.id === currentUser.value?.id
     && editingUser.value.roles.includes('sys_admin')
     && !roleDraft.value.includes('sys_admin')
   if (removesOwnAdminRole) {
@@ -419,20 +415,16 @@ const saveUserRoles = () => {
     return
   }
 
-  const remainingAdminCount = users.value.filter((user) => {
-    const roleCodes = user.id === editingUser.value.id ? roleDraft.value : user.roles
-    return roleCodes.includes('sys_admin')
-  }).length
-  if (remainingAdminCount === 0) {
-    roleDialogError.value = '系统中必须至少保留一名系统管理员'
-    return
+  try {
+    const updatedUser = await updateUserRoles(editingUser.value.id, { roleCodes: roleDraft.value })
+    const index = users.value.findIndex(user => user.id === updatedUser.id)
+    if (index !== -1) users.value[index] = updatedUser
+    if (updatedUser.id === currentUser.value?.id) setCurrentUser(updatedUser)
+    closeRoleDialog()
+    toast(`已更新${updatedUser.username}的角色`)
+  } catch (error) {
+    roleDialogError.value = error.message
   }
-
-  editingUser.value.roles = [...roleDraft.value]
-  editingUser.value.permissions = permissionsForRoles(roleDraft.value)
-  const username = editingUser.value.username
-  closeRoleDialog()
-  toast(`已更新${username}的角色`)
 }
 
 const selectRole = (roleCode) => {
@@ -454,19 +446,49 @@ const togglePermissionModule = (group) => {
 }
 
 const selectAllPermissions = () => {
-  permissionDraft.value = permissions.map((permission) => permission.code)
+  permissionDraft.value = permissions.value.map((permission) => permission.code)
 }
 
 const resetPermissionDraft = () => {
   permissionDraft.value = [...(selectedRole.value?.permissions || [])]
 }
 
-const saveRolePermissions = () => {
+const saveRolePermissions = async () => {
   if (!selectedRole.value) return
-  selectedRole.value.permissions = [...permissionDraft.value]
-  users.value.forEach((user) => {
-    user.permissions = permissionsForRoles(user.roles)
-  })
-  toast(`已保存${selectedRole.value.name}的权限配置`)
+  try {
+    const updatedRole = await updateRolePermissions(selectedRole.value.code, {
+      permissionCodes: permissionDraft.value
+    })
+    const index = roles.value.findIndex(role => role.code === updatedRole.code)
+    if (index !== -1) roles.value[index] = updatedRole
+    permissionDraft.value = [...updatedRole.permissions]
+    if (currentUser.value?.roles.includes(updatedRole.code)) {
+      setCurrentUser(await getCurrentUser())
+    }
+    toast(`已保存${updatedRole.name}的权限配置`)
+  } catch (error) {
+    toast(`保存权限失败：${error.message}`, 'bg-red-500')
+  }
 }
+
+watch(filters, () => {
+  clearTimeout(filterTimer)
+  filterTimer = window.setTimeout(() => {
+    loadFilteredUsers().catch(error => toast(`加载用户失败：${error.message}`, 'bg-red-500'))
+  }, 250)
+}, { deep: true })
+
+onMounted(async () => {
+  try {
+    const [roleList, permissionList] = await Promise.all([listRoles(), listPermissions()])
+    roles.value = roleList
+    permissions.value = permissionList
+    if (roleList.length > 0) selectRole(roleList[0].code)
+    await loadFilteredUsers()
+  } catch (error) {
+    toast(`加载权限管理数据失败：${error.message}`, 'bg-red-500')
+  }
+})
+
+onUnmounted(() => clearTimeout(filterTimer))
 </script>

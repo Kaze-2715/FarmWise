@@ -85,6 +85,27 @@ public class MonitoringService {
     }
 
     @Transactional(readOnly = true)
+    public List<SensorReadingResponse> listLatestSensorReadings(
+            String userId,
+            String landId) {
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
+
+        return sensorReadingMapper.findLatestByLandId(landId).stream()
+                .map(row -> new SensorReadingResponse(
+                        row.deviceId(),
+                        row.landId(),
+                        row.recordedAt(),
+                        row.metric(),
+                        row.unit(),
+                        row.value()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<EnvironmentThresholdResponse> listEnvironmentThresholds(
             String userId,
             String landId) {

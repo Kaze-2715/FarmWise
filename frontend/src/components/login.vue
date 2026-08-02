@@ -43,9 +43,12 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { toast } from '../utils/toast';
+import { login as loginApi } from "../api/auth";
+import { setCurrentUser } from '../composables/useAuthSession';
 
+const route = useRoute();
 const router = useRouter();
 
 const isEmailLogin = ref(true);
@@ -56,33 +59,24 @@ const form = ref({
 })
 
 const handleLogin = async () => {
-    const type = isEmailLogin.value ? 'EMAIL' : 'USERNAME';
-    const login = form.value.account;
-    const pwd = form.value.password;
+    const loginType = isEmailLogin.value ? 'email' : 'username';
 
     try {
-        const res = await fetch('/api/user/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                login,
-                password: pwd,
-                type,
-                ip: ''
-            })
+        const response = await loginApi({
+            loginType,
+            account: form.value.account.trim(),
+            password: form.value.password
         });
-        if (!res.ok) throw new Error(await res.text());
 
-        const data = await res.json();
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('permissions', JSON.stringify(data.permissions));
-        localStorage.setItem('roles', JSON.stringify(data.role));
+        setCurrentUser(response.user);
 
         toast('登录成功');
-        router.push('/dashboard');
-    } catch (err) {
-        toast('登录失败：' + err.message, 'bg-red-500');
+
+        const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/dashboard') ? route.query.redirect : '/dashboard';
+
+        await router.replace(redirect);
+    } catch (error) {
+        toast(`登录失败：${error.message}`, 'bg-red-500');
     }
 };
 

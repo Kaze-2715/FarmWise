@@ -2,6 +2,8 @@
 
 本文档覆盖当前 Vue 核心原型需要的认证、权限和农业业务接口。按“认证与 RBAC 基础 → 农业业务 → RBAC 后台管理”的顺序实现。
 
+> 第一阶段已结束：本文档列出的第一版核心接口均已实现，Vue 前端已移除业务 mock 数据并完成真实 API 接入。后续契约变更属于第二阶段的上线修复和持续优化。
+
 ## 通用约定
 
 - 接口默认使用 JSON；文件上传使用 `multipart/form-data`。成功时直接返回对象或数组，列表无数据返回 `[]`。
@@ -45,7 +47,7 @@
 
 ## 实现顺序
 
-下表中的“已实现”表示当前开发分支的后端代码已完成并通过编译，不代表已经合并到 `main`，也不代表已经完成前后端和外部服务联调；“已确认”表示接口契约已经确定但后端尚未实现。
+下表中的“已实现”表示第一版后端代码和前端调用已完成；“已确认”表示接口契约已经确定但后端尚未实现。运行时还需在生产配置下验收 MySQL、Redis、EMQX、邮件和 AI 等外部依赖。
 
 ### 认证与 RBAC 基础
 
@@ -78,6 +80,7 @@
 | 11 | `PUT /api/planting-plans/{planId}` | `planting_plan:manage` | 已实现 |
 | 12 | `DELETE /api/planting-plans/{planId}` | `planting_plan:manage` | 已实现 |
 | 13 | `GET /api/sensor-readings` | `environment:read` | 已实现 |
+| 13A | `GET /api/sensor-readings/latest` | `environment:read` | 已实现 |
 | 14 | `GET /api/lands/{landId}/environment-thresholds` | `environment:read` | 已实现 |
 | 15 | `POST /api/lands/{landId}/environment-thresholds` | `environment_threshold:manage` | 已实现 |
 | 16 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `environment_threshold:manage` | 已实现 |
@@ -203,6 +206,7 @@
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
 | `GET /api/sensor-readings` | 必填 `landId`；可选 `metric, startAt, endAt` | `SensorReading[]`，按 `recordedAt` 升序 |
+| `GET /api/sensor-readings/latest` | 必填 `landId` | `SensorReading[]`；从最新状态表返回地块内各设备、各指标的最新值，用于监控页轻量刷新 |
 | `GET /api/lands/{landId}/environment-thresholds` | 无 | `EnvironmentThreshold[]` |
 | `POST /api/lands/{landId}/environment-thresholds` | `metric, min, max, enabled` | `201 EnvironmentThreshold`；同一地块同一指标只能有一条 |
 | `PUT /api/lands/{landId}/environment-thresholds/{metric}` | `min, max, enabled` | `EnvironmentThreshold`；不能修改指标 |

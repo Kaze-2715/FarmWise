@@ -46,4 +46,16 @@ public class SensorReadingController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/latest")
+    @RequiredPermission("environment:read")
+    public ResponseEntity<List<SensorReadingResponse>> listLatestSensorReadings(
+            @RequestParam String landId,
+            Authentication authentication) {
+        List<SensorReadingResponse> response = monitoringService.listLatestSensorReadings(
+                authentication.getName(),
+                landId);
+
+        return ResponseEntity.ok(response);
+    }
 }
