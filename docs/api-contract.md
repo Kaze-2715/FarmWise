@@ -100,16 +100,16 @@
 | 33 | `POST /api/farm-tasks/{taskId}/start` | `farm_task:manage` | 已实现 |
 | 34 | `POST /api/farm-tasks/{taskId}/complete` | `farm_task:manage` | 已实现 |
 | 35 | `POST /api/farm-tasks/{taskId}/cancel` | `farm_task:manage` | 已实现 |
-| 36 | `GET /api/ai/conversations` | `ai_advisor:use` | 已确认 |
-| 37 | `GET /api/ai/conversations/{conversationId}` | `ai_advisor:use` | 已确认 |
-| 38 | `POST /api/ai/conversations` | `ai_advisor:use` | 已确认 |
-| 39 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已确认 |
-| 40 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已确认 |
-| 41 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已确认 |
-| 42 | `GET /api/reports` | `report:read` | 已确认 |
-| 43 | `GET /api/reports/{reportId}` | `report:read` | 已确认 |
-| 44 | `POST /api/reports` | `report:generate` | 已确认 |
-| 45 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已确认 |
+| 36 | `GET /api/ai/conversations` | `ai_advisor:use` | 已实现 |
+| 37 | `GET /api/ai/conversations/{conversationId}` | `ai_advisor:use` | 已实现 |
+| 38 | `POST /api/ai/conversations` | `ai_advisor:use` | 已实现 |
+| 39 | `POST /api/ai/conversations/{conversationId}/messages` | `ai_advisor:use` | 已实现 |
+| 40 | `POST /api/ai/conversations/{conversationId}/messages/{messageId}/task` | `farm_task:manage` | 已实现 |
+| 41 | `POST /api/ai/conversations/{conversationId}/close` | `ai_advisor:use` | 已实现 |
+| 42 | `GET /api/reports` | `report:read` | 已实现 |
+| 43 | `GET /api/reports/{reportId}` | `report:read` | 已实现 |
+| 44 | `POST /api/reports` | `report:generate` | 已实现 |
+| 45 | `POST /api/reports/{reportId}/archive` | `report:archive` | 已实现 |
 
 ### RBAC 后台管理
 

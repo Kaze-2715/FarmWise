@@ -13,6 +13,7 @@ import org.apache.ibatis.annotations.Update;
 import com.farmwise.alert.dto.AlertQueryRow;
 import com.farmwise.alert.dto.LatestAlertStateRow;
 import com.farmwise.alert.model.Alert;
+import com.farmwise.report.dto.ReportSnapshotResponse.AlertSnapshot;
 
 @Mapper
 public interface AlertMapper {
@@ -261,4 +262,20 @@ public interface AlertMapper {
             @Param("handledAt") LocalDateTime handledAt,
             @Param("updatedAt") LocalDateTime updatedAt);
 
+    @Select("""
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(status = 'pending'), 0) AS pending,
+                COALESCE(SUM(status = 'processing'), 0) AS processing,
+                COALESCE(SUM(status = 'resolved'), 0) AS resolved,
+                COALESCE(SUM(status = 'ignored'), 0) AS ignored
+            FROM alerts
+            WHERE land_id = #{landId}
+              AND occurred_at >= #{startAt}
+              AND occurred_at < #{endAt}
+            """)
+    AlertSnapshot snapshot(
+            @Param("landId") String landId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
 }

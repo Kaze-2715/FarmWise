@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import com.farmwise.report.dto.ReportSnapshotResponse.TaskSnapshot;
 import com.farmwise.task.model.FarmTask;
 
 @Mapper
@@ -188,5 +189,22 @@ public interface FarmTaskMapper {
                   AND status IN ('pending', 'processing')
             )""")
     boolean existsActiveByAlertId(
-            @Param("alertId") String alertId);
+                    @Param("alertId") String alertId);
+
+    @Select("""
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(status = 'pending'), 0) AS pending,
+                COALESCE(SUM(status = 'processing'), 0) AS processing,
+                COALESCE(SUM(status = 'completed'), 0) AS completed,
+                COALESCE(SUM(status = 'cancelled'), 0) AS cancelled
+            FROM farm_tasks
+            WHERE land_id = #{landId}
+              AND created_at >= #{startAt}
+              AND created_at < #{endAt}
+            """)
+    TaskSnapshot snapshot(
+            @Param("landId") String landId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
 }

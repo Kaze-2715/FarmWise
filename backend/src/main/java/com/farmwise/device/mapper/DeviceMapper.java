@@ -13,6 +13,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import com.farmwise.device.model.Device;
+import com.farmwise.report.dto.ReportSnapshotResponse.DeviceSnapshot;
 
 @Mapper
 public interface DeviceMapper {
@@ -81,92 +82,92 @@ public interface DeviceMapper {
     int addDevice(Device device);
 
     @Select("""
-            SELECT *
-            FROM devices
-            WHERE id = #{deviceId}
-            AND owner_id = #{
-        ownerId}
-            """)
+                SELECT *
+                FROM devices
+                WHERE id = #{deviceId}
+                AND owner_id = #{
+            ownerId}
+                """)
     Optional<Device> findByIdAndOwnerId(
             @Param("deviceId") String deviceId,
             @Param("ownerId") String ownerId);
 
     @Update("""
-            UPDATE devices
-            SET name = #{name},
-            device_type = #{deviceType},
-            land_id = #{landId},
-            model = #{model},
-            install_date = #{installDate},
-            longitude = #{longitude},
-            latitude = #{latitude},
-            updated_at = #{updatedAt}
-            WHERE id = #{id}
-            AND owner_id = #{
-        ownerId}
-            """)
+                UPDATE devices
+                SET name = #{name},
+                device_type = #{deviceType},
+                land_id = #{landId},
+                model = #{model},
+                install_date = #{installDate},
+                longitude = #{longitude},
+                latitude = #{latitude},
+                updated_at = #{updatedAt}
+                WHERE id = #{id}
+                AND owner_id = #{
+            ownerId}
+                """)
     int updateDevice(Device device);
 
     @Delete("""
-            DELETE FROM devices
-            WHERE id = #{deviceId}
-            AND  owner_id = #{
-        ownerId}
-            """)
+                DELETE FROM devices
+                WHERE id = #{deviceId}
+                AND  owner_id = #{
+            ownerId}
+                """)
     int deleteByIdAndOwnerId(
             @Param("deviceId") String deviceId,
             @Param("ownerId") String ownerId);
 
     @Select("""
-            SELECT *
-            FROM devices
-            WHERE id = #{
-        deviceId}
-            """)
+                SELECT *
+                FROM devices
+                WHERE id = #{
+            deviceId}
+                """)
     Optional<Device> findById(
             @Param("deviceId") String deviceId);
 
     @Update("""
-            UPDATE devices
-            SET status = 'online',
-                battery = CASE
-                    WHEN last_reported_at IS NULL OR last_reported_at < #{reportedAt}
-                    THEN COALESCE(#{battery}, battery)
-                    ELSE battery
-                END,
-                last_reported_at = CASE
-                    WHEN last_reported_at IS NULL
-                             OR last_reported_at < #{reportedAt}
-                    THEN #{reportedAt}
-                    ELSE last_reported_at
-                END,
-                updated_at = UTC_TIMESTAMP(3)
-            WHERE id = #{
-        deviceId}
-            """)
+                UPDATE devices
+                SET status = 'online',
+                    battery = CASE
+                        WHEN last_reported_at IS NULL OR last_reported_at < #{reportedAt}
+                        THEN COALESCE(#{battery}, battery)
+                        ELSE battery
+                    END,
+                    last_reported_at = CASE
+                        WHEN last_reported_at IS NULL
+                                 OR last_reported_at < #{reportedAt}
+                        THEN #{reportedAt}
+                        ELSE last_reported_at
+                    END,
+                    updated_at = UTC_TIMESTAMP(3)
+                WHERE id = #{
+            deviceId}
+                """)
     int updateStateFromTelemetry(
             @Param("deviceId") String deviceId,
             @Param("battery") BigDecimal battery,
             @Param("reportedAt") LocalDateTime reportedAt);
 
     @Update("""
-            UPDATE devices
-            SET status = #{status},
-                updated_at = UTC_TIMESTAMP(3)
-            WHERE id = #{
-        deviceId}
-            """)
+                UPDATE devices
+                SET status = #{status},
+                    updated_at = UTC_TIMESTAMP(3)
+                WHERE id = #{
+            deviceId}
+                """)
     int updateStatus(@Param("deviceId") String deviceId, @Param("status") String status);
 
     @Update("""
-            UPDATE devices
-            SET status = 'offline',
-                updated_at = UTC_TIMESTAMP(3)
-            WHERE status = 'online'
-              AND last_reported_at IS NOT NULL
-              AND last_reported_at < #{
-        cutoff}
-            """)
+                UPDATE devices
+                SET status = 'offline',
+                    updated_at = UTC_TIMESTAMP(3)
+                WHERE status = 'online'
+                  AND last_reported_at IS NOT NULL
+                  AND last_reported_at < #{
+            cutoff}
+                """)
     int markTimedOutDevicesOffline(
             @Param("cutoff") LocalDateTime cutoff);
 
@@ -200,4 +201,17 @@ public interface DeviceMapper {
             WHERE land_id = #{landId}
             """)
     List<String> findTypesByLandId(@Param("landId") String landId);
+
+    @Select("""
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(status = 'online'), 0) AS online,
+                COALESCE(SUM(status = 'offline'), 0) AS offline,
+                COALESCE(SUM(battery IS NOT NULL AND battery < 20), 0) AS low_battery
+            FROM devices
+            WHERE land_id = #{landId}
+            """)
+    DeviceSnapshot snapshot(
+        @Param("landId") String landId
+    );
 }

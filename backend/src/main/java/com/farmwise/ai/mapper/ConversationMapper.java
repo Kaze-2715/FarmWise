@@ -12,6 +12,7 @@ import org.apache.ibatis.annotations.Update;
 
 import com.farmwise.ai.model.Conversation;
 import com.farmwise.ai.model.ConversationMessage;
+import com.farmwise.report.dto.AiAdviceSnapshotRow;
 
 @Mapper
 public interface ConversationMapper {
@@ -200,4 +201,24 @@ public interface ConversationMapper {
     int closeIfActive(
             @Param("conversationId") String conversationId,
             @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Select("""
+            SELECT
+                m.id AS message_id,
+                m.content,
+                m.references_json,
+                m.created_at
+            FROM ai_messages m
+            JOIN ai_conversations c
+              ON c.id = m.conversation_id
+            WHERE c.land_id = #{landId}
+              AND m.role = 'assistant'
+              AND m.created_at >= #{startAt}
+              AND m.created_at < #{endAt}
+            ORDER BY m.created_at ASC, m.id ASC
+            """)
+    List<AiAdviceSnapshotRow> snapshot(
+            @Param("landId") String landId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
 }

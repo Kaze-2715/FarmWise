@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Select;
 
 import com.farmwise.device.model.SensorReading;
 import com.farmwise.monitoring.dto.LatestSensorReadingRow;
+import com.farmwise.report.dto.ReportSnapshotResponse.EnvironmentSnapshot;
 
 @Mapper
 public interface SensorReadingMapper {
@@ -39,8 +40,7 @@ public interface SensorReadingMapper {
             @Param("landId") String landId,
             @Param("metric") String metric,
             @Param("startedAt") LocalDateTime startedAt,
-            @Param("endedAt") LocalDateTime endedAt
-    );
+            @Param("endedAt") LocalDateTime endedAt);
 
     @Select("""
             SELECT device_id,
@@ -82,4 +82,46 @@ public interface SensorReadingMapper {
             """)
     List<LatestSensorReadingRow> findLatestByLandId(
             @Param("landId") String landId);
+
+    @Select("""
+            WITH ranked_readings AS (
+                SELECT
+                    sr.id,
+                    sr.land_id,
+                    sr.metric,
+                    sr.value,
+                    sr.unit,
+                    sr.recorded_at,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY sr.metric
+                        ORDER BY sr.recorded_at DESC, sr.id DESC
+                    ) AS rn
+                FROM sensor_readings sr
+                WHERE sr.land_id = #{landId}
+                AND sr.recorded_at >= #{startAt}
+                AND sr.recorded_at < #{endAt}
+            )
+            SELECT
+                rr.metric,
+                rr.value,
+                rr.unit,
+                CASE
+                    WHEN et.metric IS NULL THEN 'unconfigured'
+                    WHEN rr.value < et.min_value THEN 'low'
+                    WHEN rr.value > et.max_value THEN 'high'
+                    ELSE 'normal'
+                END AS status,
+                rr.recorded_at
+            FROM ranked_readings rr
+            LEFT JOIN environment_thresholds et
+            ON et.land_id = rr.land_id
+            AND et.metric = rr.metric
+            AND et.enabled = TRUE
+            WHERE rr.rn = 1
+            ORDER BY rr.metric
+            """)
+    List<EnvironmentSnapshot> snapshot(
+            @Param("landId") String landId,
+            @Param("startAt") LocalDateTime startAt,
+            @Param("endAt") LocalDateTime endAt);
 }
