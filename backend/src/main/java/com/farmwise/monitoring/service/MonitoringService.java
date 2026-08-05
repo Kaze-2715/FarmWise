@@ -4,6 +4,7 @@ import static com.farmwise.common.util.ValidationUtil.validateOptional;
 import static com.farmwise.common.util.ValidationUtil.validateRequired;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -32,6 +33,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class MonitoringService {
+    private static final Duration MAX_SENSOR_READING_RANGE = Duration.ofHours(24);
+
     private final SensorReadingMapper sensorReadingMapper;
     private final EnvironmentThresholdMapper thresholdMapper;
     private final LandMapper landMapper;
@@ -75,11 +78,27 @@ public class MonitoringService {
             throw new BizException(HttpStatus.BAD_REQUEST, "不支持的指标类型");
         }
 
-        if (startAt != null && endAt != null && startAt.isAfter(endAt)) {
+        LocalDateTime effectiveEndAt = endAt != null
+                ? endAt
+                : LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime effectiveStartAt = startAt != null
+                ? startAt
+                : effectiveEndAt.minus(MAX_SENSOR_READING_RANGE);
+
+        if (effectiveStartAt.isAfter(effectiveEndAt)) {
             throw new BizException(HttpStatus.BAD_REQUEST, "起始时间不能晚于结束时间");
         }
 
-        List<SensorReading> readings = sensorReadingMapper.findByLandAndMetricAndTime(landId, metric, startAt, endAt);
+        if (Duration.between(effectiveStartAt, effectiveEndAt)
+                .compareTo(MAX_SENSOR_READING_RANGE) > 0) {
+            throw new BizException(HttpStatus.BAD_REQUEST, "传感器数据查询范围不能超过 24 小时");
+        }
+
+        List<SensorReading> readings = sensorReadingMapper.findByLandAndMetricAndTime(
+                landId,
+                metric,
+                effectiveStartAt,
+                effectiveEndAt);
 
         return readings.stream().map(SensorReadingResponse::from).toList();
     }

@@ -6,73 +6,73 @@
     {
       "deviceId": "10000000-0000-4000-8000-000000000001",
       "deviceType": "soil_moisture_sensor",
-      "reportIntervalSeconds": 8,
+      "reportIntervalSeconds": 60,
       "initialBattery": 95
     },
     {
       "deviceId": "10000000-0000-4000-8000-000000000002",
       "deviceType": "soil_moisture_sensor",
-      "reportIntervalSeconds": 12,
+      "reportIntervalSeconds": 60,
       "initialBattery": 92
     },
     {
       "deviceId": "10000000-0000-4000-8000-000000000003",
       "deviceType": "soil_moisture_sensor",
-      "reportIntervalSeconds": 16,
+      "reportIntervalSeconds": 60,
       "initialBattery": 88
     },
     {
       "deviceId": "20000000-0000-4000-8000-000000000001",
       "deviceType": "air_temp_humidity_sensor",
-      "reportIntervalSeconds": 10,
+      "reportIntervalSeconds": 60,
       "initialBattery": 94
     },
     {
       "deviceId": "20000000-0000-4000-8000-000000000002",
       "deviceType": "air_temp_humidity_sensor",
-      "reportIntervalSeconds": 14,
+      "reportIntervalSeconds": 60,
       "initialBattery": 90
     },
     {
       "deviceId": "20000000-0000-4000-8000-000000000003",
       "deviceType": "air_temp_humidity_sensor",
-      "reportIntervalSeconds": 18,
+      "reportIntervalSeconds": 60,
       "initialBattery": 86
     },
     {
       "deviceId": "30000000-0000-4000-8000-000000000001",
       "deviceType": "light_sensor",
-      "reportIntervalSeconds": 9,
+      "reportIntervalSeconds": 60,
       "initialBattery": 93
     },
     {
       "deviceId": "30000000-0000-4000-8000-000000000002",
       "deviceType": "light_sensor",
-      "reportIntervalSeconds": 13,
+      "reportIntervalSeconds": 60,
       "initialBattery": 89
     },
     {
       "deviceId": "30000000-0000-4000-8000-000000000003",
       "deviceType": "light_sensor",
-      "reportIntervalSeconds": 17,
+      "reportIntervalSeconds": 60,
       "initialBattery": 85
     },
     {
       "deviceId": "40000000-0000-4000-8000-000000000001",
       "deviceType": "soil_ph_sensor",
-      "reportIntervalSeconds": 11,
+      "reportIntervalSeconds": 60,
       "initialBattery": 91
     },
     {
       "deviceId": "40000000-0000-4000-8000-000000000002",
       "deviceType": "soil_ph_sensor",
-      "reportIntervalSeconds": 15,
+      "reportIntervalSeconds": 60,
       "initialBattery": 87
     },
     {
       "deviceId": "40000000-0000-4000-8000-000000000003",
       "deviceType": "soil_ph_sensor",
-      "reportIntervalSeconds": 20,
+      "reportIntervalSeconds": 60,
       "initialBattery": 83
     },
     {

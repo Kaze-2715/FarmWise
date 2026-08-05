@@ -279,7 +279,14 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { useAuthSession } from '../composables/useAuthSession';
 
-const { currentUser } = useAuthSession();
+const { currentUser, loadCurrentUser } = useAuthSession();
+
+onMounted(() => {
+    loadCurrentUser().catch(() => {
+        // 首页允许匿名访问，会话不存在时保持未登录状态即可。
+    });
+});
 </script>

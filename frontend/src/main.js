@@ -10,7 +10,7 @@ setUnauthorizedHandler(() => {
     clearCurrentUser();
     useFarmStore().clearFarmData();
 
-    if (router.currentRoute.value.path !== '/login') {
+    if (router.currentRoute.value.path.startsWith('/dashboard')) {
         router.replace('/login');
     }
 })

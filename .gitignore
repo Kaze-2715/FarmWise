@@ -27,3 +27,6 @@ AGENTS.md
 .env
 /simulator/devices.json
 /simulator/target/
+
+# Local operation postmortems
+/SERVER_OOM_INCIDENT_2026-08-05.md

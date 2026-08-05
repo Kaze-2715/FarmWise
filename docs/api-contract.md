@@ -205,7 +205,7 @@
 
 | 方法和路径 | 参数或请求体 | 响应与规则 |
 | --- | --- | --- |
-| `GET /api/sensor-readings` | 必填 `landId`；可选 `metric, startAt, endAt` | `SensorReading[]`，按 `recordedAt` 升序 |
+| `GET /api/sensor-readings` | 必填 `landId`；可选 `metric, startAt, endAt`；默认查询最近 24 小时且范围不能超过 24 小时 | `SensorReading[]`，按 `recordedAt` 升序 |
 | `GET /api/sensor-readings/latest` | 必填 `landId` | `SensorReading[]`；从最新状态表返回地块内各设备、各指标的最新值，用于监控页轻量刷新 |
 | `GET /api/lands/{landId}/environment-thresholds` | 无 | `EnvironmentThreshold[]` |
 | `POST /api/lands/{landId}/environment-thresholds` | `metric, min, max, enabled` | `201 EnvironmentThreshold`；同一地块同一指标只能有一条 |

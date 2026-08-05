@@ -158,8 +158,9 @@ const loadPlans = async landId => {
 };
 
 const loadReadings = async landId => {
-    const startAt = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-    const items = await listSensorReadings({ landId, startAt });
+    const endAt = new Date();
+    const startAt = new Date(endAt.getTime() - 24 * 60 * 60 * 1000);
+    const items = await listSensorReadings({ landId, startAt, endAt });
     replaceForLand(sensorReadings, landId, items);
     return items;
 };

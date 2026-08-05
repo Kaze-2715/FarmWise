@@ -177,8 +177,6 @@ public class VirtualSensor implements SimulatedDevice, MqttCallbackExtended {
                     objectMapper.writeValueAsBytes(payload),
                     1,
                     false);
-
-            System.out.println("虚拟设备已上报数据, deviceId=%s, type=%s".formatted(deviceId, deviceType));
         } catch (Exception exception) {
             System.err.println("虚拟设备上报数据失败, deviceId=%s, reason=%s".formatted(deviceId, exception.getMessage()));
         }
