@@ -61,7 +61,7 @@
       </div>
       <div class="h-[30rem] min-w-0 overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white p-4 text-sm">
         <div class="mb-3 text-gray-600">
-          当前范围内共有 {{ filteredTrendReadings.length }} 条传感器数据
+          当前范围内共有 {{ filteredTrendReadings.length }} 个聚合趋势点
         </div>
 
         <div v-if="filteredTrendReadings.length === 0" class="flex h-64 items-center justify-center text-gray-400">
@@ -108,7 +108,7 @@
         <div v-if="trendTotalCount > 0"
           class="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-2 text-sm text-gray-500">
-            <span>共 {{ trendTotalCount }} 条</span>
+            <span>共 {{ trendTotalCount }} 个趋势点</span>
             <select v-model.number="trendPageSize"
               class="rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm text-gray-700">
               <option :value="50">50 条/页</option>

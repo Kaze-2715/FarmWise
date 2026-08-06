@@ -148,13 +148,14 @@ import FarmTask from "./planting/FarmTask.vue";
 const {
   lands,
   devices,
-  sensorReadings,
+  sensorTrendReadings,
   latestSensorReadings,
   environmentThresholds,
   alerts,
   latestReadingsLoading,
   loadLandModules,
-  loadLatestReadings
+  loadLatestReadings,
+  loadTrendReadings
 } = useFarmStore();
 
 const sensorMetricLabels = {
@@ -223,7 +224,10 @@ watch(selectedLandId, async landId => {
 const refreshLatestReadings = async (showError = true) => {
   if (!selectedLandId.value) return;
   try {
-    await loadLatestReadings(selectedLandId.value);
+    await Promise.all([
+      loadLatestReadings(selectedLandId.value),
+      loadTrendReadings(selectedLandId.value)
+    ]);
   } catch (error) {
     if (showError) {
       toast(`刷新监测数据失败：${error.message}`, 'bg-red-500');
@@ -393,7 +397,7 @@ const currentLandAlerts = computed(() => {
   return alerts.value.filter(alert => alert.landId === selectedLandId.value);
 });
 
-const currentLandSensorReadings = computed(() => sensorReadings.value.filter(reading => reading.landId === selectedLandId.value));
+const currentLandTrendReadings = computed(() => sensorTrendReadings.value.filter(reading => reading.landId === selectedLandId.value));
 
 const unhandledWarningCount = computed(() => {
   return currentLandAlerts.value.filter(alert => alert.status === 'pending' || alert.status === 'processing').length;
@@ -432,7 +436,7 @@ const filteredTrendReadings = computed(() => {
   const days = sensorTrendRangeDays[sensorTrendRange.value];
   const startTime = Date.now() - days * 24 * 60 * 60 * 1000;
 
-  return currentLandSensorReadings.value.filter(reading => {
+  return currentLandTrendReadings.value.filter(reading => {
     return parseUtcDateTime(reading.recordedAt).getTime() >= startTime;
   });
 });
@@ -456,46 +460,15 @@ const buildTrendSeries = readings => {
   }));
 };
 
-const averageReadingsEveryTwoHours = readings => {
-  const bucketSize = 2 * 60 * 60 * 1000;
-  const currentBucketStart = Math.floor(Date.now() / bucketSize) * bucketSize;
-  const startTime = currentBucketStart - 11 * bucketSize;
-  const buckets = readings.reduce((result, reading) => {
-    const recordedAt = parseUtcDateTime(reading.recordedAt).getTime();
-    const value = Number(reading.value);
-    if (recordedAt < startTime || !Number.isFinite(value)) return result;
-    const bucketStart = Math.floor(recordedAt / bucketSize) * bucketSize;
-    const key = `${reading.metric}:${bucketStart}`;
-    const bucket = result[key] ?? {
-      metric: reading.metric,
-      unit: reading.unit,
-      recordedAt: new Date(bucketStart).toISOString(),
-      sum: 0,
-      count: 0
-    };
-    bucket.sum += value;
-    bucket.count += 1;
-    result[key] = bucket;
-    return result;
-  }, {});
-
-  return Object.values(buckets).map(bucket => ({
-    metric: bucket.metric,
-    unit: bucket.unit,
-    recordedAt: bucket.recordedAt,
-    value: bucket.sum / bucket.count
-  }));
-};
-
 const trendChartSeries = computed(() => buildTrendSeries(
-  averageReadingsEveryTwoHours(selectedTrendReadings.value)
+  selectedTrendReadings.value
 ));
 
 const dashboardTrendSeries = computed(() => {
   const dashboardMetrics = new Set(['soil_moisture', 'air_temperature', 'air_humidity']);
-  return buildTrendSeries(averageReadingsEveryTwoHours(
-    currentLandSensorReadings.value.filter(reading => dashboardMetrics.has(reading.metric))
-  ));
+  return buildTrendSeries(
+    currentLandTrendReadings.value.filter(reading => dashboardMetrics.has(reading.metric))
+  );
 });
 
 const trendReadingsByMetric = computed(() => {
@@ -609,14 +582,7 @@ const currentLatestSensorReadings = computed(() => {
   );
   if (currentLatestReadings.length > 0) return currentLatestReadings;
 
-  return Object.values(currentLandSensorReadings.value.reduce((result, reading) => {
-    const key = `${reading.deviceId}:${reading.metric}`;
-    const previousReading = result[key];
-    if (!previousReading || parseUtcDateTime(reading.recordedAt).getTime() > parseUtcDateTime(previousReading.recordedAt).getTime()) {
-      result[key] = reading;
-    }
-    return result;
-  }, {}));
+  return [];
 });
 
 const latestReadingsByMetric = computed(() => {
@@ -665,7 +631,8 @@ const exportSensorTrendData = () => {
     range: sensorTrendRange.value,
     metric: selectedTrendMetric.value,
     exportedAt: new Date().toISOString(),
-    readings: exportableTrendReadings.value
+    aggregation: 'two-hour equal-weight device average',
+    trendPoints: exportableTrendReadings.value
   };
 
   const content = JSON.stringify(exportData, null, 2);
@@ -674,7 +641,7 @@ const exportSensorTrendData = () => {
 
   const link = document.createElement('a');
   link.href = url;
-  link.download = `sensor-readings-${selectedLandId.value}-${sensorTrendRange.value}.json`;
+  link.download = `sensor-trend-${selectedLandId.value}-${sensorTrendRange.value}.json`;
   link.click();
 
   URL.revokeObjectURL(url);

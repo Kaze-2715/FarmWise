@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.farmwise.monitoring.dto.SensorReadingResponse;
+import com.farmwise.monitoring.dto.SensorTrendPointResponse;
 import com.farmwise.monitoring.service.MonitoringService;
 import com.farmwise.security.permission.RequiredPermission;
 
@@ -57,5 +58,25 @@ public class SensorReadingController {
                 landId);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/trend")
+    @RequiredPermission("environment:read")
+    public ResponseEntity<List<SensorTrendPointResponse>> listSensorReadingTrend(
+            @RequestParam String landId,
+            @RequestParam(required = false) String metric,
+            @RequestParam(required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                    LocalDateTime startAt,
+            @RequestParam(required = false)
+                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+                    LocalDateTime endAt,
+            Authentication authentication) {
+        return ResponseEntity.ok(monitoringService.listSensorReadingTrend(
+                authentication.getName(),
+                landId,
+                metric,
+                startAt,
+                endAt));
     }
 }

@@ -23,6 +23,7 @@ import {
     deleteEnvironmentThreshold,
     listEnvironmentThresholds,
     listLatestSensorReadings,
+    listSensorReadingTrend,
     listSensorReadings,
     updateEnvironmentThreshold
 } from '../api/monitoring';
@@ -68,6 +69,7 @@ import {
 const lands = ref([]);
 const devices = ref([]);
 const sensorReadings = ref([]);
+const sensorTrendReadings = ref([]);
 const latestSensorReadings = ref([]);
 const environmentThresholds = ref([]);
 const plans = ref([]);
@@ -84,6 +86,7 @@ const devicesLoading = ref(false);
 const devicesLoadError = ref(null);
 const landModulesLoading = ref(false);
 const latestReadingsLoading = ref(false);
+const trendReadingsLoading = ref(false);
 
 const replaceForLand = (state, landId, items) => {
     state.value = [
@@ -177,6 +180,29 @@ const loadLatestReadings = async landId => {
     }
 };
 
+const loadTrendReadings = async landId => {
+    if (!landId || trendReadingsLoading.value) return [];
+    trendReadingsLoading.value = true;
+    try {
+        const endAt = new Date();
+        const startAt = new Date(endAt.getTime() - 24 * 60 * 60 * 1000);
+        const points = await listSensorReadingTrend({ landId, startAt, endAt });
+        const items = points.map(point => ({
+            landId,
+            metric: point.metric,
+            unit: point.unit,
+            recordedAt: point.bucketStart,
+            value: point.averageValue,
+            sampleCount: point.sampleCount,
+            deviceCount: point.deviceCount
+        }));
+        replaceForLand(sensorTrendReadings, landId, items);
+        return items;
+    } finally {
+        trendReadingsLoading.value = false;
+    }
+};
+
 const loadThresholds = async landId => {
     const items = await listEnvironmentThresholds(landId);
     replaceForLand(environmentThresholds, landId, items);
@@ -211,7 +237,7 @@ const loadLandModules = async landId => {
     try {
         await Promise.all([
             loadPlans(landId),
-            loadReadings(landId),
+            loadTrendReadings(landId),
             loadLatestReadings(landId),
             loadThresholds(landId),
             loadIrrigation(landId),
@@ -394,16 +420,16 @@ const createFarmTaskFromAiDraft = async ({ conversationId, messageId, assigneeId
 };
 
 const clearFarmData = () => {
-    [lands, devices, sensorReadings, latestSensorReadings, environmentThresholds, plans, alerts,
+    [lands, devices, sensorReadings, sensorTrendReadings, latestSensorReadings, environmentThresholds, plans, alerts,
         irrigationConfigs, irrigationRecords, farmTasks, reports, aiConversations]
         .forEach(state => { state.value = []; });
 };
 
 export const useFarmStore = () => ({
-    lands, devices, sensorReadings, latestSensorReadings, environmentThresholds, plans, alerts,
+    lands, devices, sensorReadings, sensorTrendReadings, latestSensorReadings, environmentThresholds, plans, alerts,
     irrigationConfigs, irrigationRecords, farmTasks, reports, aiConversations,
-    landsLoading, landsLoadError, devicesLoading, devicesLoadError, landModulesLoading, latestReadingsLoading,
-    loadLands, loadDevices, loadPlans, loadReadings, loadLatestReadings, loadThresholds, loadIrrigation,
+    landsLoading, landsLoadError, devicesLoading, devicesLoadError, landModulesLoading, latestReadingsLoading, trendReadingsLoading,
+    loadLands, loadDevices, loadPlans, loadReadings, loadLatestReadings, loadTrendReadings, loadThresholds, loadIrrigation,
     loadAlerts, loadTasks, loadLandModules, loadReports, loadReport,
     loadConversations, loadConversation, clearFarmData,
     addLand, updateLand, deleteLand, addDevice, updateDevice, deleteDevice,

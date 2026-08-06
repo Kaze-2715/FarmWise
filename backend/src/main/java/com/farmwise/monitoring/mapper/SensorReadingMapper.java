@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Select;
 
 import com.farmwise.device.model.SensorReading;
 import com.farmwise.monitoring.dto.LatestSensorReadingRow;
+import com.farmwise.monitoring.dto.SensorTrendPointResponse;
 import com.farmwise.report.dto.ReportSnapshotResponse.EnvironmentSnapshot;
 
 @Mapper
@@ -37,6 +38,55 @@ public interface SensorReadingMapper {
             </script>
             """)
     List<SensorReading> findByLandAndMetricAndTime(
+            @Param("landId") String landId,
+            @Param("metric") String metric,
+            @Param("startedAt") LocalDateTime startedAt,
+            @Param("endedAt") LocalDateTime endedAt);
+
+    @Select("""
+            <script>
+            WITH bucketed_readings AS (
+                SELECT
+                    device_id,
+                    metric,
+                    unit,
+                    value,
+                    TIMESTAMP(
+                        DATE(recorded_at),
+                        MAKETIME((HOUR(recorded_at) DIV 2) * 2, 0, 0)
+                    ) AS bucket_start
+                FROM sensor_readings
+                WHERE land_id = #{landId}
+                AND recorded_at &gt;= #{startedAt}
+                AND recorded_at &lt; #{endedAt}
+                <if test="metric != null">
+                    AND metric = #{metric}
+                </if>
+            ),
+            device_bucket_averages AS (
+                SELECT
+                    device_id,
+                    metric,
+                    unit,
+                    bucket_start,
+                    AVG(value) AS device_average,
+                    COUNT(*) AS sample_count
+                FROM bucketed_readings
+                GROUP BY device_id, metric, unit, bucket_start
+            )
+            SELECT
+                metric,
+                unit,
+                bucket_start,
+                ROUND(AVG(device_average), 4) AS average_value,
+                SUM(sample_count) AS sample_count,
+                COUNT(*) AS device_count
+            FROM device_bucket_averages
+            GROUP BY metric, unit, bucket_start
+            ORDER BY bucket_start ASC, metric ASC
+            </script>
+            """)
+    List<SensorTrendPointResponse> findTrendByLandAndMetricAndTime(
             @Param("landId") String landId,
             @Param("metric") String metric,
             @Param("startedAt") LocalDateTime startedAt,

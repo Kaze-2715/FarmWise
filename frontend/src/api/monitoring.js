@@ -11,6 +11,10 @@ export function listLatestSensorReadings(landId) {
     return request(withQuery('/sensor-readings/latest', { landId }));
 }
 
+export function listSensorReadingTrend(filters) {
+    return request(withQuery('/sensor-readings/trend', filters));
+}
+
 export function listEnvironmentThresholds(landId) {
     return request(thresholdPath(landId));
 }

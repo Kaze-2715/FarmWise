@@ -23,6 +23,7 @@ import com.farmwise.monitoring.dto.CreateEnvironmentThresholdRequest;
 import com.farmwise.monitoring.dto.EnvironmentThresholdResponse;
 import com.farmwise.monitoring.dto.EnvironmentThresholdRow;
 import com.farmwise.monitoring.dto.SensorReadingResponse;
+import com.farmwise.monitoring.dto.SensorTrendPointResponse;
 import com.farmwise.monitoring.dto.UpdateEnvironmentThresholdRequest;
 import com.farmwise.monitoring.mapper.EnvironmentThresholdMapper;
 import com.farmwise.monitoring.mapper.SensorReadingMapper;
@@ -122,6 +123,48 @@ public class MonitoringService {
                         row.unit(),
                         row.value()))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SensorTrendPointResponse> listSensorReadingTrend(
+            String userId,
+            String landId,
+            String metric,
+            LocalDateTime startAt,
+            LocalDateTime endAt) {
+        landId = validateRequired(landId, "地块 ID 不能为空");
+        metric = validateOptional(metric);
+
+        landMapper.findByIdAndOwnerId(landId, userId)
+                .orElseThrow(() -> new BizException(
+                        HttpStatus.NOT_FOUND,
+                        "地块不存在或不属于当前用户"));
+
+        if (metric != null && !DeviceMetricCapabilities.isSupportedMetric(metric)) {
+            throw new BizException(HttpStatus.BAD_REQUEST, "不支持的指标类型");
+        }
+
+        LocalDateTime effectiveEndAt = endAt != null
+                ? endAt
+                : LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime effectiveStartAt = startAt != null
+                ? startAt
+                : effectiveEndAt.minus(MAX_SENSOR_READING_RANGE);
+
+        if (effectiveStartAt.isAfter(effectiveEndAt)) {
+            throw new BizException(HttpStatus.BAD_REQUEST, "起始时间不能晚于结束时间");
+        }
+
+        if (Duration.between(effectiveStartAt, effectiveEndAt)
+                .compareTo(MAX_SENSOR_READING_RANGE) > 0) {
+            throw new BizException(HttpStatus.BAD_REQUEST, "趋势数据查询范围不能超过 24 小时");
+        }
+
+        return sensorReadingMapper.findTrendByLandAndMetricAndTime(
+                landId,
+                metric,
+                effectiveStartAt,
+                effectiveEndAt);
     }
 
     @Transactional(readOnly = true)
