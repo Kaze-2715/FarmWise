@@ -1,17 +1,21 @@
 package com.farmwise.device.mqtt;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import com.farmwise.irrigation.mqtt.IrrigationCommand;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +26,20 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 @Slf4j
 public class MqttClientManager implements MqttCallbackExtended {
+    private static final long MQTT_OPERATION_TIMEOUT_MILLISECONDS = 15_000;
+    private static final int MAX_SUBSCRIPTION_ATTEMPTS = 3;
+
     private final MqttService mqttService;
     private final MqttProperties properties;
     private MqttClient client;
 
     private final ObjectMapper objectMapper;
+
+    private final ExecutorService subscriptionExecutor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "mqtt-subscription");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
@@ -94,31 +107,21 @@ public class MqttClientManager implements MqttCallbackExtended {
 
         int[] qos = {properties.qos(), properties.qos(), properties.qos()};
 
-        try {
-            client.subscribe(topics, qos);
-        } catch (MqttException exception) {
-            throw new IllegalStateException("订阅 MQTT Topic 失败", exception);
-        }
-
-        log.info(
-                "MQTT 连接并订阅完成，broker={}, topics={}, qos={}, reconnect={}",
-                serverUri,
-                String.join(", ", topics),
-                properties.qos(),
-                reconnect);
+        subscriptionExecutor.execute(() -> subscribe(topics, qos, serverUri, reconnect));
     }
 
     public boolean isAvailable() {
         return client != null && client.isConnected();
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     void start() throws MqttException {
         if (!properties.enabled()) {
             log.info("MQTT 功能未启用");
             return;
         }
         client = new MqttClient(properties.brokerUri(), properties.clientId());
+        client.setTimeToWait(MQTT_OPERATION_TIMEOUT_MILLISECONDS);
 
         client.setCallback(this);
         client.connect(createConnectOptions());
@@ -126,6 +129,8 @@ public class MqttClientManager implements MqttCallbackExtended {
 
     @PreDestroy
     void stop() {
+        subscriptionExecutor.shutdownNow();
+
         if (client == null) {
             return;
         }
@@ -150,7 +155,7 @@ public class MqttClientManager implements MqttCallbackExtended {
         MqttConnectOptions options = new MqttConnectOptions();
 
         options.setAutomaticReconnect(true);
-        options.setCleanSession(false);
+        options.setCleanSession(true);
         options.setConnectionTimeout(properties.connectionTimeoutSeconds());
         options.setKeepAliveInterval(properties.keepAliveSeconds());
 
@@ -160,6 +165,31 @@ public class MqttClientManager implements MqttCallbackExtended {
         }
 
         return options;
+    }
+
+    private void subscribe(String[] topics, int[] qos, String serverUri, boolean reconnect) {
+        for (int attempt = 1; attempt <= MAX_SUBSCRIPTION_ATTEMPTS; attempt++) {
+            if (!client.isConnected()) {
+                return;
+            }
+
+            try {
+                client.subscribe(topics, qos);
+                log.info(
+                        "MQTT 连接并订阅完成，broker={}, topics={}, qos={}, reconnect={}",
+                        serverUri,
+                        String.join(", ", topics),
+                        properties.qos(),
+                        reconnect);
+                return;
+            } catch (MqttException exception) {
+                if (attempt == MAX_SUBSCRIPTION_ATTEMPTS) {
+                    log.error("订阅 MQTT Topic 失败，已达到最大重试次数", exception);
+                    return;
+                }
+                log.warn("订阅 MQTT Topic 失败，即将重试，attempt={}", attempt, exception);
+            }
+        }
     }
 
     @Override
