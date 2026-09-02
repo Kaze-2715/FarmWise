@@ -1,4 +1,64 @@
 services:
+  frontend:
+    image: farmwise-frontend:20260902
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8081:80"
+
+  simulator:
+    image: farmwise-simulator:20260902
+    restart: unless-stopped
+    depends_on:
+      emqx:
+        condition: service_healthy
+    environment:
+      MQTT_BROKER_URI: tcp://emqx:1883
+      MQTT_USERNAME: ${MQTT_USERNAME:?请配置 MQTT 用户名}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?请配置 MQTT 密码}
+
+  backend:
+    depends_on:
+      redis:
+        condition: service_healthy
+      emqx:
+        condition: service_healthy
+    image: farmwise-backend:20260902
+    restart: unless-stopped
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      MQTT_ENABLED: ${MQTT_ENABLED:-true}
+      MQTT_BROKER_URI: tcp://emqx:1883
+      MQTT_USERNAME: ${MQTT_USERNAME:?请配置 MQTT 用户名}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?请配置 MQTT 密码}
+
+      JWT_SECRET: ${JWT_SECRET:?请配置 JWT_SECRET}
+
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:?请配置邮件服务器}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:?请配置邮件账号}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:?请配置邮件密码}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:-true}
+
+      DB_URL: ${DB_URL:?请配置外部 MySQL 地址}
+      DB_USERNAME: ${DB_USERNAME:?请配置数据库用户名}
+      DB_PASSWORD: ${DB_PASSWORD:?请配置数据库密码}
+
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com}
+      AI_MODEL: ${AI_MODEL:-deepseek-v4-flash}
+      AI_API_KEY: ${AI_API_KEY:?请配置 AI API Key}
+
   emqx:
     image: emqx/emqx:5.8.8
     restart: unless-stopped
@@ -22,6 +82,17 @@ services:
       timeout: 5s
       retries: 6
       start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   emqx-data:

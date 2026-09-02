@@ -2,7 +2,7 @@
 
 FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆盖地块、设备、环境监测、灌溉、预警、农事任务、AI 顾问和报告等业务。
 
-> 项目第一阶段已于 2026 年 8 月完成。当前进入发布与第二阶段持续优化。
+> 项目第一阶段已于 2026 年 8 月完成。当前进入发布与第二阶段持续优化，开发机上的 Docker Compose 编排已经跑通，服务器切换仍在进行。
 
 ## 目标技术栈
 
@@ -17,8 +17,8 @@ FarmWise 是一个基于 Spring Boot 与 Vue 3 的智慧农业管理系统，覆
 
 ## 第二阶段开发计划
 
-- [ ] 完成 Nginx、HTTPS、systemd 或 Docker Compose 生产部署。
-- [ ] 使用 Docker Compose 编排 MySQL、Redis、EMQX 和应用服务。
+- [x] 使用 Docker Compose 编排前端、后端、Redis、EMQX 和虚拟设备模拟器；MySQL 继续使用外部共享实例。
+- [ ] 完成服务器上的 Docker Compose、Nginx 与 HTTPS 生产部署切换。
 - [ ] 增加低频预警补偿扫描，覆盖事件丢失和异步判定失败。
 - [ ] 建立用户操作审计日志与敏感信息脱敏规则。
 - [ ] 根据实际热点引入环境阈值和最新传感器状态缓存。

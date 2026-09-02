@@ -19,7 +19,11 @@ public class VirtualDeviceCluster {
             throw new IllegalArgumentException("模拟器配置不能为空");
         }
 
-        if (config.brokerUri() == null || config.brokerUri().isBlank()) {
+        String brokerUri = environmentOrDefault("MQTT_BROKER_URI", config.brokerUri());
+        String username = environmentOrDefault("MQTT_USERNAME", config.username());
+        String password = environmentOrDefault("MQTT_PASSWORD", config.password());
+
+        if (brokerUri == null || brokerUri.isBlank()) {
             throw new IllegalArgumentException("brokerUri 不能为空");
         }
 
@@ -34,18 +38,18 @@ public class VirtualDeviceCluster {
                             if ("irrigation_controller".equals(device.deviceType())) {
                                 return new VirtualIrrigationController(
                                         device.deviceId(),
-                                        config.brokerUri(),
-                                        config.username(),
-                                        config.password());
+                                        brokerUri,
+                                        username,
+                                        password);
                             }
 
                             return new VirtualSensor(
                                     device.deviceId(),
                                     device.deviceType(),
                                     device.reportIntervalSeconds(),
-                                    config.brokerUri(),
-                                    config.username(),
-                                    config.password(),
+                                    brokerUri,
+                                    username,
+                                    password,
                                     device.initialBattery());
                         })
                         .toList();
@@ -59,5 +63,10 @@ public class VirtualDeviceCluster {
 
         Runtime.getRuntime().addShutdownHook(
                 new Thread(() -> devices.forEach(SimulatedDevice::stop)));
+    }
+
+    private static String environmentOrDefault(String name, String fallback) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? fallback : value;
     }
 }
