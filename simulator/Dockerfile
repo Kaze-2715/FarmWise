@@ -13,6 +13,6 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 COPY --from=build /build/app.jar app.jar
-COPY devices.json devices.json
+COPY devices.example.json devices.json
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar", "/app/devices.json"]

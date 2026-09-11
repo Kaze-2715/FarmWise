@@ -2,6 +2,16 @@
 
 FarmWise 是一个面向智慧农业场景的 IoT 管理与智能决策平台。系统采用 Vue 3 + Spring Boot 构建，提供地块与种植计划管理、设备接入、环境监测、智能灌溉、异常预警、农事任务、报告生成和 AI 技术顾问等功能，并通过 MQTT 连接虚拟传感器与灌溉控制器。
 
+## 项目预览
+
+### 数据总览
+
+![FarmWise 数据总览](docs/assets/dashboard-overview.png)
+
+### AI 技术顾问
+
+![FarmWise AI 技术顾问](docs/assets/ai-advisor.png)
+
 ## 系统架构
 
 ![FarmWise 系统架构](docs/assets/system-architecture.png)
@@ -18,15 +28,12 @@ FarmWise 是一个面向智慧农业场景的 IoT 管理与智能决策平台。
 
 ![FarmWise IoT 遥测与预警链路](docs/assets/iot-telemetry-pipeline.png)
 
-图中展示了设备上报、消息校验、messageId 幂等、历史数据与最新状态投影，以及事务提交后的预警和自动灌溉处理。
-
 ### AI Agent 业务闭环
 
-AI 技术顾问基于 Spring AI `ChatClient` 和 Tool Calling 实现。模型不会直接读取数据库，也不能直接修改业务数据，而是通过后端提供的业务工具按需查询地块、设备、监测、预警和任务信息。
+AI 技术顾问基于 Spring AI `ChatClient` 和 Tool Calling 实现。模型通过后端提供的业务工具按需查询地块、设备、监测、预警和任务信息，生成建议和任务草稿；用户显式确认后才执行写操作，且操作也由后端业务服务完成。
 
 ![FarmWise AI Agent 工作流](docs/assets/ai-agent-workflow.png)
 
-AI 只通过只读工具查询真实业务数据，生成建议和任务草稿；确认后的写操作仍由后端业务服务完成。
 
 ## 功能
 
