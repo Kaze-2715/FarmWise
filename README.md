@@ -1,5 +1,7 @@
 # FarmWise
 
+[![CI/CD](https://github.com/Kaze-2715/FarmWise/actions/workflows/ci.yml/badge.svg)](https://github.com/Kaze-2715/FarmWise/actions/workflows/ci.yml)
+
 FarmWise 是一个面向智慧农业场景的 IoT 管理与智能决策平台。系统采用 Vue 3 + Spring Boot 构建，提供地块与种植计划管理、设备接入、环境监测、智能灌溉、异常预警、农事任务、报告生成和 AI 技术顾问等功能，并通过 MQTT 连接虚拟传感器与灌溉控制器。
 
 ## 项目预览
