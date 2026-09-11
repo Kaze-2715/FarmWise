@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: ghcr.io/kaze-2715/farmwise-frontend:${IMAGE_TAG:-latest}
+    image: crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-frontend:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       - backend
@@ -8,7 +8,7 @@ services:
       - "127.0.0.1:8081:80"
 
   simulator:
-    image: ghcr.io/kaze-2715/farmwise-simulator:${IMAGE_TAG:-latest}
+    image: crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-simulator:${IMAGE_TAG:-latest}
     restart: unless-stopped
     depends_on:
       emqx:
@@ -24,7 +24,7 @@ services:
         condition: service_healthy
       emqx:
         condition: service_healthy
-    image: ghcr.io/kaze-2715/farmwise-backend:${IMAGE_TAG:-latest}
+    image: crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-backend:${IMAGE_TAG:-latest}
     restart: unless-stopped
 
     extra_hosts:

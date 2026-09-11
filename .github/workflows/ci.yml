@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   verify:
@@ -20,12 +19,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Log in to GHCR
+      - name: Log in to ACR
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -59,8 +58,8 @@ jobs:
           context: ./backend
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/kaze-2715/farmwise-backend:latest
-            ghcr.io/kaze-2715/farmwise-backend:${{ github.sha }}
+            crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-backend:latest
+            crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-backend:${{ github.sha }}
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
@@ -68,8 +67,8 @@ jobs:
           context: ./frontend
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/kaze-2715/farmwise-frontend:latest
-            ghcr.io/kaze-2715/farmwise-frontend:${{ github.sha }}
+            crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-frontend:latest
+            crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-frontend:${{ github.sha }}
 
       - name: Build and push simulator image
         uses: docker/build-push-action@v6
@@ -77,8 +76,8 @@ jobs:
           context: ./simulator
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ghcr.io/kaze-2715/farmwise-simulator:latest
-            ghcr.io/kaze-2715/farmwise-simulator:${{ github.sha }}
+            crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-simulator:latest
+            crpi-6qnp9vn9wop3xsyi.cn-huhehaote.personal.cr.aliyuncs.com/farmwise/farmwise-simulator:${{ github.sha }}
 
       - name: Deploy to server
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
